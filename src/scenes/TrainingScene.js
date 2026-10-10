@@ -2,16 +2,17 @@
 // 右下（休みの札の右の空き）に親方か娘が出て助言する（trainingAdvice・描き直すたびに出し直す）
 // 疲れ10で「番付を見る」を押すと休場の場所に入る（番付 → 取組の順は全部「休」→ 結果）
 // 押すと train → 保存 → 効果音 → 描き直した上に稽古の絵と効き目の札と応援の1行（2.4秒で閉じる・応援が無い時は1.6秒・押せばすぐ閉じる）。0回になったら「番付を見る」→ 場所を始めて（保存）→ 番付
-import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=15';
-import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=15';
-import { session, trainNow, beginBasho } from '../state.js?v=15';
-import { HEYA, heyaOfGuide } from '../data/heya.js?v=15';
-import { cheerKey, trainingAdvice } from '../core/cheer.js?v=15';
+import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=16';
+import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=16';
+import { session, trainNow, beginBasho } from '../state.js?v=16';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=16';
+import { cheerKey, trainingAdvice } from '../core/cheer.js?v=16';
 import {
-  button, fitText, roundBox, hitZone, textStyle, statBars, preloadTypeArt, preloadTrainingIndex, loadTrainingArt, preloadGuideArt, preloadOyakataArt,
+  button, fitText, roundBox, hitZone, textStyle, statBars, preloadTypeArt, preloadTrainingIndex, loadTrainingArt, preloadWordsIndex, loadWordsArt, preloadVoiceIndex, loadVoice, preloadGuideArt, preloadOyakataArt,
   speakerFace, speechBubble, COLORS, CONDITION_COLOR, cssColor, clearScene, backButton, saveButton, TOP_LEFT_FREE,
-} from '../ui/widgets.js?v=15';
-import { playTraining } from '../ui/sfx.js?v=15';
+} from '../ui/widgets.js?v=16';
+import { playTraining } from '../ui/sfx.js?v=16';
+import { wordsFor, wordSpot, WORD_COLOR } from '../data/words.js?v=16';
 
 const BARS = { x: 40, y: 226, w: 640 }; // 心技体の棒（statBars の大きい版：行の高さ44・名前の幅96・数の幅46）
 const CARD = { w: 310, h: 150, cols: [190, 530], top: 450, step: 170 };
@@ -20,6 +21,7 @@ const BUTTON_TOP = 1190 - 55; // 「番付を見る」の上の端（札はこ�
 // 右下の助言：休みの札（左の列の4段目）の右の空き。札の右の列は x 375〜685・4段目は y 885〜1035
 const ADVICE = { left: 384, right: 700, top: 885, h: 150, face: 96 };
 const HEAD = { name: 50, rank: 98, heya: 128 }; // 上の真ん中の3行（しこ名・番付・部屋の名）の高さ
+const WORD = { maxW: 260, maxH: 170, ms: 250, second: 250, voiceVolume: 0.9, sfxWithVoice: 0.6 }; // 効果文字（アニメの言葉）：幅300まで・ぽんと出る250ms・2つ目は250ms遅れ／声の音量・声がある時の効果音の倍率
 const MINUS = '−'; // 減った値の印（全角でない長い横線）
 
 export class TrainingScene extends Phaser.Scene {
@@ -30,6 +32,8 @@ export class TrainingScene extends Phaser.Scene {
   preload() {
     preloadTypeArt(this); // 稽古の絵がまだ無い時は自分のタイプの絵で代える
     preloadTrainingIndex(this);
+    preloadWordsIndex(this);
+    preloadVoiceIndex(this);
     preloadGuideArt(this); // 応援と助言の娘の顔
     preloadOyakataArt(this); // 応援と助言の親方の顔
   }
@@ -41,6 +45,8 @@ export class TrainingScene extends Phaser.Scene {
     }
     this.popup = null;
     loadTrainingArt(this); // 本人の稽古の絵は後から届く（目録 assets/training/index.json にある物だけ）
+    loadWordsArt(this); // 効果文字の絵（assets/words）と稽古の声（assets/voice）も同じ・目録にある物だけ
+    loadVoice(this);
     this.draw();
   }
 
@@ -165,7 +171,7 @@ export class TrainingScene extends Phaser.Scene {
       down = false;
       const before = session.career;
       const after = trainNow(kind);
-      playTraining(kind);
+      playTraining(kind, this.hasVoice(kind) ? WORD.sfxWithVoice : 1); // 声が付く稽古は効果音を下げて声を聞こえやすく
       this.redraw({ kind, effects: trainingEffects(before, after) });
     });
   }
@@ -232,10 +238,52 @@ export class TrainingScene extends Phaser.Scene {
       objs.push(...row);
     }
 
+    this.showWords(kind, cx, artY, D + 3, objs);
+    this.playVoice(kind);
+
     const timer = this.time.delayedCall(cheer ? POP.cheerMs : POP.ms, () => this.closePopup());
     // 押した瞬間に閉じる（離しは描き直した札に当たるが、札は押しがその札で始まった時だけ効く）
     overlay.on('pointerdown', () => this.time.delayedCall(0, () => this.closePopup()));
     this.popup = { objs, timer };
+  }
+
+  hasVoice(kind) {
+    return this.cache.audio.exists(`voice-${kind}`);
+  }
+
+  // 稽古の声（assets/voice/train_<kind>.mp3）。読めていれば鳴らす・無ければ今まで通り（効果音だけ）。鳴らせなくても遊びは続ける
+  playVoice(kind) {
+    try {
+      if (this.voice) this.voice.stop();
+      this.voice = null;
+      if (!this.hasVoice(kind)) return;
+      this.voice = this.sound.add(`voice-${kind}`, { volume: WORD.voiceVolume });
+      this.voice.play();
+    } catch {
+      this.voice = null;
+    }
+  }
+
+  // 絵の上のほうに効果文字（アニメの言葉）をぽんと出す。絵（assets/words）があれば絵・無ければ太い字で代える。札が閉じるまで残る
+  // 置き場は稽古ごとに決まっている（wordSpot）・2つ目は少し遅れて反対側に出る。回転 −8°〜+8°・拡大 0.3→1 を Back.Out で
+  showWords(kind, cx, artY, depth, objs) {
+    wordsFor(kind).forEach((id, i) => {
+      const spot = wordSpot(kind, i);
+      const x = cx + spot.dx * POP.artW;
+      const y = artY + spot.dy * POP.artH;
+      const key = `word-${id}`;
+      let obj;
+      if (this.textures.exists(key)) {
+        obj = this.add.image(x, y, key);
+        obj.setScale(Math.min(WORD.maxW / obj.width, WORD.maxH / obj.height));
+      } else {
+        obj = fitText(this.add.text(x, y, t(`word.${id}`), textStyle(56, WORD_COLOR[id], { stroke: '#1a1020', strokeThickness: 10 })).setOrigin(0.5), WORD.maxW);
+      }
+      const full = obj.scaleX;
+      obj.setDepth(depth).setAngle(spot.rot).setAlpha(0).setScale(full * 0.3);
+      this.tweens.add({ targets: obj, alpha: 1, scale: full, delay: i * WORD.second, duration: WORD.ms, ease: 'Back.Out' });
+      objs.push(obj);
+    });
   }
 
   closePopup() {

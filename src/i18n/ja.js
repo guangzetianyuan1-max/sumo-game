@@ -292,4 +292,12 @@ export default {
   'advise.tsurumai.weak': '{stat}が一番足りん。{train}で伸ばせ',
   'advise.suzukaze.weak': '{stat}が弱い！ {train}でガンガン鍛えろ！',
   'advise.kotonami.weak': '{stat}が遅れています。{train}を勧めます',
+  'word.dosun': 'ドスン！',
+  'word.bashi': 'バシッ！',
+  'word.bachiin': 'バチーン！',
+  'word.doon': 'ドーン！',
+  'word.gottsan': 'ごっつあんです！',
+  'word.gui': 'グイッ！',
+  'word.zuzaza': 'ズザザッ！',
+  'word.guugu': 'グーグー…',
 };

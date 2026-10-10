@@ -1,9 +1,10 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=15';
-import { GUIDE_IDS } from '../data/guides.js?v=15';
-import { HEYA_IDS } from '../data/heya.js?v=15';
-import { t } from '../i18n/i18n.js?v=15';
-import { saveNow } from '../state.js?v=15';
+import { TYPE_IDS } from '../data/types.js?v=16';
+import { GUIDE_IDS } from '../data/guides.js?v=16';
+import { HEYA_IDS } from '../data/heya.js?v=16';
+import { t } from '../i18n/i18n.js?v=16';
+import { listedWords, listedVoiceKinds } from '../data/words.js?v=16';
+import { saveNow } from '../state.js?v=16';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -58,6 +59,22 @@ export const loadKimariteArt = (scene) => loadIndexedArt(scene, 'kim-index', 'ki
 // 稽古の絵：絵の鍵は train-<kind>
 export const preloadTrainingIndex = (scene) => preloadArtIndex(scene, 'train-index', 'assets/training');
 export const loadTrainingArt = (scene) => loadIndexedArt(scene, 'train-index', 'train-', 'assets/training');
+// 効果文字（アニメの言葉の絵・10/11）：assets/words/<id>.png。絵の鍵は word-<id>（目録に書いた id のうち知っている物だけ読む）
+export const preloadWordsIndex = (scene) => preloadArtIndex(scene, 'word-index', 'assets/words');
+export function loadWordsArt(scene) {
+  const ids = listedWords(scene.cache.json.get('word-index')).filter((id) => !scene.textures.exists(`word-${id}`));
+  if (!ids.length) return;
+  ids.forEach((id) => scene.load.image(`word-${id}`, `assets/words/${id}.png`));
+  scene.load.start();
+}
+// 稽古の声：assets/voice/train_<kind>.mp3。音の鍵は voice-<kind>（目録にある物だけ読む）
+export const preloadVoiceIndex = (scene) => preloadArtIndex(scene, 'voice-index', 'assets/voice');
+export function loadVoice(scene) {
+  const kinds = listedVoiceKinds(scene.cache.json.get('voice-index')).filter((k) => !scene.cache.audio.exists(`voice-${k}`));
+  if (!kinds.length) return;
+  kinds.forEach((k) => scene.load.audio(`voice-${k}`, `assets/voice/train_${k}.mp3`));
+  scene.load.start();
+}
 // 親方の顔（本人の絵・10/11）：assets/guides/oyakata_<部屋の id>_<normal|shout|smile>.png。絵の鍵は oyakata-<id>-<顔>
 export const OYAKATA_MOODS = ['normal', 'shout', 'smile'];
 export function preloadOyakataArt(scene) {

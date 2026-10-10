@@ -2,6 +2,7 @@
 // どの音も 0.8 秒以内・重なった時も含めて音量の山は 0.35 以下。鳴らせない端末（AudioContext が無い・作ると例外）では何もしない
 let ctx = null;
 let broken = false; // 作ろうとして例外が出た端末では、2度目からは試さない
+let level = 1; // 今鳴らす音の音量の倍率（声が付く稽古では下げる・playTraining が音ごとに決める）
 
 function audio() {
   if (ctx || broken) return ctx;
@@ -21,7 +22,7 @@ function audio() {
 function envelope(c, t0, dur, peak, attack = 0.005) {
   const g = c.createGain();
   g.gain.setValueAtTime(0.0001, t0);
-  g.gain.linearRampToValueAtTime(peak, t0 + attack);
+  g.gain.linearRampToValueAtTime(peak * level, t0 + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   g.connect(c.destination);
   return g;
@@ -92,7 +93,8 @@ const SOUNDS = {
 };
 
 // 稽古の札を押した時の音。知らない名前・鳴らせない端末では何もしない（遊びは止めない）
-export function playTraining(kind) {
+// volume＝今までの音量に掛ける倍率（0〜1・既定 1）。声のファイルが付く稽古では 0.6 に下げて声を聞こえやすくする
+export function playTraining(kind, volume = 1) {
   if (!Object.prototype.hasOwnProperty.call(SOUNDS, kind)) return;
   const make = SOUNDS[kind];
   const c = audio();
@@ -103,6 +105,7 @@ export function playTraining(kind) {
       const p = c.resume(); // 古い端末は Promise を返さない
       if (p && p.catch) p.catch(() => {});
     }
+    level = typeof volume === 'number' && volume >= 0 && volume <= 1 ? volume : 1;
     make(c, c.currentTime + 0.01);
   } catch {
     // 鳴らせなくても遊びは続ける

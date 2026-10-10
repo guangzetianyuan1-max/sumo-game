@@ -293,4 +293,12 @@ export default {
   'advise.tsurumai.weak': '{stat} is your weakest. Build it with {train}.',
   'advise.suzukaze.weak': '{stat} is weak! Pound it with {train}!',
   'advise.kotonami.weak': '{stat} is lagging. I recommend {train}.',
+  'word.dosun': 'THUD!',
+  'word.bashi': 'SMACK!',
+  'word.bachiin': 'WHAM!',
+  'word.doon': 'BOOM!',
+  'word.gottsan': 'Thank you for the meal!',
+  'word.gui': 'TWIST!',
+  'word.zuzaza': 'SKID!',
+  'word.guugu': 'Zzz…',
 };
