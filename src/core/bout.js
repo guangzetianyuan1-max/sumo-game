@@ -1,12 +1,12 @@
 // 取組の計算（設計書 §2）。画面には触らない。state は毎回 新しい物を返す（元を書き換えない）。
 // 位置 pos：0＝真ん中・東の俵が −100・西の俵が +100。東が押すと + へ動く。
-import { KIMARITE, NON_TECH } from '../data/kimarite.js?v=20';
+import { KIMARITE, NON_TECH } from '../data/kimarite.js?v=21';
 import {
   ARCH, DEFAULT_MOVES, NOISE, EDGE_AT, OUT_AT, TURN_LIMIT, RECOVER, OKURI_BELOW, NON_TECH_P,
   COUNTER_BONUS, PUSH_RATIO_EXP,
-} from './tuning.js?v=20';
-import { strongBonus, weakBonus } from './wrestler.js?v=20';
-import { makeRng } from './rng.js?v=20';
+} from './tuning.js?v=21';
+import { strongBonus, weakBonus } from './wrestler.js?v=21';
+import { makeRng } from './rng.js?v=21';
 
 const other = (side) => (side === 'east' ? 'west' : 'east');
 const dirOf = (side) => (side === 'east' ? 1 : -1);
