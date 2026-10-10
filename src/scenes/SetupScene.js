@@ -1,8 +1,8 @@
 // src/scenes/SetupScene.js — 入門：育てる自分のタイプを1つ選ぶ（相手は取組ごとに引く・入門の長い画面は第3段）
-import { TYPE_IDS } from '../data/types.js?v=6';
-import { t, getLang, setLang } from '../i18n/i18n.js?v=6';
-import { session, nextOpponent } from '../state.js?v=6';
-import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, storage } from '../ui/widgets.js?v=6';
+import { TYPE_IDS } from '../data/types.js?v=6b';
+import { t, getLang, setLang } from '../i18n/i18n.js?v=6b';
+import { session, nextOpponent } from '../state.js?v=6b';
+import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, storage } from '../ui/widgets.js?v=6b';
 
 export class SetupScene extends Phaser.Scene {
   constructor() {

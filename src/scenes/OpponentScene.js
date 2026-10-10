@@ -1,11 +1,11 @@
 // src/scenes/OpponentScene.js — 今日の相手の情報（タイプの絵・得意・弱み・心技体）と、案内役の女子のひとこと。作戦表の前に見せる
-import { TYPES } from '../data/types.js?v=6';
-import { defaultStrategy, SCENES } from '../core/strategy.js?v=6';
-import { recommendStrategy, recommendReason } from '../core/recommend.js?v=6';
-import { makeWrestler } from '../core/wrestler.js?v=6';
-import { t, techLabel } from '../i18n/i18n.js?v=6';
-import { session } from '../state.js?v=6';
-import { button, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadGuideArt, COLORS } from '../ui/widgets.js?v=6';
+import { TYPES } from '../data/types.js?v=6b';
+import { defaultStrategy, SCENES } from '../core/strategy.js?v=6b';
+import { recommendStrategy, recommendReason } from '../core/recommend.js?v=6b';
+import { makeWrestler } from '../core/wrestler.js?v=6b';
+import { t, techLabel } from '../i18n/i18n.js?v=6b';
+import { session } from '../state.js?v=6b';
+import { button, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadGuideArt, COLORS } from '../ui/widgets.js?v=6b';
 
 const ART_H = 300;
 const FACE_W = 140;
@@ -64,7 +64,7 @@ export class OpponentScene extends Phaser.Scene {
   drawAdvice() {
     const guide = session.guide ?? 'chizuru';
     const rec = recommendStrategy(TYPES[session.you].sample, session.you, session.opp);
-    const moves = recommendReason(session.you, session.opp, rec).moves.map((id) => techLabel(id)).join(t('advice.join'));
+    const moves = recommendReason(rec).moves.map((id) => techLabel(id)).join(t('advice.join'));
     const str = t(`advice.${guide}`, { type: t(`type.${session.opp}.name`), weak: t(`type.${session.opp}.weak`), moves });
 
     const { x, y, w, h } = BUBBLE;

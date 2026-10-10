@@ -1,11 +1,11 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { GuideScene } from './scenes/GuideScene.js?v=6';
-import { SetupScene } from './scenes/SetupScene.js?v=6';
-import { OpponentScene } from './scenes/OpponentScene.js?v=6';
-import { StrategyScene } from './scenes/StrategyScene.js?v=6';
-import { BoutScene } from './scenes/BoutScene.js?v=6';
-import { initLang } from './i18n/i18n.js?v=6';
-import { storage } from './ui/widgets.js?v=6';
+import { GuideScene } from './scenes/GuideScene.js?v=6b';
+import { SetupScene } from './scenes/SetupScene.js?v=6b';
+import { OpponentScene } from './scenes/OpponentScene.js?v=6b';
+import { StrategyScene } from './scenes/StrategyScene.js?v=6b';
+import { BoutScene } from './scenes/BoutScene.js?v=6b';
+import { initLang } from './i18n/i18n.js?v=6b';
+import { storage } from './ui/widgets.js?v=6b';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;

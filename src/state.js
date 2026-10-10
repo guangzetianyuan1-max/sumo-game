@@ -1,6 +1,6 @@
 // src/state.js — 場面をまたぐ選び。strategy は自分の作戦表（新しい相手ごとにお勧めで組む）
-import { TYPE_IDS, TYPES } from './data/types.js?v=6';
-import { recommendStrategy } from './core/recommend.js?v=6';
+import { TYPE_IDS, TYPES } from './data/types.js?v=6b';
+import { recommendStrategy } from './core/recommend.js?v=6b';
 
 export const session = {
   you: 'heavy',

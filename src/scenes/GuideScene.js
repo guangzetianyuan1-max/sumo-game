@@ -1,8 +1,8 @@
 // src/scenes/GuideScene.js — 最初の画面：案内役（相手の弱みを教えてくれる女子）を3人から選ぶ
-import { GUIDE_IDS } from '../data/guides.js?v=6';
-import { t, getLang, setLang } from '../i18n/i18n.js?v=6';
-import { session } from '../state.js?v=6';
-import { button, fitText, roundBox, hitZone, textStyle, preloadGuideArt, COLORS, storage } from '../ui/widgets.js?v=6';
+import { GUIDE_IDS } from '../data/guides.js?v=6b';
+import { t, getLang, setLang } from '../i18n/i18n.js?v=6b';
+import { session } from '../state.js?v=6b';
+import { button, fitText, roundBox, hitZone, textStyle, preloadGuideArt, COLORS, storage } from '../ui/widgets.js?v=6b';
 
 const CARD_W = 205;
 const CARD_H = 480;

@@ -1,7 +1,7 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=6';
-import { GUIDE_IDS } from '../data/guides.js?v=6';
-import { t } from '../i18n/i18n.js?v=6';
+import { TYPE_IDS } from '../data/types.js?v=6b';
+import { GUIDE_IDS } from '../data/guides.js?v=6b';
+import { t } from '../i18n/i18n.js?v=6b';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
