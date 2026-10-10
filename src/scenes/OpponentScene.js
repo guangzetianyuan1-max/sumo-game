@@ -1,13 +1,13 @@
 // src/scenes/OpponentScene.js — 今日の相手の情報（しこ名・番付・タイプの絵・得意・弱み・心技体）と、案内役の女子のひとこと。作戦表の前に見せる
 // 相手は一代記の場所の今日の相手（currentOpponent）。作戦表は prepareOpponent が組む（同じ相手に戻った時は組み直さない）
-import { TYPES } from '../data/types.js?v=16';
-import { boutStats, condition } from '../core/career.js?v=16';
-import { SCENES } from '../core/strategy.js?v=16';
-import { recommendStrategy, recommendReason } from '../core/recommend.js?v=16';
-import { adviceKeys } from '../core/advice.js?v=16';
-import { t, techLabel, rankLabel, shikonaLabel, getLang } from '../i18n/i18n.js?v=16';
-import { session, prepareOpponent } from '../state.js?v=16';
-import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadGuideArt, COLORS, CONDITION_COLOR, cssColor } from '../ui/widgets.js?v=16';
+import { TYPES } from '../data/types.js?v=17';
+import { boutStats, condition } from '../core/career.js?v=17';
+import { SCENES } from '../core/strategy.js?v=17';
+import { recommendStrategy, recommendReason } from '../core/recommend.js?v=17';
+import { adviceKeys } from '../core/advice.js?v=17';
+import { t, techLabel, rankLabel, shikonaLabel, getLang } from '../i18n/i18n.js?v=17';
+import { session, prepareOpponent } from '../state.js?v=17';
+import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, bubbleText, preloadTypeArt, preloadGuideArt, COLORS, CONDITION_COLOR, cssColor } from '../ui/widgets.js?v=17';
 
 const ART_H = 240;
 const ART_Y = 285; // 絵の札の中心（札は 140〜430）
@@ -114,17 +114,7 @@ export class OpponentScene extends Phaser.Scene {
     tail.lineBetween(x - 18, y + h / 2, x, y + h / 2 + 16);
 
     // 吹き出しに収まるまで字を一段ずつ小さくする
-    const inner = { w: w - 48, h: h - 36 };
-    let size = 30;
-    const bubble = this.add.text(x + w / 2, y + h / 2, str, textStyle(size, COLORS.ink, {
-      fontStyle: '500', lineSpacing: 8, wordWrap: { width: inner.w, useAdvancedWrap: true },
-    })).setOrigin(0.5);
-    while (bubble.height > inner.h && size > 16) {
-      size -= 2;
-      bubble.setFontSize(size);
-    }
-    fitText(bubble, inner.w); // 区切りの無い長い語が残っても枠の幅に収める
-    if (bubble.displayHeight > inner.h) bubble.setScale(bubble.scaleX * inner.h / bubble.displayHeight); // 16でもあふれる時の最後の守り
+    bubbleText(this, x + w / 2, y + h / 2, str, { w: w - 48, h: h - 36 }, { size: 30, min: 16, lineSpacing: 8 });
   }
 
   // 相手の作戦表を 立ち合い → 中 → 土俵際 の順に見て、重ならない手を3つ

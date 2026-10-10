@@ -1,8 +1,8 @@
 // src/scenes/SetupScene.js — 入門：育てる自分のタイプを1つ選ぶ → しこ名へ（一代記の間、タイプは変わらない）
-import { TYPE_IDS } from '../data/types.js?v=16';
-import { t, getLang, setLang } from '../i18n/i18n.js?v=16';
-import { session } from '../state.js?v=16';
-import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=16';
+import { TYPE_IDS } from '../data/types.js?v=17';
+import { t, getLang, setLang } from '../i18n/i18n.js?v=17';
+import { session } from '../state.js?v=17';
+import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=17';
 
 export class SetupScene extends Phaser.Scene {
   constructor() {

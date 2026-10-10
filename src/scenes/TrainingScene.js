@@ -2,17 +2,17 @@
 // 右下（休みの札の右の空き）に親方か娘が出て助言する（trainingAdvice・描き直すたびに出し直す）
 // 疲れ10で「番付を見る」を押すと休場の場所に入る（番付 → 取組の順は全部「休」→ 結果）
 // 押すと train → 保存 → 効果音 → 描き直した上に稽古の絵と効き目の札と応援の1行（2.4秒で閉じる・応援が無い時は1.6秒・押せばすぐ閉じる）。0回になったら「番付を見る」→ 場所を始めて（保存）→ 番付
-import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=16';
-import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=16';
-import { session, trainNow, beginBasho } from '../state.js?v=16';
-import { HEYA, heyaOfGuide } from '../data/heya.js?v=16';
-import { cheerKey, trainingAdvice } from '../core/cheer.js?v=16';
+import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=17';
+import { t, getLang, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=17';
+import { session, trainNow, beginBasho } from '../state.js?v=17';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=17';
+import { cheerKey, trainingAdvice } from '../core/cheer.js?v=17';
 import {
   button, fitText, roundBox, hitZone, textStyle, statBars, preloadTypeArt, preloadTrainingIndex, loadTrainingArt, preloadWordsIndex, loadWordsArt, preloadVoiceIndex, loadVoice, preloadGuideArt, preloadOyakataArt,
   speakerFace, speechBubble, COLORS, CONDITION_COLOR, cssColor, clearScene, backButton, saveButton, TOP_LEFT_FREE,
-} from '../ui/widgets.js?v=16';
-import { playTraining } from '../ui/sfx.js?v=16';
-import { wordsFor, wordSpot, WORD_COLOR } from '../data/words.js?v=16';
+} from '../ui/widgets.js?v=17';
+import { playTraining } from '../ui/sfx.js?v=17';
+import { wordsFor, wordSpot, WORD_COLOR, wordArt, voiceSet, voiceKey } from '../data/words.js?v=17';
 
 const BARS = { x: 40, y: 226, w: 640 }; // 心技体の棒（statBars の大きい版：行の高さ44・名前の幅96・数の幅46）
 const CARD = { w: 310, h: 150, cols: [190, 530], top: 450, step: 170 };
@@ -45,8 +45,8 @@ export class TrainingScene extends Phaser.Scene {
     }
     this.popup = null;
     loadTrainingArt(this); // 本人の稽古の絵は後から届く（目録 assets/training/index.json にある物だけ）
-    loadWordsArt(this); // 効果文字の絵（assets/words）と稽古の声（assets/voice）も同じ・目録にある物だけ
-    loadVoice(this);
+    loadWordsArt(this, getLang()); // 効果文字の絵（assets/words・英語は assets/words/en）と稽古の声（assets/voice/<言葉>/<タイプ>）も同じ・目録にある物だけ
+    loadVoice(this, getLang(), session.career.type);
     this.draw();
   }
 
@@ -247,8 +247,16 @@ export class TrainingScene extends Phaser.Scene {
     this.popup = { objs, timer };
   }
 
+  // いまの言葉とタイプで使う声の音の鍵（組が無い・まだ読めていない時は null）
+  voiceKeyFor(kind) {
+    const set = voiceSet(this.cache.json.get('voice-index'), getLang(), session.career.type);
+    if (!set) return null;
+    const key = voiceKey(set, kind);
+    return this.cache.audio.exists(key) ? key : null;
+  }
+
   hasVoice(kind) {
-    return this.cache.audio.exists(`voice-${kind}`);
+    return this.voiceKeyFor(kind) !== null;
   }
 
   // 稽古の声（assets/voice/train_<kind>.mp3）。読めていれば鳴らす・無ければ今まで通り（効果音だけ）。鳴らせなくても遊びは続ける
@@ -256,8 +264,9 @@ export class TrainingScene extends Phaser.Scene {
     try {
       if (this.voice) this.voice.stop();
       this.voice = null;
-      if (!this.hasVoice(kind)) return;
-      this.voice = this.sound.add(`voice-${kind}`, { volume: WORD.voiceVolume });
+      const key = this.voiceKeyFor(kind);
+      if (!key) return;
+      this.voice = this.sound.add(key, { volume: WORD.voiceVolume });
       this.voice.play();
     } catch {
       this.voice = null;
@@ -271,10 +280,10 @@ export class TrainingScene extends Phaser.Scene {
       const spot = wordSpot(kind, i);
       const x = cx + spot.dx * POP.artW;
       const y = artY + spot.dy * POP.artH;
-      const key = `word-${id}`;
+      const art = wordArt(getLang(), id, this.cache.json.get('word-index'), this.cache.json.get('word-en-index'));
       let obj;
-      if (this.textures.exists(key)) {
-        obj = this.add.image(x, y, key);
+      if (art && this.textures.exists(art.key)) {
+        obj = this.add.image(x, y, art.key);
         obj.setScale(Math.min(WORD.maxW / obj.width, WORD.maxH / obj.height));
       } else {
         obj = fitText(this.add.text(x, y, t(`word.${id}`), textStyle(56, WORD_COLOR[id], { stroke: '#1a1020', strokeThickness: 10 })).setOrigin(0.5), WORD.maxW);

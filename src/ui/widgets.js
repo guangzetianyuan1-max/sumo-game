@@ -1,10 +1,12 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=16';
-import { GUIDE_IDS } from '../data/guides.js?v=16';
-import { HEYA_IDS } from '../data/heya.js?v=16';
-import { t } from '../i18n/i18n.js?v=16';
-import { listedWords, listedVoiceKinds } from '../data/words.js?v=16';
-import { saveNow } from '../state.js?v=16';
+import { TYPE_IDS } from '../data/types.js?v=17';
+import { GUIDE_IDS } from '../data/guides.js?v=17';
+import { HEYA_IDS } from '../data/heya.js?v=17';
+import { t, getLang } from '../i18n/i18n.js?v=17';
+import { jaWrap } from '../data/wrap.js?v=17';
+import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=17';
+import { TRAININGS } from '../core/career.js?v=17';
+import { saveNow } from '../state.js?v=17';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -59,21 +61,35 @@ export const loadKimariteArt = (scene) => loadIndexedArt(scene, 'kim-index', 'ki
 // 稽古の絵：絵の鍵は train-<kind>
 export const preloadTrainingIndex = (scene) => preloadArtIndex(scene, 'train-index', 'assets/training');
 export const loadTrainingArt = (scene) => loadIndexedArt(scene, 'train-index', 'train-', 'assets/training');
-// 効果文字（アニメの言葉の絵・10/11）：assets/words/<id>.png。絵の鍵は word-<id>（目録に書いた id のうち知っている物だけ読む）
-export const preloadWordsIndex = (scene) => preloadArtIndex(scene, 'word-index', 'assets/words');
-export function loadWordsArt(scene) {
-  const ids = listedWords(scene.cache.json.get('word-index')).filter((id) => !scene.textures.exists(`word-${id}`));
-  if (!ids.length) return;
-  ids.forEach((id) => scene.load.image(`word-${id}`, `assets/words/${id}.png`));
+// 効果文字（アニメの言葉の絵・10/11）：日本語＝assets/words/<id>.png・英語＝assets/words/en/<id>.png。絵の鍵は word-<言葉>-<id>
+// 英語の絵が無い言葉は日本語の絵で代える（wordArt）。目録にある物だけ読む
+export const preloadWordsIndex = (scene) => {
+  preloadArtIndex(scene, 'word-index', 'assets/words');
+  preloadArtIndex(scene, 'word-en-index', 'assets/words/en');
+};
+export function loadWordsArt(scene, lang) {
+  const ja = scene.cache.json.get('word-index');
+  const en = scene.cache.json.get('word-en-index');
+  const todo = new Map();
+  WORD_IDS.forEach((id) => {
+    const art = wordArt(lang, id, ja, en);
+    if (art && !scene.textures.exists(art.key)) todo.set(art.key, art.path);
+  });
+  if (!todo.size) return;
+  todo.forEach((path, key) => scene.load.image(key, path));
   scene.load.start();
 }
-// 稽古の声：assets/voice/train_<kind>.mp3。音の鍵は voice-<kind>（目録にある物だけ読む）
+// 稽古の声：assets/voice/<言葉>/<タイプ>/train_<kind>.mp3。音の鍵は voice-<言葉>-<タイプ>-<kind>。使う組（voiceSet）の7つだけ読む
 export const preloadVoiceIndex = (scene) => preloadArtIndex(scene, 'voice-index', 'assets/voice');
-export function loadVoice(scene) {
-  const kinds = listedVoiceKinds(scene.cache.json.get('voice-index')).filter((k) => !scene.cache.audio.exists(`voice-${k}`));
-  if (!kinds.length) return;
-  kinds.forEach((k) => scene.load.audio(`voice-${k}`, `assets/voice/train_${k}.mp3`));
-  scene.load.start();
+export function loadVoice(scene, lang, type) {
+  const set = voiceSet(scene.cache.json.get('voice-index'), lang, type);
+  if (!set) return null;
+  const kinds = TRAININGS.filter((k) => !scene.cache.audio.exists(voiceKey(set, k)));
+  if (kinds.length) {
+    kinds.forEach((k) => scene.load.audio(voiceKey(set, k), voicePath(set, k)));
+    scene.load.start();
+  }
+  return set;
 }
 // 親方の顔（本人の絵・10/11）：assets/guides/oyakata_<部屋の id>_<normal|shout|smile>.png。絵の鍵は oyakata-<id>-<顔>
 export const OYAKATA_MOODS = ['normal', 'shout', 'smile'];
@@ -85,21 +101,60 @@ export function preloadOyakataArt(scene) {
 // 親方の顔が読めなかった時は普通の顔、それも無ければ名前入りの丸い札で代える
 export function speakerFace(scene, who, x, y, size, mood = 'normal') {
   const isHeya = HEYA_IDS.includes(who);
+  // 親方は顔の下に小さく「親方」の札（10/11 本人）。全体の高さ size は変えず、顔をその分だけ小さくして上に寄せる
+  const tagH = isHeya ? OYAKATA_TAG_H : 0;
+  const face = size - tagH;
+  const fy = y - tagH / 2;
+  const objs = [];
   let key = isHeya ? `oyakata-${who}-${mood}` : `guide-${who}`;
   if (isHeya && !scene.textures.exists(key)) key = `oyakata-${who}-normal`;
   if (scene.textures.exists(key)) {
-    const img = scene.add.image(x, y, key);
-    img.setScale(Math.min(size / img.width, size / img.height));
-    return [img];
+    const img = scene.add.image(x, fy, key);
+    img.setScale(Math.min(face / img.width, face / img.height));
+    objs.push(img);
+  } else {
+    const box = roundBox(scene, x, fy, face, face, COLORS.buttonSub, { radius: 22, stroke: COLORS.frame });
+    const label = isHeya ? t(`heya.${who}.oyakata`) : t(`guide.${who}.name`);
+    const text = scene.add.text(x, fy, label, textStyle(Math.round(face / 5), COLORS.ink, {
+      align: 'center', wordWrap: { width: face - 16, useAdvancedWrap: true },
+    })).setOrigin(0.5);
+    fitText(text, face - 16);
+    if (text.displayHeight > face - 16) text.setScale(text.scaleX * (face - 16) / text.displayHeight);
+    objs.push(box, text);
   }
-  const box = roundBox(scene, x, y, size, size, COLORS.buttonSub, { radius: 22, stroke: COLORS.frame });
-  const label = isHeya ? t(`heya.${who}.oyakata`) : t(`guide.${who}.name`);
-  const text = scene.add.text(x, y, label, textStyle(Math.round(size / 5), COLORS.ink, {
-    align: 'center', wordWrap: { width: size - 16, useAdvancedWrap: true },
-  })).setOrigin(0.5);
-  fitText(text, size - 16);
-  if (text.displayHeight > size - 16) text.setScale(text.scaleX * (size - 16) / text.displayHeight);
-  return [box, text];
+  if (isHeya) {
+    const tag = scene.add.text(x, y + size / 2 - tagH / 2, t('oyakata.label'), textStyle(20, COLORS.gold)).setOrigin(0.5);
+    objs.push(fitText(tag, size));
+  }
+  return objs;
+}
+const OYAKATA_TAG_H = 26; // 顔の下の「親方」の札の高さ（字20px）
+
+// 吹き出しの字。日本語は行頭禁則つきで自分で折り（jaWrap）、英語は Phaser の折り返し。収まるまで字を一段ずつ小さくする
+export function bubbleText(scene, x, y, str, inner, { size = 26, min = 14, lineSpacing = 4 } = {}) {
+  const ja = getLang() === 'ja';
+  const style = { fontStyle: '500', lineSpacing, ...(ja ? {} : { wordWrap: { width: inner.w, useAdvancedWrap: true } }) };
+  const text = scene.add.text(x, y, str, textStyle(size, COLORS.ink, style)).setOrigin(0.5);
+  const probe = ja ? scene.add.text(0, 0, '', textStyle(size, COLORS.ink, { fontStyle: '500' })).setVisible(false) : null;
+  const set = (s) => {
+    text.setFontSize(s);
+    if (!ja) return;
+    probe.setFontSize(s);
+    text.setText(jaWrap(str, inner.w, (v) => {
+      probe.setText(v);
+      return probe.width;
+    }));
+  };
+  let s = size;
+  set(s);
+  while (text.height > inner.h && s > min) {
+    s -= 2;
+    set(s);
+  }
+  if (probe) probe.destroy();
+  fitText(text, inner.w); // 区切りの無い長い語が残っても枠の幅に収める
+  if (text.displayHeight > inner.h) text.setScale(text.scaleX * inner.h / text.displayHeight); // 最後の守り
+  return text;
 }
 
 // 吹き出し（札の地・金の縁・左に顔へ向くしっぽ）。left,top,w,h の中に str を折り返し、収まるまで字を小さくする。部品の配列を返す
@@ -112,17 +167,7 @@ export function speechBubble(scene, left, top, w, h, str, { size = 26, min = 14 
   tail.lineStyle(3, COLORS.frame, 1);
   tail.lineBetween(left, cy - 12, left - 14, cy);
   tail.lineBetween(left - 14, cy, left, cy + 12);
-  const inner = { w: w - 28, h: h - 20 };
-  let s = size;
-  const text = scene.add.text(left + w / 2, cy, str, textStyle(s, COLORS.ink, {
-    fontStyle: '500', lineSpacing: 4, wordWrap: { width: inner.w, useAdvancedWrap: true },
-  })).setOrigin(0.5);
-  while (text.height > inner.h && s > min) {
-    s -= 2;
-    text.setFontSize(s);
-  }
-  fitText(text, inner.w);
-  if (text.displayHeight > inner.h) text.setScale(text.scaleX * inner.h / text.displayHeight); // 最後の守り
+  const text = bubbleText(scene, left + w / 2, cy, str, { w: w - 28, h: h - 20 }, { size, min, lineSpacing: 4 });
   return [box, tail, text];
 }
 

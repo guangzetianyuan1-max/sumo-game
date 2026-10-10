@@ -1,11 +1,11 @@
 // src/scenes/GuideScene.js — 最初の画面：題・言葉の切り替え・記録①〜③の札（10/11 本人「昔話と同じように最大3つの四股名ですすめられるように」）。
 // 中身のある札を押す＝その記録のつづきへ（その時の画面へ）。空きの札を押す＝その記録で新しく入門（相撲部屋 → タイプ → しこ名 → 稽古）。
 // 中身のある札の「はじめから」は2度押し（1度目は知らせるだけ・指1本の二重発火は数えない）で、その記録を消して入門へ
-import { t, getLang, setLang, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=16';
-import { session, SLOT_COUNT, loadSaved, useCareer, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=16';
-import { heyaOfGuide } from '../data/heya.js?v=16';
-import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, storage, clearScene } from '../ui/widgets.js?v=16';
-import { secondPress } from '../ui/press.js?v=16';
+import { t, getLang, setLang, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=17';
+import { session, SLOT_COUNT, loadSaved, useCareer, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=17';
+import { heyaOfGuide } from '../data/heya.js?v=17';
+import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, storage, clearScene } from '../ui/widgets.js?v=17';
+import { secondPress } from '../ui/press.js?v=17';
 
 const CARD = { w: 640, h: 300, top: 210, gap: 40 }; // 札3枚：210〜1190（下に知らせの1行）
 const NEW = { w: 200, h: 64 }; // 札の右下の「はじめから」
