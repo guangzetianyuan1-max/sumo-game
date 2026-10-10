@@ -1,7 +1,7 @@
 // 言葉の切り替えと文の引き方。画面の文字は全部ここを通す。
-import ja from './ja.js?v=3';
-import en from './en.js?v=3';
-import { KIMARITE } from '../data/kimarite.js?v=3';
+import ja from './ja.js?v=4';
+import en from './en.js?v=4';
+import { KIMARITE } from '../data/kimarite.js?v=4';
 
 export const TABLES = { ja, en };
 export const LANGS = ['ja', 'en'];

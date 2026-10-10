@@ -1,5 +1,5 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-export const FONT = '"DotGothic16", sans-serif';
+export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
 export const COLORS = {
@@ -18,9 +18,9 @@ export const COLORS = {
 // 組ごとの色（和の色）
 export const GROUP_COLOR = { kihon: 0xc8553d, kake: 0x4f8a68, nage: 0x3f6aa8, hineri: 0x8a6fb0, sori: 0xcf9a3c, tokushu: 0x6c7487 };
 
-// DotGothic16 には太字が無いので、同じ色のふちで線を太らせる（本人 10/10「文字を太く」）
+// 丸みのある太字（本人 10/10「ドット字ではなく、少し丸みを帯びた字で」）。小さな補足の行だけ extra で fontStyle: '500'
 export const textStyle = (size, color, extra = {}) => ({
-  fontFamily: FONT, fontSize: size, color, stroke: color, strokeThickness: Math.max(2, Math.round(size / 11)), ...extra,
+  fontFamily: FONT, fontSize: size, fontStyle: '800', color, ...extra,
 });
 
 export function storage() {
@@ -65,7 +65,7 @@ export function button(scene, x, y, w, h, label, onTap, { color = COLORS.button,
   const text = scene.add.text(x, sub ? y - h * 0.2 : y, label, textStyle(size, COLORS.ink, { align: 'center' })).setOrigin(0.5);
   fitText(text, w - 48);
   if (sub) {
-    const subText = scene.add.text(x, y + h * 0.22, sub, textStyle(subSize, COLORS.sub, { align: 'center' })).setOrigin(0.5);
+    const subText = scene.add.text(x, y + h * 0.22, sub, textStyle(subSize, COLORS.sub, { align: 'center', fontStyle: '500' })).setOrigin(0.5);
     fitText(subText, w - 48);
   }
   // 押しはこのボタンの上で始まったものだけ数える（外で押して滑り込んだ離しは無視）

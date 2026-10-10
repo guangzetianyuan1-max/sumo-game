@@ -1,5 +1,5 @@
 // src/state.js — 場面をまたぐ選び。strategy は自分の作戦表（null なら見本から組む）
-import { TYPE_IDS } from './data/types.js?v=3';
+import { TYPE_IDS } from './data/types.js?v=4';
 
 export const session = {
   you: 'heavy',

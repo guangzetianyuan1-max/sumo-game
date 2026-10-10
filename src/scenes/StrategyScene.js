@@ -1,11 +1,11 @@
 // src/scenes/StrategyScene.js — 作戦表（設計書 §2）。四角を押すと1つ上へ・長押しで外す・下の覚えた手を押すと段に入る
-import { SCENES, ROW, addTech, raise, remove, defaultStrategy } from '../core/strategy.js?v=3';
-import { TYPES } from '../data/types.js?v=3';
-import { KIMARITE } from '../data/kimarite.js?v=3';
-import { classifyPress, LONG_PRESS_MS } from '../ui/press.js?v=3';
-import { t, techLabel, getLang } from '../i18n/i18n.js?v=3';
-import { session } from '../state.js?v=3';
-import { button, fitText, roundBox, hitZone, textStyle, COLORS, GROUP_COLOR } from '../ui/widgets.js?v=3';
+import { SCENES, ROW, addTech, raise, remove, defaultStrategy } from '../core/strategy.js?v=4';
+import { TYPES } from '../data/types.js?v=4';
+import { KIMARITE } from '../data/kimarite.js?v=4';
+import { classifyPress, LONG_PRESS_MS } from '../ui/press.js?v=4';
+import { t, techLabel, getLang } from '../i18n/i18n.js?v=4';
+import { session } from '../state.js?v=4';
+import { button, fitText, roundBox, hitZone, textStyle, COLORS, GROUP_COLOR } from '../ui/widgets.js?v=4';
 
 const ICON = 120;
 
@@ -30,9 +30,9 @@ export class StrategyScene extends Phaser.Scene {
     const { width } = this.scale;
     this.add.text(30, 26, t('strat.title'), textStyle(48, COLORS.gold));
     fitText(this.add.text(30, 78, t('strat.today', { type: t(`type.${session.opp}.name`) }), textStyle(32, COLORS.ink)), width - 60);
-    fitText(this.add.text(30, 116, t(`type.${session.opp}.strong`), textStyle(22, COLORS.sub)), width - 60);
-    fitText(this.add.text(30, 142, t('strat.oppWeak', { weak: t(`type.${session.opp}.weak`) }), textStyle(22, COLORS.sub)), width - 60);
-    fitText(this.add.text(30, 170, t('strat.hint'), textStyle(24, COLORS.gold)), width - 60);
+    fitText(this.add.text(30, 116, t(`type.${session.opp}.strong`), textStyle(22, COLORS.sub, { fontStyle: '500' })), width - 60);
+    fitText(this.add.text(30, 142, t('strat.oppWeak', { weak: t(`type.${session.opp}.weak`) }), textStyle(22, COLORS.sub, { fontStyle: '500' })), width - 60);
+    fitText(this.add.text(30, 170, t('strat.hint'), textStyle(24, COLORS.gold, { fontStyle: '500' })), width - 60);
 
     SCENES.forEach((sc, r) => {
       const y = 305 + r * 180;

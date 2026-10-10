@@ -1,8 +1,8 @@
 // src/scenes/SetupScene.js — 入門：育てる自分のタイプを1つ選ぶ（相手は取組ごとに引く・入門の長い画面は第3段）
-import { TYPE_IDS } from '../data/types.js?v=3';
-import { t, getLang, setLang } from '../i18n/i18n.js?v=3';
-import { session, nextOpponent } from '../state.js?v=3';
-import { button, fitText, roundBox, hitZone, textStyle, COLORS, storage } from '../ui/widgets.js?v=3';
+import { TYPE_IDS } from '../data/types.js?v=4';
+import { t, getLang, setLang } from '../i18n/i18n.js?v=4';
+import { session, nextOpponent } from '../state.js?v=4';
+import { button, fitText, roundBox, hitZone, textStyle, COLORS, storage } from '../ui/widgets.js?v=4';
 
 export class SetupScene extends Phaser.Scene {
   constructor() {
@@ -45,12 +45,14 @@ export class SetupScene extends Phaser.Scene {
       const img = this.add.image(left + 70, y, key);
       img.setScale(138 / img.height);
     }
-    const tx = left + 140;
-    const room = 640 - 140 - 16;
-    const line = (dy, str, size, color) => fitText(this.add.text(tx, y + dy, str, textStyle(size, color)).setOrigin(0, 0.5), room);
-    line(-44, t(`type.${id}.name`), 36, COLORS.ink);
-    line(2, t(`type.${id}.strong`), 24, COLORS.ink);
-    line(40, t(`type.${id}.weak`), 24, COLORS.sub);
+    // 文字の始まり＝絵の左の余白70の中心から絵の右端 + 24
+    const imgW = this.textures.exists(key) ? this.textures.get(key).getSourceImage().width * (138 / this.textures.get(key).getSourceImage().height) : 0;
+    const tx = left + 70 + imgW / 2 + 24;
+    const room = left + 640 - 16 - tx;
+    const line = (dy, str, size, color, extra) => fitText(this.add.text(tx, y + dy, str, textStyle(size, color, extra)).setOrigin(0, 0.5), room);
+    line(-44, t(`type.${id}.name`), 34, COLORS.ink);
+    line(2, t(`type.${id}.strong`), 24, COLORS.ink, { fontStyle: '500' });
+    line(40, t(`type.${id}.weak`), 24, COLORS.sub, { fontStyle: '500' });
     const zone = hitZone(this, x, y, 640, 150);
     zone.on('pointerdown', () => gfx.setAlpha(0.8));
     zone.on('pointerout', () => gfx.setAlpha(1));
