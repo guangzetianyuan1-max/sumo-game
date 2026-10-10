@@ -111,6 +111,7 @@ export default {
   'train.moushiai': '申し合い',
   'train.rest': '休み',
   'train.done': '番付を見る',
+  'hint.pickGuide': '先に案内役を1人選ぶ（顔の札を押す）',
   'hint.trainFirst': '先に稽古をあと{n}回（札を押す）',
   'train.shiko.desc': '体（粘り）・心',
   'train.teppo.desc': '体・技',

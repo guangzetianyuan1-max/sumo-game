@@ -112,6 +112,7 @@ export default {
   'train.moushiai': 'Moushiai',
   'train.rest': 'Rest',
   'train.done': 'See banzuke',
+  'hint.pickGuide': 'Pick a guide first (tap a card)',
   'hint.trainFirst': 'Train {n} more times first (tap a card)',
   'train.shiko.desc': 'Body, Spirit',
   'train.teppo.desc': 'Body, Skill',

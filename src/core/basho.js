@@ -1,14 +1,14 @@
 // 場所：相手と取組の順・結果の記録・締め（優勝・番付・経験）。乱数は career.seed と場所の番号から
-import { LADDER_SIZE } from '../data/ranks.js?v=11';
-import { TYPES, TYPE_IDS } from '../data/types.js?v=11';
-import { divisionOf, nextPos } from './banzuke.js?v=11';
-import { makeShikona } from './shikona.js?v=11';
-import { addExperience, train } from './career.js?v=11';
-import { makeRng } from './rng.js?v=11';
-import { makeWrestler } from './wrestler.js?v=11';
-import { defaultStrategy } from './strategy.js?v=11';
-import { recommendStrategy } from './recommend.js?v=11';
-import { runBout } from './bout.js?v=11';
+import { LADDER_SIZE } from '../data/ranks.js?v=12';
+import { TYPES, TYPE_IDS } from '../data/types.js?v=12';
+import { divisionOf, nextPos } from './banzuke.js?v=12';
+import { makeShikona } from './shikona.js?v=12';
+import { addExperience, train } from './career.js?v=12';
+import { makeRng } from './rng.js?v=12';
+import { makeWrestler } from './wrestler.js?v=12';
+import { defaultStrategy } from './strategy.js?v=12';
+import { recommendStrategy } from './recommend.js?v=12';
+import { runBout } from './bout.js?v=12';
 
 export const BASHO_MONTHS = [1, 3, 5, 7, 9, 11];
 export const BASHO_PLACES = ['tokyo', 'osaka', 'tokyo', 'nagoya', 'tokyo', 'fukuoka'];
