@@ -1,10 +1,10 @@
 // src/scenes/BoutScene.js — 取組を仮の四角で見せる（ドットの絵は第4段）
-import { runBout } from '../core/bout.js?v=2';
-import { makeWrestler } from '../core/wrestler.js?v=2';
-import { TYPES } from '../data/types.js?v=2';
-import { t, techLabel } from '../i18n/i18n.js?v=2';
-import { session, nextOpponent } from '../state.js?v=2';
-import { button, fitText, roundBox, FONT, COLORS } from '../ui/widgets.js?v=2';
+import { runBout } from '../core/bout.js?v=3';
+import { makeWrestler } from '../core/wrestler.js?v=3';
+import { TYPES } from '../data/types.js?v=3';
+import { t, techLabel } from '../i18n/i18n.js?v=3';
+import { session, nextOpponent } from '../state.js?v=3';
+import { button, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=3';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
@@ -31,14 +31,14 @@ export class BoutScene extends Phaser.Scene {
     this.cx = width / 2;
     this.drawStage();
     const half = width / 2 - 40;
-    fitText(this.add.text(30, 120, t('bout.sideType', { side: t('bout.east'), type: t(`type.${session.you}.name`) }), { fontFamily: FONT, fontSize: 32, color: COLORS.ink }), half);
-    fitText(this.add.text(width - 30, 120, t('bout.sideType', { side: t('bout.west'), type: t(`type.${session.opp}.name`) }), { fontFamily: FONT, fontSize: 32, color: COLORS.ink }).setOrigin(1, 0), half);
+    fitText(this.add.text(30, 120, t('bout.sideType', { side: t('bout.east'), type: t(`type.${session.you}.name`) }), textStyle(32, COLORS.ink)), half);
+    fitText(this.add.text(width - 30, 120, t('bout.sideType', { side: t('bout.west'), type: t(`type.${session.opp}.name`) }), textStyle(32, COLORS.ink)).setOrigin(1, 0), half);
     this.east = this.body(session.you, EAST_BAND, 1);
     this.west = this.body(session.opp, WEST_BAND, -1);
     this.east.setPosition(this.cx - 80, FEET_Y);
     this.west.setPosition(this.cx + 80, FEET_Y);
-    this.sceneLabel = this.add.text(30, 808, '', { fontFamily: FONT, fontSize: 28, color: COLORS.gold });
-    this.lines = this.add.text(30, 852, '', { fontFamily: FONT, fontSize: 30, color: COLORS.ink, lineSpacing: 12, wordWrap: { width: width - 60, useAdvancedWrap: true } });
+    this.sceneLabel = this.add.text(30, 808, '', textStyle(28, COLORS.gold));
+    this.lines = this.add.text(30, 852, '', textStyle(30, COLORS.ink, { lineSpacing: 12, wordWrap: { width: width - 60, useAdvancedWrap: true } }));
     this.speedBtn = button(this, width - 160, 50, 270, 72, this.speedLabel(), () => this.cycleSpeed(), { color: COLORS.buttonSub, size: 26 });
     this.play();
   }
@@ -129,8 +129,8 @@ export class BoutScene extends Phaser.Scene {
     const back = this.add.graphics();
     back.fillStyle(COLORS.panel, 0.85);
     back.fillRoundedRect(this.cx - 330, 231, 660, 150, 24);
-    fitText(this.add.text(this.cx, 280, t('bout.win', { side }), { fontFamily: FONT, fontSize: 72, color: COLORS.gold }).setStroke(COLORS.bg, 8).setOrigin(0.5), width - 60);
-    fitText(this.add.text(this.cx, 345, t('bout.kimarite', { tech: techLabel(kimarite) }), { fontFamily: FONT, fontSize: 46, color: COLORS.ink }).setStroke(COLORS.bg, 6).setOrigin(0.5), width - 60);
+    fitText(this.add.text(this.cx, 280, t('bout.win', { side }), textStyle(72, COLORS.gold)).setOrigin(0.5), width - 60);
+    fitText(this.add.text(this.cx, 345, t('bout.kimarite', { tech: techLabel(kimarite) }), textStyle(46, COLORS.ink)).setOrigin(0.5), width - 60);
     // 作戦を直す（同じ相手のまま作戦表へ）は小さく上に。次の相手を引くと相手の作戦表は見本から組み直す
     button(this, this.cx, 1105, 320, 64, t('bout.edit'), () => this.scene.start('strategy'), { color: COLORS.buttonSub, size: 26 });
     button(this, this.cx - 175, 1220, 320, 100, t('bout.next'), () => {

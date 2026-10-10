@@ -18,6 +18,11 @@ export const COLORS = {
 // 組ごとの色（和の色）
 export const GROUP_COLOR = { kihon: 0xc8553d, kake: 0x4f8a68, nage: 0x3f6aa8, hineri: 0x8a6fb0, sori: 0xcf9a3c, tokushu: 0x6c7487 };
 
+// DotGothic16 には太字が無いので、同じ色のふちで線を太らせる（本人 10/10「文字を太く」）
+export const textStyle = (size, color, extra = {}) => ({
+  fontFamily: FONT, fontSize: size, color, stroke: color, strokeThickness: Math.max(2, Math.round(size / 11)), ...extra,
+});
+
 export function storage() {
   try {
     return window.localStorage;
@@ -57,10 +62,10 @@ export function hitZone(scene, x, y, w, h) {
 export function button(scene, x, y, w, h, label, onTap, { color = COLORS.button, size = 30, sub = null, subSize = 24 } = {}) {
   const gfx = roundBox(scene, x, y, w, h, color, { radius: h / 2, stroke: COLORS.frame });
   const zone = hitZone(scene, x, y, w, h);
-  const text = scene.add.text(x, sub ? y - h * 0.2 : y, label, { fontFamily: FONT, fontSize: size, color: COLORS.ink, align: 'center' }).setOrigin(0.5);
+  const text = scene.add.text(x, sub ? y - h * 0.2 : y, label, textStyle(size, COLORS.ink, { align: 'center' })).setOrigin(0.5);
   fitText(text, w - 48);
   if (sub) {
-    const subText = scene.add.text(x, y + h * 0.22, sub, { fontFamily: FONT, fontSize: subSize, color: COLORS.sub, align: 'center' }).setOrigin(0.5);
+    const subText = scene.add.text(x, y + h * 0.22, sub, textStyle(subSize, COLORS.sub, { align: 'center' })).setOrigin(0.5);
     fitText(subText, w - 48);
   }
   // 押しはこのボタンの上で始まったものだけ数える（外で押して滑り込んだ離しは無視）
