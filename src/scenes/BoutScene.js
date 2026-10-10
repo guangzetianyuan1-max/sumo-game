@@ -3,7 +3,7 @@ import { runBout } from '../core/bout.js';
 import { makeWrestler } from '../core/wrestler.js';
 import { TYPES } from '../data/types.js';
 import { t, techLabel } from '../i18n/i18n.js';
-import { session } from '../state.js';
+import { session, nextOpponent } from '../state.js';
 import { button, fitText, roundBox, FONT, COLORS } from '../ui/widgets.js';
 
 const STEP_MS = { normal: 1200, fast: 500 };
@@ -131,8 +131,13 @@ export class BoutScene extends Phaser.Scene {
     back.fillRoundedRect(this.cx - 330, 231, 660, 150, 24);
     fitText(this.add.text(this.cx, 280, t('bout.win', { side }), { fontFamily: FONT, fontSize: 72, color: COLORS.gold }).setStroke(COLORS.bg, 8).setOrigin(0.5), width - 60);
     fitText(this.add.text(this.cx, 345, t('bout.kimarite', { tech: techLabel(kimarite) }), { fontFamily: FONT, fontSize: 46, color: COLORS.ink }).setStroke(COLORS.bg, 6).setOrigin(0.5), width - 60);
-    button(this, this.cx - 175, 1220, 320, 100, t('bout.again'), () => this.scene.restart(), { size: 36 });
-    button(this, this.cx + 175, 1220, 320, 100, t('bout.edit'), () => this.scene.start('strategy'), { color: COLORS.buttonSub, size: 36 });
+    // 作戦を直す（同じ相手のまま作戦表へ）は小さく上に。次の相手を引くと相手の作戦表は見本から組み直す
+    button(this, this.cx, 1105, 320, 64, t('bout.edit'), () => this.scene.start('strategy'), { color: COLORS.buttonSub, size: 26 });
+    button(this, this.cx - 175, 1220, 320, 100, t('bout.next'), () => {
+      nextOpponent();
+      this.scene.start('strategy');
+    }, { size: 36 });
+    button(this, this.cx + 175, 1220, 320, 100, t('bout.rematch'), () => this.scene.restart(), { color: COLORS.buttonSub, size: 36 });
   }
 
   cycleSpeed() {

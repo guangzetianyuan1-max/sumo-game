@@ -28,13 +28,14 @@ export class StrategyScene extends Phaser.Scene {
   draw() {
     this.children.removeAll(true);
     const { width } = this.scale;
-    this.add.text(30, 28, t('strat.title'), { fontFamily: FONT, fontSize: 48, color: COLORS.gold });
-    fitText(this.add.text(30, 80, t('strat.vs', { type: t(`type.${session.opp}.name`) }), { fontFamily: FONT, fontSize: 32, color: COLORS.ink }), width - 60);
-    fitText(this.add.text(30, 118, t(`type.${session.opp}.strong`), { fontFamily: FONT, fontSize: 22, color: COLORS.sub }), width - 60);
-    fitText(this.add.text(30, 148, t('strat.hint'), { fontFamily: FONT, fontSize: 24, color: COLORS.sub }), width - 60);
+    this.add.text(30, 26, t('strat.title'), { fontFamily: FONT, fontSize: 48, color: COLORS.gold });
+    fitText(this.add.text(30, 78, t('strat.today', { type: t(`type.${session.opp}.name`) }), { fontFamily: FONT, fontSize: 32, color: COLORS.ink }), width - 60);
+    fitText(this.add.text(30, 116, t(`type.${session.opp}.strong`), { fontFamily: FONT, fontSize: 22, color: COLORS.sub }), width - 60);
+    fitText(this.add.text(30, 142, t('strat.oppWeak', { weak: t(`type.${session.opp}.weak`) }), { fontFamily: FONT, fontSize: 22, color: COLORS.sub }), width - 60);
+    fitText(this.add.text(30, 170, t('strat.hint'), { fontFamily: FONT, fontSize: 24, color: COLORS.gold }), width - 60);
 
     SCENES.forEach((sc, r) => {
-      const y = 285 + r * 180;
+      const y = 305 + r * 180;
       this.add.text(30, y - 104, t(`scene.${sc}`), { fontFamily: FONT, fontSize: 32, color: COLORS.gold });
       for (let i = 0; i < ROW; i++) {
         const id = session.strategy[sc][i];
@@ -47,9 +48,9 @@ export class StrategyScene extends Phaser.Scene {
       }
     });
 
-    this.add.text(30, 740, t('strat.known'), { fontFamily: FONT, fontSize: 30, color: COLORS.ink });
+    this.add.text(30, 760, t('strat.known'), { fontFamily: FONT, fontSize: 30, color: COLORS.ink });
     TYPES[session.you].sample.forEach((id, k) => {
-      this.icon(100 + (k % 5) * 130, 850 + Math.floor(k / 5) * 135, id, () => {
+      this.icon(100 + (k % 5) * 130, 870 + Math.floor(k / 5) * 135, id, () => {
         const res = addTech(session.strategy, id);
         if (res.ok) session.strategy = res.strategy;
         this.msg = res.ok ? '' : t(res.reason === 'dup' ? 'strat.dup' : 'strat.noroom');
@@ -57,8 +58,8 @@ export class StrategyScene extends Phaser.Scene {
       });
     });
 
-    if (this.msg) fitText(this.add.text(width / 2, 1085, this.msg, { fontFamily: FONT, fontSize: 30, color: COLORS.gold }).setOrigin(0.5), width - 60);
-    button(this, 190, 1215, 320, 100, t('strat.back'), () => this.scene.start('setup'), { color: COLORS.buttonSub, size: 36 });
+    if (this.msg) fitText(this.add.text(width / 2, 1115, this.msg, { fontFamily: FONT, fontSize: 30, color: COLORS.gold }).setOrigin(0.5), width - 60);
+    button(this, 190, 1215, 320, 100, t('strat.retype'), () => this.scene.start('setup'), { color: COLORS.buttonSub, size: 36 });
     button(this, width - 190, 1215, 320, 100, t('strat.go'), () => this.scene.start('bout'), { size: 36 });
   }
 

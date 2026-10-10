@@ -1,8 +1,8 @@
-// src/scenes/SetupScene.js — 自分と相手のタイプを選ぶ（第1段の入口・入門の画面は第3段）
+// src/scenes/SetupScene.js — 入門：育てる自分のタイプを1つ選ぶ（相手は取組ごとに引く・入門の長い画面は第3段）
 import { TYPE_IDS } from '../data/types.js';
 import { t, getLang, setLang } from '../i18n/i18n.js';
-import { session } from '../state.js';
-import { button, fitText, FONT, COLORS, storage } from '../ui/widgets.js';
+import { session, nextOpponent } from '../state.js';
+import { button, fitText, roundBox, hitZone, FONT, COLORS, storage } from '../ui/widgets.js';
 
 export class SetupScene extends Phaser.Scene {
   constructor() {
@@ -17,29 +17,33 @@ export class SetupScene extends Phaser.Scene {
       document.documentElement.lang = getLang();
       this.scene.restart();
     }, { size: 28, color: COLORS.buttonSub });
-    // 5つ×2組を 720×1280 に収めるため、札は高さ84・間隔92（題の字と札が重ならない並び）
-    this.picker(115, 'setup.you', 'you');
-    this.picker(630, 'setup.opp', 'opp');
-    button(this, width / 2, 1215, 460, 100, t('setup.next'), () => {
-      // 自分のタイプを変えたときだけ自分の作戦表を、相手のタイプを変えたときだけ相手の作戦表を、見本から組み直す
-      const plan = session.planFor;
-      if (!plan || plan.you !== session.you) session.strategy = null;
-      if (!plan || plan.opp !== session.opp) session.oppStrategy = null;
-      session.planFor = { you: session.you, opp: session.opp };
+    this.add.text(40, 120, t('setup.you'), { fontFamily: FONT, fontSize: 40, color: COLORS.ink });
+    TYPE_IDS.forEach((id, i) => this.card(id, 270 + i * 170));
+    button(this, width / 2, 1190, 460, 110, t('setup.start'), () => {
+      // 自分のタイプを変えたときだけ自分の作戦表を見本から組み直す。相手は取組ごとに引く
+      if (!session.planFor || session.planFor.you !== session.you) session.strategy = null;
+      session.planFor = { you: session.you };
+      nextOpponent();
       this.scene.start('strategy');
     }, { size: 38 });
   }
 
-  picker(top, labelKey, field) {
+  // 名前・得意・弱みの3行の札
+  card(id, y) {
     const { width } = this.scale;
-    this.add.text(40, top, t(labelKey), { fontFamily: FONT, fontSize: 40, color: COLORS.ink });
-    TYPE_IDS.forEach((id, i) => {
-      const y = top + 90 + i * 92;
-      const on = session[field] === id;
-      button(this, width / 2, y, 640, 84, t(`type.${id}.name`), () => {
-        session[field] = id;
-        this.scene.restart();
-      }, { color: on ? COLORS.panelOn : COLORS.panel, size: 34, sub: t(`type.${id}.strong`), subSize: 22 });
+    const x = width / 2;
+    const on = session.you === id;
+    const gfx = roundBox(this, x, y, 640, 150, on ? COLORS.panelOn : COLORS.panel, { radius: 28, stroke: COLORS.frame });
+    fitText(this.add.text(x, y - 44, t(`type.${id}.name`), { fontFamily: FONT, fontSize: 36, color: COLORS.ink }).setOrigin(0.5), 600);
+    fitText(this.add.text(x, y + 2, t(`type.${id}.strong`), { fontFamily: FONT, fontSize: 24, color: COLORS.ink }).setOrigin(0.5), 600);
+    fitText(this.add.text(x, y + 40, t(`type.${id}.weak`), { fontFamily: FONT, fontSize: 24, color: COLORS.sub }).setOrigin(0.5), 600);
+    const zone = hitZone(this, x, y, 640, 150);
+    zone.on('pointerdown', () => gfx.setAlpha(0.8));
+    zone.on('pointerout', () => gfx.setAlpha(1));
+    zone.on('pointerup', () => {
+      gfx.setAlpha(1);
+      session.you = id;
+      this.scene.restart();
     });
   }
 }
