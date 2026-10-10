@@ -1,9 +1,9 @@
 // src/scenes/TrainingScene.js — 稽古（場所の前に6回）：上に自分のしこ名・番付・残りの回数・疲れ、心技体の棒、稽古7つの札（2列×4段）
 // 押すと train → 保存 → 棒を描き直し、伸びた値を「+1.5」のように一瞬出す。0回になったら「番付を見る」→ 場所を始めて（保存）→ 番付
-import { TRAININGS } from '../core/career.js?v=8';
-import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=8';
-import { session, trainNow, beginBasho } from '../state.js?v=8';
-import { button, fitText, roundBox, hitZone, textStyle, statBars, COLORS } from '../ui/widgets.js?v=8';
+import { TRAININGS } from '../core/career.js?v=9';
+import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=9';
+import { session, trainNow, beginBasho } from '../state.js?v=9';
+import { button, fitText, roundBox, hitZone, textStyle, statBars, COLORS } from '../ui/widgets.js?v=9';
 
 const BARS = { x: 40, y: 196, w: 640 }; // 心技体の棒（statBars の大きい版：行の高さ44・名前の幅96・数の幅46）
 const CARD = { w: 310, h: 150, cols: [190, 530], top: 450, step: 170 };

@@ -1,6 +1,6 @@
 // 一代記の状態・稽古・疲れ・成長・場所の経験・記録（設計書 §3）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=8';
-import { LADDER_SIZE } from '../data/ranks.js?v=8';
+import { TYPES } from '../data/types.js?v=9';
+import { LADDER_SIZE } from '../data/ranks.js?v=9';
 
 export const TRAININGS = ['shiko', 'teppo', 'chanko', 'waza', 'butsukari', 'moushiai', 'rest'];
 const GAIN = {

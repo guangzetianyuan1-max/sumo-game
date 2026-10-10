@@ -1,7 +1,7 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=8';
-import { GUIDE_IDS } from '../data/guides.js?v=8';
-import { t } from '../i18n/i18n.js?v=8';
+import { TYPE_IDS } from '../data/types.js?v=9';
+import { GUIDE_IDS } from '../data/guides.js?v=9';
+import { t } from '../i18n/i18n.js?v=9';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -50,6 +50,20 @@ export function fitText(text, maxW) {
   return text;
 }
 
+// 角の丸い四角の輪郭の点（時計回り・角ごとに8刻み）
+function roundPoints(l, t, w, h, radius) {
+  const r = Math.min(radius, w / 2, h / 2);
+  const pts = [];
+  const corners = [[l + w - r, t + r, -Math.PI / 2], [l + w - r, t + h - r, 0], [l + r, t + h - r, Math.PI / 2], [l + r, t + r, Math.PI]];
+  for (const [cx, cy, a0] of corners) {
+    for (let i = 0; i <= 8; i++) {
+      const a = a0 + (Math.PI / 2) * (i / 8);
+      pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+    }
+  }
+  return pts;
+}
+
 // 角の丸い箱（やわらかい影つき）。Graphics を返す
 export function roundBox(scene, x, y, w, h, fill, { radius = 18, stroke = null, strokeAlpha = 1, shadow = true } = {}) {
   const g = scene.add.graphics();
@@ -59,12 +73,9 @@ export function roundBox(scene, x, y, w, h, fill, { radius = 18, stroke = null, 
   }
   g.fillStyle(fill, 1);
   // fillRoundedRect は三角形の継ぎ目にすき間ができ、下の影の黒が細い線で透ける（番付表で見えた）。
-  // 中身は四角3枚と角の円4つで塗る（1px ずつ重ねて継ぎ目を作らない）
-  const l = x - w / 2, t = y - h / 2, r = Math.min(radius, w / 2, h / 2);
-  g.fillRect(l + r - 1, t, w - 2 * r + 2, h);
-  g.fillRect(l, t + r - 1, r + 1, h - 2 * r + 2);
-  g.fillRect(l + w - r - 1, t + r - 1, r + 1, h - 2 * r + 2);
-  for (const [cx, cy] of [[l + r, t + r], [l + w - r, t + r], [l + r, t + h - r], [l + w - r, t + h - r]]) g.fillCircle(cx, cy, r);
+  // 四角と円を重ねて塗ると、薄く（setAlpha）した時に重なりが濃く見える（使い切った稽古の札で見えた）。
+  // ⇒ 角を細かく刻んだ1枚の凸多角形で塗る（重なりもすき間も無い）
+  g.fillPoints(roundPoints(x - w / 2, y - h / 2, w, h, radius), true);
   if (stroke !== null) {
     g.lineStyle(3, stroke, strokeAlpha);
     g.strokeRoundedRect(x - w / 2, y - h / 2, w, h, radius);

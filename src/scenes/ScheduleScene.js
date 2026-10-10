@@ -1,8 +1,8 @@
 // src/scenes/ScheduleScene.js — 取組の順：日ごとの行（日・相手のしこ名・番付・タイプ・済んだ日は ○● と決まり手）。今日の行を光らせる
 // 全部済むまで「次の取組へ」→ 相手の情報。全部済んだら「場所の結果へ」＝ここで1度だけ締めて保存してから結果の画面へ
-import { t, techLabel, rankLabel, shikonaLabel, bashoLabel } from '../i18n/i18n.js?v=8';
-import { session, prepareOpponent, closeBasho } from '../state.js?v=8';
-import { button, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=8';
+import { t, techLabel, rankLabel, shikonaLabel, bashoLabel } from '../i18n/i18n.js?v=9';
+import { session, prepareOpponent, closeBasho } from '../state.js?v=9';
+import { button, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=9';
 
 const LIST = { top: 146, bottom: 1126, w: 664 }; // 15日でも1行65（番付の字22を入れる）
 const COL = { day: 46, who: 152, type: 404, mark: 650, right: 618 }; // 左から：日／しこ名・番付／タイプ・決まり手／○●
