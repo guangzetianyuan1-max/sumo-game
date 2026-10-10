@@ -1,15 +1,25 @@
-// src/scenes/TrainingScene.js — 稽古（場所の前に6回）：上に自分のしこ名・番付・残りの回数・疲れの目盛りと調子、心技体の棒、稽古7つの札（2列×4段）
+// src/scenes/TrainingScene.js — 稽古（場所の前に6回）：上の真ん中に自分のしこ名・番付・部屋の名、残りの回数・疲れの目盛りと調子、心技体の棒、稽古7つの札（2列×4段・部屋の得意に「得意」の札）
+// 右下（休みの札の右の空き）に親方か娘が出て助言する（trainingAdvice・描き直すたびに出し直す）
 // 疲れ10で「番付を見る」を押すと休場の場所に入る（番付 → 取組の順は全部「休」→ 結果）
-// 押すと train → 保存 → 効果音 → 描き直した上に稽古の絵と効き目の札（1.6秒で閉じる・押せばすぐ閉じる）。0回になったら「番付を見る」→ 場所を始めて（保存）→ 番付
-import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=14';
-import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=14';
-import { session, trainNow, beginBasho } from '../state.js?v=14';
-import { button, fitText, roundBox, hitZone, textStyle, statBars, preloadTypeArt, preloadTrainingIndex, loadTrainingArt, COLORS, CONDITION_COLOR, cssColor, clearScene, backButton, saveButton, TOP_LEFT_FREE, TOP_RIGHT_FREE } from '../ui/widgets.js?v=14';
-import { playTraining } from '../ui/sfx.js?v=14';
+// 押すと train → 保存 → 効果音 → 描き直した上に稽古の絵と効き目の札と応援の1行（2.4秒で閉じる・応援が無い時は1.6秒・押せばすぐ閉じる）。0回になったら「番付を見る」→ 場所を始めて（保存）→ 番付
+import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=15';
+import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=15';
+import { session, trainNow, beginBasho } from '../state.js?v=15';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=15';
+import { cheerKey, trainingAdvice } from '../core/cheer.js?v=15';
+import {
+  button, fitText, roundBox, hitZone, textStyle, statBars, preloadTypeArt, preloadTrainingIndex, loadTrainingArt, preloadGuideArt, preloadOyakataArt,
+  speakerFace, speechBubble, COLORS, CONDITION_COLOR, cssColor, clearScene, backButton, saveButton, TOP_LEFT_FREE,
+} from '../ui/widgets.js?v=15';
+import { playTraining } from '../ui/sfx.js?v=15';
 
 const BARS = { x: 40, y: 226, w: 640 }; // 心技体の棒（statBars の大きい版：行の高さ44・名前の幅96・数の幅46）
 const CARD = { w: 310, h: 150, cols: [190, 530], top: 450, step: 170 };
-const POP = { w: 560, artW: 420, artH: 300, ms: 1600, stepMs: 150 }; // 稽古の絵の札
+const POP = { w: 560, artW: 420, artH: 300, ms: 1600, cheerMs: 2400, stepMs: 150, face: 110, rowH: 130, gap: 16 }; // 稽古の絵の札（応援の段＝顔110・高さ130）
+const BUTTON_TOP = 1190 - 55; // 「番付を見る」の上の端（札はこれより上に収める）
+// 右下の助言：休みの札（左の列の4段目）の右の空き。札の右の列は x 375〜685・4段目は y 885〜1035
+const ADVICE = { left: 384, right: 700, top: 885, h: 150, face: 96 };
+const HEAD = { name: 50, rank: 98, heya: 128 }; // 上の真ん中の3行（しこ名・番付・部屋の名）の高さ
 const MINUS = '−'; // 減った値の印（全角でない長い横線）
 
 export class TrainingScene extends Phaser.Scene {
@@ -20,6 +30,8 @@ export class TrainingScene extends Phaser.Scene {
   preload() {
     preloadTypeArt(this); // 稽古の絵がまだ無い時は自分のタイプの絵で代える
     preloadTrainingIndex(this);
+    preloadGuideArt(this); // 応援と助言の娘の顔
+    preloadOyakataArt(this); // 応援と助言の親方の顔
   }
 
   create() {
@@ -48,14 +60,19 @@ export class TrainingScene extends Phaser.Scene {
     const { width } = this.scale;
     backButton(this, () => this.scene.start('guide')); // 初めの画面へ（つづきからで戻って来られる）
     saveButton(this); // 右上の「セーブ」（しこ名はその左の手前まで）
-    fitText(this.add.text(TOP_LEFT_FREE, 56, shikonaLabel(c.name), textStyle(52, COLORS.gold)).setOrigin(0, 0.5), width - TOP_RIGHT_FREE - TOP_LEFT_FREE);
-    fitText(this.add.text(40, 112, rankLabel(c.pos), textStyle(30, COLORS.ink)).setOrigin(0, 0.5), width - 80);
+    // 10/11 本人「上の主人公の名前は真ん中に」：しこ名は「もどる」と「セーブ」の間の真ん中（掛かる長さなら縮める）・その下に番付と部屋の名
+    const heya = heyaOfGuide(c.guide);
+    fitText(this.add.text(width / 2, HEAD.name, shikonaLabel(c.name), textStyle(52, COLORS.gold)).setOrigin(0.5), width - 2 * TOP_LEFT_FREE);
+    fitText(this.add.text(width / 2, HEAD.rank, rankLabel(c.pos), textStyle(28, COLORS.ink)).setOrigin(0.5), width - 80);
+    if (heya) fitText(this.add.text(width / 2, HEAD.heya, t(`heya.${heya}.name`), textStyle(22, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 80);
     fitText(this.add.text(40, 158, t('train.left', { n: c.trainingLeft }), textStyle(30, COLORS.gold)).setOrigin(0, 0.5), 130);
     this.fatigueGauge(c.fatigue, 180, 158, width - 40);
     fitText(this.add.text(40, 194, t('fatigue.note'), textStyle(20, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), width - 80);
     statBars(this, BARS.x, BARS.y, BARS.w, c.stats);
 
-    TRAININGS.forEach((kind, i) => this.card(kind, CARD.cols[i % 2], CARD.top + Math.floor(i / 2) * CARD.step, c.trainingLeft > 0));
+    const special = heya ? HEYA[heya].specialty : null;
+    TRAININGS.forEach((kind, i) => this.card(kind, CARD.cols[i % 2], CARD.top + Math.floor(i / 2) * CARD.step, c.trainingLeft > 0, kind === special));
+    this.advisor();
 
     const done = c.trainingLeft === 0;
     button(this, width / 2, 1190, 460, 110, t('train.done'), () => {
@@ -86,6 +103,25 @@ export class TrainingScene extends Phaser.Scene {
     fitText(this.add.text(cx, cy, word, textStyle(26, cssColor(color))).setOrigin(0, 0.5), right - cx);
   }
 
+  // 右下の助言（10/11 本人「画面右下に親方また女子が現れ、アドバイスをする」）：左に顔、右に吹き出し。描くたびに右から滑って出る
+  advisor() {
+    const a = trainingAdvice(session.career);
+    if (!a) return;
+    const params = a.params.stat ? { stat: t(`stat.${a.params.stat}`), train: t(`train.${a.params.train}`) } : {};
+    const cy = ADVICE.top + ADVICE.h / 2;
+    const bubbleLeft = ADVICE.left + ADVICE.face + 14;
+    const objs = [
+      // 親方の顔：稽古を使い切った時（番付を見ろ）は笑顔・ほかは普通
+      ...speakerFace(this, a.who, ADVICE.left + ADVICE.face / 2, cy, ADVICE.face, a.key.endsWith('.done') ? 'smile' : 'normal'),
+      ...speechBubble(this, bubbleLeft, ADVICE.top, ADVICE.right - bubbleLeft, ADVICE.h, t(a.key, params), { size: 22, min: 14 }),
+    ];
+    objs.forEach((o) => {
+      const x = o.x;
+      o.setAlpha(0).setX(x + 40);
+      this.tweens.add({ targets: o, x, alpha: 1, duration: 260, ease: 'Cubic.Out' });
+    });
+  }
+
   // 稽古が残っている時に「番付を見る」を押したら、ボタンの上に理由を出して少し揺らす
   needMore() {
     this.hint?.destroy();
@@ -95,12 +131,22 @@ export class TrainingScene extends Phaser.Scene {
   }
 
   // 稽古の札：名前と効き目の2行。回数が残っていない時は薄く、押しても何もしない
-  card(kind, x, y, open) {
+  // special＝入門した部屋の得意の稽古（右上の角に金の小札「得意」・札の上の縁にまたがる）
+  card(kind, x, y, open, special) {
     const gfx = roundBox(this, x, y, CARD.w, CARD.h, COLORS.panel, { radius: 28, stroke: COLORS.frame });
     const name = fitText(this.add.text(x, y - 24, t(`train.${kind}`), textStyle(34, COLORS.ink)).setOrigin(0.5), CARD.w - 30);
     const desc = fitText(this.add.text(x, y + 30, t(`train.${kind}.desc`), textStyle(24, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 30);
+    const parts = [gfx, name, desc];
+    if (special) {
+      const tag = fitText(this.add.text(0, y - CARD.h / 2, t('heya.tag'), textStyle(20, COLORS.bg)).setOrigin(0.5), 120);
+      const tw = tag.displayWidth + 24;
+      const tx = x + CARD.w / 2 - 16 - tw / 2;
+      tag.setX(tx);
+      parts.push(roundBox(this, tx, y - CARD.h / 2, tw, 32, COLORS.frame, { radius: 16, shadow: false }), tag);
+      tag.setDepth(1);
+    }
     if (!open) {
-      [gfx, name, desc].forEach((p) => p.setAlpha(0.4));
+      parts.forEach((p) => p.setAlpha(0.4));
       return;
     }
     const zone = hitZone(this, x, y, CARD.w, CARD.h);
@@ -136,8 +182,11 @@ export class TrainingScene extends Phaser.Scene {
     const lines = this.effectLines(effects);
     const LINE_H = 46;
     const PAD = 30;
-    const h = PAD + POP.artH + 16 + 50 + 14 + lines.length * LINE_H + PAD;
-    const top = Math.round((height - h) / 2);
+    // 応援の1行（10/11 本人「女子は、ちゃんこと休みの際に応援。親方はそれ以外の稽古で応援」）。文は稽古の回数の奇数・偶数で交互
+    const cheer = cheerKey(session.career.guide, kind, 6 - session.career.trainingLeft);
+    const h = PAD + POP.artH + 16 + 50 + 14 + lines.length * LINE_H + (cheer ? POP.gap + POP.rowH : 0) + PAD;
+    // 真ん中に置き、「番付を見る」に掛かるなら上へずらす（画面の上からははみ出さない）
+    const top = Math.max(16, Math.min(Math.round((height - h) / 2), BUTTON_TOP - 16 - h));
     const cx = width / 2;
     objs.push(roundBox(this, cx, top + h / 2, POP.w, h, COLORS.panel, { radius: 30, stroke: COLORS.frame }).setDepth(D + 1));
 
@@ -167,7 +216,23 @@ export class TrainingScene extends Phaser.Scene {
       objs.push(txt);
     });
 
-    const timer = this.time.delayedCall(POP.ms, () => this.closePopup());
+    if (cheer) {
+      // 効き目の行の下：左に話す人の顔（娘か親方）、右に吹き出し。効き目の行が出そろってから出る
+      const rowTop = y + (lines.length - 1) * LINE_H + LINE_H / 2 + POP.gap;
+      const left = cx - POP.w / 2 + PAD;
+      const bubbleLeft = left + POP.face + 22;
+      const row = [
+        ...speakerFace(this, cheer.who, left + POP.face / 2, rowTop + POP.rowH / 2, POP.face, 'shout'), // 親方は声を張る顔
+        ...speechBubble(this, bubbleLeft, rowTop, cx + POP.w / 2 - PAD - bubbleLeft, POP.rowH, t(cheer.key), { size: 24, min: 14 }),
+      ];
+      row.forEach((o) => {
+        o.setDepth(D + 2).setAlpha(0);
+        this.tweens.add({ targets: o, alpha: 1, delay: lines.length * POP.stepMs, duration: 200 });
+      });
+      objs.push(...row);
+    }
+
+    const timer = this.time.delayedCall(cheer ? POP.cheerMs : POP.ms, () => this.closePopup());
     // 押した瞬間に閉じる（離しは描き直した札に当たるが、札は押しがその札で始まった時だけ効く）
     overlay.on('pointerdown', () => this.time.delayedCall(0, () => this.closePopup()));
     this.popup = { objs, timer };

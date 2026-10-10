@@ -1,8 +1,9 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=14';
-import { GUIDE_IDS } from '../data/guides.js?v=14';
-import { t } from '../i18n/i18n.js?v=14';
-import { saveNow } from '../state.js?v=14';
+import { TYPE_IDS } from '../data/types.js?v=15';
+import { GUIDE_IDS } from '../data/guides.js?v=15';
+import { HEYA_IDS } from '../data/heya.js?v=15';
+import { t } from '../i18n/i18n.js?v=15';
+import { saveNow } from '../state.js?v=15';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -57,6 +58,56 @@ export const loadKimariteArt = (scene) => loadIndexedArt(scene, 'kim-index', 'ki
 // 稽古の絵：絵の鍵は train-<kind>
 export const preloadTrainingIndex = (scene) => preloadArtIndex(scene, 'train-index', 'assets/training');
 export const loadTrainingArt = (scene) => loadIndexedArt(scene, 'train-index', 'train-', 'assets/training');
+// 親方の顔（本人の絵・10/11）：assets/guides/oyakata_<部屋の id>_<normal|shout|smile>.png。絵の鍵は oyakata-<id>-<顔>
+export const OYAKATA_MOODS = ['normal', 'shout', 'smile'];
+export function preloadOyakataArt(scene) {
+  HEYA_IDS.forEach((id) => OYAKATA_MOODS.forEach((m) => scene.load.image(`oyakata-${id}-${m}`, `assets/guides/oyakata_${id}_${m}.png`)));
+}
+
+// 話す人の顔（四角 size×size の中に収める）。who＝娘の id（案内役の顔）か部屋の id（親方の顔・mood＝normal|shout|smile）。
+// 親方の顔が読めなかった時は普通の顔、それも無ければ名前入りの丸い札で代える
+export function speakerFace(scene, who, x, y, size, mood = 'normal') {
+  const isHeya = HEYA_IDS.includes(who);
+  let key = isHeya ? `oyakata-${who}-${mood}` : `guide-${who}`;
+  if (isHeya && !scene.textures.exists(key)) key = `oyakata-${who}-normal`;
+  if (scene.textures.exists(key)) {
+    const img = scene.add.image(x, y, key);
+    img.setScale(Math.min(size / img.width, size / img.height));
+    return [img];
+  }
+  const box = roundBox(scene, x, y, size, size, COLORS.buttonSub, { radius: 22, stroke: COLORS.frame });
+  const label = isHeya ? t(`heya.${who}.oyakata`) : t(`guide.${who}.name`);
+  const text = scene.add.text(x, y, label, textStyle(Math.round(size / 5), COLORS.ink, {
+    align: 'center', wordWrap: { width: size - 16, useAdvancedWrap: true },
+  })).setOrigin(0.5);
+  fitText(text, size - 16);
+  if (text.displayHeight > size - 16) text.setScale(text.scaleX * (size - 16) / text.displayHeight);
+  return [box, text];
+}
+
+// 吹き出し（札の地・金の縁・左に顔へ向くしっぽ）。left,top,w,h の中に str を折り返し、収まるまで字を小さくする。部品の配列を返す
+export function speechBubble(scene, left, top, w, h, str, { size = 26, min = 14 } = {}) {
+  const cy = top + h / 2;
+  const box = roundBox(scene, left + w / 2, cy, w, h, COLORS.panel, { radius: 22, stroke: COLORS.frame });
+  const tail = scene.add.graphics();
+  tail.fillStyle(COLORS.panel, 1);
+  tail.fillTriangle(left + 3, cy - 12, left + 3, cy + 12, left - 14, cy);
+  tail.lineStyle(3, COLORS.frame, 1);
+  tail.lineBetween(left, cy - 12, left - 14, cy);
+  tail.lineBetween(left - 14, cy, left, cy + 12);
+  const inner = { w: w - 28, h: h - 20 };
+  let s = size;
+  const text = scene.add.text(left + w / 2, cy, str, textStyle(s, COLORS.ink, {
+    fontStyle: '500', lineSpacing: 4, wordWrap: { width: inner.w, useAdvancedWrap: true },
+  })).setOrigin(0.5);
+  while (text.height > inner.h && s > min) {
+    s -= 2;
+    text.setFontSize(s);
+  }
+  fitText(text, inner.w);
+  if (text.displayHeight > inner.h) text.setScale(text.scaleX * inner.h / text.displayHeight); // 最後の守り
+  return [box, tail, text];
+}
 
 // 丸みのある太字（本人 10/10「ドット字ではなく、少し丸みを帯びた字で」）。小さな補足の行だけ extra で fontStyle: '500'
 export const textStyle = (size, color, extra = {}) => ({

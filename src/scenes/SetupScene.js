@@ -1,8 +1,8 @@
 // src/scenes/SetupScene.js — 入門：育てる自分のタイプを1つ選ぶ → しこ名へ（一代記の間、タイプは変わらない）
-import { TYPE_IDS } from '../data/types.js?v=14';
-import { t, getLang, setLang } from '../i18n/i18n.js?v=14';
-import { session } from '../state.js?v=14';
-import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=14';
+import { TYPE_IDS } from '../data/types.js?v=15';
+import { t, getLang, setLang } from '../i18n/i18n.js?v=15';
+import { session } from '../state.js?v=15';
+import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=15';
 
 export class SetupScene extends Phaser.Scene {
   constructor() {
@@ -15,7 +15,7 @@ export class SetupScene extends Phaser.Scene {
 
   create() {
     const { width } = this.scale;
-    backButton(this, () => this.scene.start('guidePick')); // 案内役を選び直す（前の下の「案内役を選び直す」の代わり）
+    backButton(this, () => this.scene.start('guidePick')); // 入門する部屋を選び直す
     fitText(this.add.text(TOP_LEFT_FREE, 55, t('title'), textStyle(60, COLORS.gold)).setOrigin(0, 0.5), width - 190 - 16 - TOP_LEFT_FREE);
     button(this, width - 105, 55, 170, 70, t('lang.toggle'), () => {
       setLang(getLang() === 'ja' ? 'en' : 'ja', storage());

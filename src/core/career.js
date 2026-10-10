@@ -1,7 +1,8 @@
 // 一代記の状態・稽古・疲れ・成長・場所の経験・記録（設計書 §3）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=14';
-import { LADDER_SIZE } from '../data/ranks.js?v=14';
-import { GROWTH } from './tuning.js?v=14';
+import { TYPES } from '../data/types.js?v=15';
+import { LADDER_SIZE } from '../data/ranks.js?v=15';
+import { GROWTH, SPECIALTY_MULT } from './tuning.js?v=15';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=15';
 
 // 古い iPhone の Safari（iOS 15.4 より前）には Object.hasOwn が無い＝札を押すと止まっていた（10/10）
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
@@ -72,8 +73,11 @@ export function train(career, kind) {
     return { ...career, fatigue: Math.max(0, career.fatigue - 2), trainingLeft: career.trainingLeft - 1 };
   }
   const stats = { ...career.stats };
+  const heya = heyaOfGuide(career.guide);
+  const special = heya !== null && HEYA[heya].specialty === kind; // 部屋の得意の稽古は伸びが1割多い（鈍りの後・100で止める前）
   for (const [stat, g] of Object.entries(GAIN[kind])) {
     let add = g * GROWTH.gain * growthMult(career.type, stat) * diminish(stats[stat]);
+    if (special) add *= SPECIALTY_MULT;
     if (stat === 'tai') add *= Math.max(0, 1 - 0.25 * career.fatigue);
     stats[stat] = cap(stats[stat] + add);
   }
