@@ -1,11 +1,11 @@
 // src/state.js — 場面をまたぐ選び。strategy は自分の作戦表（新しい相手ごとにお勧めで組む）
 // career は一代記（入門を終えるまで null）。一代記の移り変わりはここの関数で行い、そのたびに保存する
-import { TYPE_IDS, TYPES } from './data/types.js?v=10';
-import { recommendStrategy } from './core/recommend.js?v=10';
-import { defaultStrategy } from './core/strategy.js?v=10';
-import { newCareer, train, saveCareer, loadCareer } from './core/career.js?v=10';
-import { startBasho, currentOpponent, recordBout, finishBasho } from './core/basho.js?v=10';
-import { makeRng } from './core/rng.js?v=10';
+import { TYPE_IDS, TYPES } from './data/types.js?v=11';
+import { recommendStrategy } from './core/recommend.js?v=11';
+import { defaultStrategy } from './core/strategy.js?v=11';
+import { newCareer, train, saveCareer, loadCareer } from './core/career.js?v=11';
+import { startBasho, currentOpponent, recordBout, finishBasho } from './core/basho.js?v=11';
+import { makeRng } from './core/rng.js?v=11';
 
 export const session = {
   you: 'heavy',

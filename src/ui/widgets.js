@@ -1,7 +1,7 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=10';
-import { GUIDE_IDS } from '../data/guides.js?v=10';
-import { t } from '../i18n/i18n.js?v=10';
+import { TYPE_IDS } from '../data/types.js?v=11';
+import { GUIDE_IDS } from '../data/guides.js?v=11';
+import { t } from '../i18n/i18n.js?v=11';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -85,6 +85,9 @@ export function roundBox(scene, x, y, w, h, fill, { radius = 18, stroke = null, 
 
 // 見えない押し当たり
 export function hitZone(scene, x, y, w, h) {
+  // 描き直しや画面の切り替えで、止まったマウスの下に新しく置いた札は、マウスが動くまで押しても効かなかった
+  // （10/10 本人のパソコンで稽古の札が2回目から効かない）⇒ マウスが止まっていても毎回当たりを調べ直す
+  scene.input.setPollAlways();
   return scene.add.zone(x, y, w, h).setInteractive({ useHandCursor: true });
 }
 
