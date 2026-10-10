@@ -1,8 +1,8 @@
 // src/scenes/SetupScene.js — 入門：育てる自分のタイプを1つ選ぶ（相手は取組ごとに引く・入門の長い画面は第3段）
-import { TYPE_IDS } from '../data/types.js?v=5';
-import { t, getLang, setLang } from '../i18n/i18n.js?v=5';
-import { session, nextOpponent } from '../state.js?v=5';
-import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, storage } from '../ui/widgets.js?v=5';
+import { TYPE_IDS } from '../data/types.js?v=6';
+import { t, getLang, setLang } from '../i18n/i18n.js?v=6';
+import { session, nextOpponent } from '../state.js?v=6';
+import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, storage } from '../ui/widgets.js?v=6';
 
 export class SetupScene extends Phaser.Scene {
   constructor() {
@@ -24,12 +24,11 @@ export class SetupScene extends Phaser.Scene {
     this.add.text(40, 120, t('setup.you'), textStyle(40, COLORS.ink));
     TYPE_IDS.forEach((id, i) => this.card(id, 270 + i * 170));
     button(this, width / 2, 1190, 460, 110, t('setup.start'), () => {
-      // 自分のタイプを変えたときだけ自分の作戦表を見本から組み直す。相手は取組ごとに引く
-      if (!session.planFor || session.planFor.you !== session.you) session.strategy = null;
-      session.planFor = { you: session.you };
+      // 相手を引くと、自分の作戦表もその相手へのお勧めで組み直される（state.js）
       nextOpponent();
       this.scene.start('opponent');
     }, { size: 38 });
+    button(this, width / 2, 1085, 320, 64, t('setup.changeGuide'), () => this.scene.start('guide'), { color: COLORS.buttonSub, size: 26 });
   }
 
   // 名前・得意・弱みの3行の札

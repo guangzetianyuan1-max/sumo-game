@@ -1,12 +1,13 @@
-// src/state.js — 場面をまたぐ選び。strategy は自分の作戦表（null なら見本から組む）
-import { TYPE_IDS } from './data/types.js?v=5';
+// src/state.js — 場面をまたぐ選び。strategy は自分の作戦表（新しい相手ごとにお勧めで組む）
+import { TYPE_IDS, TYPES } from './data/types.js?v=6';
+import { recommendStrategy } from './core/recommend.js?v=6';
 
 export const session = {
   you: 'heavy',
   opp: 'tall',
   strategy: null,
   oppStrategy: null,
-  planFor: null, // 作戦表を組んだときの { you }。自分のタイプが変わったときだけ見本から組み直す
+  guide: null, // 案内役 'chizuru' | 'suzu' | 'kotone'（選ぶまで null）
   speed: 'normal',
   seed: Date.now() % 100000,
 };
@@ -15,5 +16,7 @@ export const session = {
 export function nextOpponent(rand = Math.random) {
   session.opp = TYPE_IDS[Math.min(TYPE_IDS.length - 1, Math.floor(rand() * TYPE_IDS.length))];
   session.oppStrategy = null;
+  // 自分の作戦表は、新しい相手ごとにお勧めへ組み直す（もう一番では触らないので、手直しは持ち越される）
+  session.strategy = recommendStrategy(TYPES[session.you].sample, session.you, session.opp);
   return session.opp;
 }

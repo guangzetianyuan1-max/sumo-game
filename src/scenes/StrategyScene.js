@@ -1,11 +1,12 @@
 // src/scenes/StrategyScene.js — 作戦表（設計書 §2）。四角を押すと1つ上へ・長押しで外す・下の覚えた手を押すと段に入る
-import { SCENES, ROW, addTech, raise, remove, defaultStrategy } from '../core/strategy.js?v=5';
-import { TYPES } from '../data/types.js?v=5';
-import { KIMARITE } from '../data/kimarite.js?v=5';
-import { classifyPress, LONG_PRESS_MS } from '../ui/press.js?v=5';
-import { t, techLabel, getLang } from '../i18n/i18n.js?v=5';
-import { session } from '../state.js?v=5';
-import { button, fitText, roundBox, hitZone, textStyle, COLORS, GROUP_COLOR } from '../ui/widgets.js?v=5';
+import { SCENES, ROW, addTech, raise, remove, defaultStrategy } from '../core/strategy.js?v=6';
+import { recommendStrategy } from '../core/recommend.js?v=6';
+import { TYPES } from '../data/types.js?v=6';
+import { KIMARITE } from '../data/kimarite.js?v=6';
+import { classifyPress, LONG_PRESS_MS } from '../ui/press.js?v=6';
+import { t, techLabel, getLang } from '../i18n/i18n.js?v=6';
+import { session } from '../state.js?v=6';
+import { button, fitText, roundBox, hitZone, textStyle, COLORS, GROUP_COLOR } from '../ui/widgets.js?v=6';
 
 const ICON = 120;
 
@@ -15,7 +16,7 @@ export class StrategyScene extends Phaser.Scene {
   }
 
   create() {
-    session.strategy ??= defaultStrategy(TYPES[session.you].sample, session.you);
+    session.strategy ??= recommendStrategy(TYPES[session.you].sample, session.you, session.opp);
     session.oppStrategy ??= defaultStrategy(TYPES[session.opp].sample, session.opp);
     this.msg = '';
     this.draw();
@@ -29,6 +30,12 @@ export class StrategyScene extends Phaser.Scene {
     this.children.removeAll(true);
     const { width } = this.scale;
     this.add.text(30, 26, t('strat.title'), textStyle(48, COLORS.gold));
+    // 相手に合わせたお勧めへ作戦表を戻す（手直しは消える）
+    button(this, width - 180, 48, 300, 52, t('strat.recommend'), () => {
+      session.strategy = recommendStrategy(TYPES[session.you].sample, session.you, session.opp);
+      this.msg = '';
+      this.redraw();
+    }, { color: COLORS.buttonSub, size: 24 });
     fitText(this.add.text(30, 78, t('strat.today', { type: t(`type.${session.opp}.name`) }), textStyle(32, COLORS.ink)), width - 60);
     fitText(this.add.text(30, 116, t(`type.${session.opp}.strong`), textStyle(22, COLORS.sub, { fontStyle: '500' })), width - 60);
     fitText(this.add.text(30, 142, t('strat.oppWeak', { weak: t(`type.${session.opp}.weak`) }), textStyle(22, COLORS.sub, { fontStyle: '500' })), width - 60);

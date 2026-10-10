@@ -1,5 +1,7 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=5';
+import { TYPE_IDS } from '../data/types.js?v=6';
+import { GUIDE_IDS } from '../data/guides.js?v=6';
+import { t } from '../i18n/i18n.js?v=6';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -22,6 +24,11 @@ export const GROUP_COLOR = { kihon: 0xc8553d, kake: 0x4f8a68, nage: 0x3f6aa8, hi
 // 5タイプの絵を読み込む（場面ごとに呼んでよい・読み込み済みの鍵は Phaser が飛ばす）
 export function preloadTypeArt(scene) {
   TYPE_IDS.forEach((id) => scene.load.image(`type-${id}`, `assets/types/${id}.png`));
+}
+
+// 案内役の顔（通常）を読み込む
+export function preloadGuideArt(scene) {
+  GUIDE_IDS.forEach((id) => scene.load.image(`guide-${id}`, `assets/guides/${id}_normal.png`));
 }
 
 // 丸みのある太字（本人 10/10「ドット字ではなく、少し丸みを帯びた字で」）。小さな補足の行だけ extra で fontStyle: '500'
@@ -91,4 +98,42 @@ export function button(scene, x, y, w, h, label, onTap, { color = COLORS.button,
     onTap();
   });
   return { box: zone, text };
+}
+
+// 心・技・体の3本の横棒（金の棒＋暗い溝・値は 0〜100 で棒の長さ・右に数）。x,y は左上。使った高さを返す。
+// compact＝3本を横に1列に並べた小さい版（取組の画面用）。ラベルの文は stat.shin / stat.gi / stat.tai
+export function statBars(scene, x, y, w, stats, { compact = false } = {}) {
+  const keys = ['shin', 'gi', 'tai'];
+  const GOLD = 0xe3c27a;
+  const track = (cx, cy, tw, th) => roundBox(scene, cx + tw / 2, cy, tw, th, 0x2f3858, { radius: th / 2, shadow: false });
+  const fill = (cx, cy, tw, th, v) => {
+    const fw = Math.max(th, tw * Math.max(0, Math.min(100, v)) / 100);
+    return roundBox(scene, cx + fw / 2, cy, fw, th, GOLD, { radius: th / 2, shadow: false });
+  };
+  if (compact) {
+    const col = w / 3;
+    const size = 18;
+    keys.forEach((k, i) => {
+      const cx = x + i * col;
+      const label = scene.add.text(cx, y, t(`stat.${k}`), textStyle(size, COLORS.ink)).setOrigin(0, 0);
+      fitText(label, col * 0.5);
+      scene.add.text(cx + col - 10, y, String(Math.round(stats[k])), textStyle(size, COLORS.gold)).setOrigin(1, 0);
+      track(cx, y + 30, col - 10, 10);
+      fill(cx, y + 30, col - 10, 10, stats[k]);
+    });
+    return 38;
+  }
+  const ROWH = 44;
+  const labelW = 96;
+  const numW = 46;
+  keys.forEach((k, i) => {
+    const cy = y + i * ROWH + ROWH / 2;
+    fitText(scene.add.text(x, cy, t(`stat.${k}`), textStyle(26, COLORS.ink)).setOrigin(0, 0.5), labelW - 6);
+    const bx = x + labelW;
+    const bw = w - labelW - numW;
+    track(bx, cy, bw, 18);
+    fill(bx, cy, bw, 18, stats[k]);
+    scene.add.text(x + w, cy, String(Math.round(stats[k])), textStyle(26, COLORS.gold)).setOrigin(1, 0.5);
+  });
+  return ROWH * keys.length;
 }

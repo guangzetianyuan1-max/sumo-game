@@ -1,10 +1,11 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { SetupScene } from './scenes/SetupScene.js?v=5';
-import { OpponentScene } from './scenes/OpponentScene.js?v=5';
-import { StrategyScene } from './scenes/StrategyScene.js?v=5';
-import { BoutScene } from './scenes/BoutScene.js?v=5';
-import { initLang } from './i18n/i18n.js?v=5';
-import { storage } from './ui/widgets.js?v=5';
+import { GuideScene } from './scenes/GuideScene.js?v=6';
+import { SetupScene } from './scenes/SetupScene.js?v=6';
+import { OpponentScene } from './scenes/OpponentScene.js?v=6';
+import { StrategyScene } from './scenes/StrategyScene.js?v=6';
+import { BoutScene } from './scenes/BoutScene.js?v=6';
+import { initLang } from './i18n/i18n.js?v=6';
+import { storage } from './ui/widgets.js?v=6';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;
@@ -15,7 +16,7 @@ function start() {
     parent: 'game',
     backgroundColor: '#141a2e',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 720, height: 1280 },
-    scene: [SetupScene, OpponentScene, StrategyScene, BoutScene],
+    scene: [GuideScene, SetupScene, OpponentScene, StrategyScene, BoutScene],
   });
 }
 

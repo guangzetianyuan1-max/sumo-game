@@ -1,10 +1,10 @@
 // src/scenes/BoutScene.js — 取組を仮の四角で見せる（ドットの絵は第4段）
-import { runBout } from '../core/bout.js?v=5';
-import { makeWrestler } from '../core/wrestler.js?v=5';
-import { TYPES } from '../data/types.js?v=5';
-import { t, techLabel } from '../i18n/i18n.js?v=5';
-import { session, nextOpponent } from '../state.js?v=5';
-import { button, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=5';
+import { runBout } from '../core/bout.js?v=6';
+import { makeWrestler } from '../core/wrestler.js?v=6';
+import { TYPES } from '../data/types.js?v=6';
+import { t, techLabel } from '../i18n/i18n.js?v=6';
+import { session, nextOpponent } from '../state.js?v=6';
+import { button, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=6';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
@@ -31,8 +31,11 @@ export class BoutScene extends Phaser.Scene {
     this.cx = width / 2;
     this.drawStage();
     const half = width / 2 - 40;
-    fitText(this.add.text(30, 120, t('bout.sideType', { side: t('bout.east'), type: t(`type.${session.you}.name`) }), textStyle(32, COLORS.ink)), half);
-    fitText(this.add.text(width - 30, 120, t('bout.sideType', { side: t('bout.west'), type: t(`type.${session.opp}.name`) }), textStyle(32, COLORS.ink)).setOrigin(1, 0), half);
+    // 東西の札は一段上げ、その下に心・技・体の小さな棒（屋根は y170 から）
+    fitText(this.add.text(30, 88, t('bout.sideType', { side: t('bout.east'), type: t(`type.${session.you}.name`) }), textStyle(30, COLORS.ink)), half);
+    fitText(this.add.text(width - 30, 88, t('bout.sideType', { side: t('bout.west'), type: t(`type.${session.opp}.name`) }), textStyle(30, COLORS.ink)).setOrigin(1, 0), half);
+    statBars(this, 30, 128, width / 2 - 50, { shin: you.shin, gi: you.gi, tai: you.tai }, { compact: true });
+    statBars(this, width / 2 + 20, 128, width / 2 - 50, { shin: opp.shin, gi: opp.gi, tai: opp.tai }, { compact: true });
     this.east = this.body(session.you, EAST_BAND, 1);
     this.west = this.body(session.opp, WEST_BAND, -1);
     this.east.setPosition(this.cx - 80, FEET_Y);
