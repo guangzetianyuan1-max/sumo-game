@@ -1,10 +1,10 @@
 // src/scenes/BoutScene.js — 取組を仮の四角で見せる（ドットの絵は第4段）
-import { runBout } from '../core/bout.js';
-import { makeWrestler } from '../core/wrestler.js';
-import { TYPES } from '../data/types.js';
-import { t, techLabel } from '../i18n/i18n.js';
-import { session, nextOpponent } from '../state.js';
-import { button, fitText, roundBox, FONT, COLORS } from '../ui/widgets.js';
+import { runBout } from '../core/bout.js?v=2';
+import { makeWrestler } from '../core/wrestler.js?v=2';
+import { TYPES } from '../data/types.js?v=2';
+import { t, techLabel } from '../i18n/i18n.js?v=2';
+import { session, nextOpponent } from '../state.js?v=2';
+import { button, fitText, roundBox, FONT, COLORS } from '../ui/widgets.js?v=2';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
