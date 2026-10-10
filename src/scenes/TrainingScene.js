@@ -1,9 +1,9 @@
 // src/scenes/TrainingScene.js — 稽古（場所の前に6回）：上に自分のしこ名・番付・残りの回数・疲れ、心技体の棒、稽古7つの札（2列×4段）
 // 押すと train → 保存 → 棒を描き直し、伸びた値を「+1.5」のように一瞬出す。0回になったら「番付を見る」→ 場所を始めて（保存）→ 番付
-import { TRAININGS } from '../core/career.js?v=7';
-import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=7';
-import { session, trainNow, beginBasho } from '../state.js?v=7';
-import { button, fitText, roundBox, hitZone, textStyle, statBars, COLORS } from '../ui/widgets.js?v=7';
+import { TRAININGS } from '../core/career.js?v=8';
+import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=8';
+import { session, trainNow, beginBasho } from '../state.js?v=8';
+import { button, fitText, roundBox, hitZone, textStyle, statBars, COLORS } from '../ui/widgets.js?v=8';
 
 const BARS = { x: 40, y: 196, w: 640 }; // 心技体の棒（statBars の大きい版：行の高さ44・名前の幅96・数の幅46）
 const CARD = { w: 310, h: 150, cols: [190, 530], top: 450, step: 170 };
@@ -44,10 +44,21 @@ export class TrainingScene extends Phaser.Scene {
 
     const done = c.trainingLeft === 0;
     button(this, width / 2, 1190, 460, 110, t('train.done'), () => {
-      if (session.career.trainingLeft > 0) return;
+      if (session.career.trainingLeft > 0) {
+        this.needMore(); // 押しても進まない理由を出す（本人「番付を見るから進まない」）
+        return;
+      }
       beginBasho(); // basho が無い時だけ始める
       this.scene.start('banzuke');
     }, { size: 38, color: done ? COLORS.button : COLORS.buttonSub });
+  }
+
+  // 稽古が残っている時に「番付を見る」を押したら、ボタンの上に理由を出して少し揺らす
+  needMore() {
+    this.hint?.destroy();
+    const { width } = this.scale;
+    this.hint = fitText(this.add.text(width / 2, 1100, t('hint.trainFirst', { n: session.career.trainingLeft }), textStyle(30, COLORS.gold, { align: 'center' })).setOrigin(0.5), width - 60);
+    this.tweens.add({ targets: this.hint, x: { from: width / 2 - 12, to: width / 2 }, duration: 300, ease: 'Bounce.Out' });
   }
 
   // 稽古の札：名前と効き目の2行。回数が残っていない時は薄く、押しても何もしない
