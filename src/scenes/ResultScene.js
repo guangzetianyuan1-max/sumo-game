@@ -1,9 +1,9 @@
 // src/scenes/ResultScene.js — 場所の結果：場所の名前・星の数・勝ち越し／負け越し・優勝・番付の動き・伸びた心技体（経験）
 // 締めは取組の順の画面で1度だけ済ませてある（ここは session.lastResult を読むだけ＝読み直しで2度締めない）
-import { t, rankLabel, bashoLabel } from '../i18n/i18n.js?v=18';
-import { session } from '../state.js?v=18';
-import { recordNote } from '../core/honors.js?v=18';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=18';
+import { t, rankLabel, bashoLabel } from '../i18n/i18n.js?v=19';
+import { session } from '../state.js?v=19';
+import { recordNote } from '../core/honors.js?v=19';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=19';
 
 const STATS = ['shin', 'gi', 'tai'];
 const BARS = { x: 80, w: 540 };
