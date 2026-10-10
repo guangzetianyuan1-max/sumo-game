@@ -1,10 +1,12 @@
-// src/scenes/BoutScene.js — 取組を仮の四角で見せる（ドットの絵は第4段）
-import { runBout } from '../core/bout.js?v=6b';
-import { makeWrestler } from '../core/wrestler.js?v=6b';
-import { TYPES } from '../data/types.js?v=6b';
-import { t, techLabel } from '../i18n/i18n.js?v=6b';
-import { session, nextOpponent } from '../state.js?v=6b';
-import { button, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=6b';
+// src/scenes/BoutScene.js — 取組を仮の四角で見せる（ドットの絵は第4段）。一代記：自分（東）＝career の値・相手（西）＝今日の相手の値
+// 取組を計算したらすぐ recordBout → 保存（動きは結果を見せるだけ）。ボタンは「取組の順へ」だけ
+import { runBout } from '../core/bout.js?v=7';
+import { makeWrestler } from '../core/wrestler.js?v=7';
+import { currentOpponent } from '../core/basho.js?v=7';
+import { TYPES } from '../data/types.js?v=7';
+import { t, techLabel, shikonaLabel } from '../i18n/i18n.js?v=7';
+import { session, recordNow, boutSeed } from '../state.js?v=7';
+import { button, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=7';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
@@ -22,22 +24,34 @@ export class BoutScene extends Phaser.Scene {
     this.lastPos = 0;
     this.history = [];
     this.i = 0;
-    session.seed += 1;
-    const you = makeWrestler(session.you);
-    const opp = makeWrestler(session.opp);
-    this.result = runBout({ wrestler: you, strategy: session.strategy }, { wrestler: opp, strategy: session.oppStrategy }, session.seed);
+    const career = session.career;
+    const foe = career ? currentOpponent(career) : null;
+    if (!foe || !session.strategy || !session.oppStrategy) {
+      this.scene.start(career ? 'schedule' : 'guide');
+      return;
+    }
+    const you = makeWrestler(career.type, career.stats);
+    const opp = makeWrestler(foe.type, foe.stats);
+    // 種は一代記・場所・日から（読み直して取り直しても同じ取組）
+    this.result = runBout({ wrestler: you, strategy: session.strategy }, { wrestler: opp, strategy: session.oppStrategy }, boutSeed(career));
+    this.names = { east: shikonaLabel(career.name), west: shikonaLabel(foe.name) };
+    // 結果はここで記録して保存する（日が1つ進む）。見せている途中で読み直しても取り直せない＝動きは結果を見せるだけ
+    recordNow(this.result.winner === 'east', this.result.kimarite);
+    // 作戦は使い終わり＝この画面にもう一度入っても次の日を勝手に取らず、取組の順へ戻る
+    session.strategy = session.oppStrategy = null;
 
     const { width } = this.scale;
     this.cx = width / 2;
     this.drawStage();
     const half = width / 2 - 40;
     // 東西の札は一段上げ、その下に心・技・体の小さな棒（屋根は y170 から）
-    fitText(this.add.text(30, 88, t('bout.sideType', { side: t('bout.east'), type: t(`type.${session.you}.name`) }), textStyle(30, COLORS.ink)), half);
-    fitText(this.add.text(width - 30, 88, t('bout.sideType', { side: t('bout.west'), type: t(`type.${session.opp}.name`) }), textStyle(30, COLORS.ink)).setOrigin(1, 0), half);
+    // 東西の名前はしこ名（自分は東）
+    fitText(this.add.text(30, 88, t('bout.sideType', { side: t('bout.east'), type: this.names.east }), textStyle(30, COLORS.ink)), half);
+    fitText(this.add.text(width - 30, 88, t('bout.sideType', { side: t('bout.west'), type: this.names.west }), textStyle(30, COLORS.ink)).setOrigin(1, 0), half);
     statBars(this, 30, 128, width / 2 - 50, { shin: you.shin, gi: you.gi, tai: you.tai }, { compact: true });
     statBars(this, width / 2 + 20, 128, width / 2 - 50, { shin: opp.shin, gi: opp.gi, tai: opp.tai }, { compact: true });
-    this.east = this.body(session.you, EAST_BAND, 1);
-    this.west = this.body(session.opp, WEST_BAND, -1);
+    this.east = this.body(career.type, EAST_BAND, 1);
+    this.west = this.body(foe.type, WEST_BAND, -1);
     this.east.setPosition(this.cx - 80, FEET_Y);
     this.west.setPosition(this.cx + 80, FEET_Y);
     this.sceneLabel = this.add.text(30, 808, '', textStyle(28, COLORS.gold));
@@ -126,7 +140,7 @@ export class BoutScene extends Phaser.Scene {
     // 倒れる向きは土俵の中央側（Phaser の角度は時計回り）。足もとは x 64 以上なので 0..720 に収まる
     // 縁の外まで押し出された（|pos| が100以上）なら、土俵の縁から落ちる
     if (Math.abs(this.lastPos ?? 0) >= 100) this.tweens.add({ targets: loser, y: FEET_Y + 120, duration: 400 });
-    const side = t(winner === 'east' ? 'bout.east' : 'bout.west');
+    const side = this.names[winner];
     const { width } = this.scale;
     // 屋根や飾りの上でも読めるよう、字の下に濃い丸い台を敷く
     const back = this.add.graphics();
@@ -134,13 +148,7 @@ export class BoutScene extends Phaser.Scene {
     back.fillRoundedRect(this.cx - 330, 231, 660, 150, 24);
     fitText(this.add.text(this.cx, 280, t('bout.win', { side }), textStyle(72, COLORS.gold)).setOrigin(0.5), width - 60);
     fitText(this.add.text(this.cx, 345, t('bout.kimarite', { tech: techLabel(kimarite) }), textStyle(46, COLORS.ink)).setOrigin(0.5), width - 60);
-    // 作戦を直す（同じ相手のまま作戦表へ）は小さく上に。次の相手を引くと相手の作戦表は見本から組み直す
-    button(this, this.cx, 1105, 320, 64, t('bout.edit'), () => this.scene.start('strategy'), { color: COLORS.buttonSub, size: 26 });
-    button(this, this.cx - 175, 1220, 320, 100, t('bout.next'), () => {
-      nextOpponent();
-      this.scene.start('opponent');
-    }, { size: 36 });
-    button(this, this.cx + 175, 1220, 320, 100, t('bout.rematch'), () => this.scene.restart(), { color: COLORS.buttonSub, size: 36 });
+    button(this, this.cx, 1200, 460, 110, t('bout.toSchedule'), () => this.scene.start('schedule'), { size: 38 });
   }
 
   cycleSpeed() {

@@ -1,12 +1,12 @@
 // src/scenes/StrategyScene.js — 作戦表（設計書 §2）。四角を押すと1つ上へ・長押しで外す・下の覚えた手を押すと段に入る
-import { SCENES, ROW, addTech, raise, remove, defaultStrategy } from '../core/strategy.js?v=6b';
-import { recommendStrategy } from '../core/recommend.js?v=6b';
-import { TYPES } from '../data/types.js?v=6b';
-import { KIMARITE } from '../data/kimarite.js?v=6b';
-import { classifyPress, LONG_PRESS_MS } from '../ui/press.js?v=6b';
-import { t, techLabel, getLang } from '../i18n/i18n.js?v=6b';
-import { session } from '../state.js?v=6b';
-import { button, fitText, roundBox, hitZone, textStyle, COLORS, GROUP_COLOR } from '../ui/widgets.js?v=6b';
+import { SCENES, ROW, addTech, raise, remove, defaultStrategy } from '../core/strategy.js?v=7';
+import { recommendStrategy } from '../core/recommend.js?v=7';
+import { TYPES } from '../data/types.js?v=7';
+import { KIMARITE } from '../data/kimarite.js?v=7';
+import { classifyPress, LONG_PRESS_MS } from '../ui/press.js?v=7';
+import { t, techLabel, getLang } from '../i18n/i18n.js?v=7';
+import { session } from '../state.js?v=7';
+import { button, fitText, roundBox, hitZone, textStyle, COLORS, GROUP_COLOR } from '../ui/widgets.js?v=7';
 
 const ICON = 120;
 
@@ -66,7 +66,8 @@ export class StrategyScene extends Phaser.Scene {
     });
 
     if (this.msg) fitText(this.add.text(width / 2, 1115, this.msg, textStyle(30, COLORS.gold)).setOrigin(0.5), width - 60);
-    button(this, 190, 1215, 320, 100, t('strat.retype'), () => this.scene.start('setup'), { color: COLORS.buttonSub, size: 36 });
+    // 一代記ではタイプは変わらない＝「もどる」で相手の情報へ（作戦表の手直しは残る）
+    button(this, 190, 1215, 320, 100, t('common.back'), () => this.scene.start('opponent'), { color: COLORS.buttonSub, size: 36 });
     button(this, width - 190, 1215, 320, 100, t('strat.go'), () => this.scene.start('bout'), { size: 36 });
   }
 

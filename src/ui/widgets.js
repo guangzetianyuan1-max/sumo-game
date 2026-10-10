@@ -1,7 +1,7 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=6b';
-import { GUIDE_IDS } from '../data/guides.js?v=6b';
-import { t } from '../i18n/i18n.js?v=6b';
+import { TYPE_IDS } from '../data/types.js?v=7';
+import { GUIDE_IDS } from '../data/guides.js?v=7';
+import { t } from '../i18n/i18n.js?v=7';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -58,7 +58,13 @@ export function roundBox(scene, x, y, w, h, fill, { radius = 18, stroke = null, 
     g.fillRoundedRect(x - w / 2, y - h / 2 + 4, w, h, radius);
   }
   g.fillStyle(fill, 1);
-  g.fillRoundedRect(x - w / 2, y - h / 2, w, h, radius);
+  // fillRoundedRect は三角形の継ぎ目にすき間ができ、下の影の黒が細い線で透ける（番付表で見えた）。
+  // 中身は四角3枚と角の円4つで塗る（1px ずつ重ねて継ぎ目を作らない）
+  const l = x - w / 2, t = y - h / 2, r = Math.min(radius, w / 2, h / 2);
+  g.fillRect(l + r - 1, t, w - 2 * r + 2, h);
+  g.fillRect(l, t + r - 1, r + 1, h - 2 * r + 2);
+  g.fillRect(l + w - r - 1, t + r - 1, r + 1, h - 2 * r + 2);
+  for (const [cx, cy] of [[l + r, t + r], [l + w - r, t + r], [l + r, t + h - r], [l + w - r, t + h - r]]) g.fillCircle(cx, cy, r);
   if (stroke !== null) {
     g.lineStyle(3, stroke, strokeAlpha);
     g.strokeRoundedRect(x - w / 2, y - h / 2, w, h, radius);

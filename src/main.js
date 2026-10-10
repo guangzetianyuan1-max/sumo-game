@@ -1,11 +1,16 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { GuideScene } from './scenes/GuideScene.js?v=6b';
-import { SetupScene } from './scenes/SetupScene.js?v=6b';
-import { OpponentScene } from './scenes/OpponentScene.js?v=6b';
-import { StrategyScene } from './scenes/StrategyScene.js?v=6b';
-import { BoutScene } from './scenes/BoutScene.js?v=6b';
-import { initLang } from './i18n/i18n.js?v=6b';
-import { storage } from './ui/widgets.js?v=6b';
+import { GuideScene } from './scenes/GuideScene.js?v=7';
+import { SetupScene } from './scenes/SetupScene.js?v=7';
+import { OpponentScene } from './scenes/OpponentScene.js?v=7';
+import { StrategyScene } from './scenes/StrategyScene.js?v=7';
+import { BoutScene } from './scenes/BoutScene.js?v=7';
+import { NameScene } from './scenes/NameScene.js?v=7';
+import { TrainingScene } from './scenes/TrainingScene.js?v=7';
+import { BanzukeScene } from './scenes/BanzukeScene.js?v=7';
+import { ScheduleScene } from './scenes/ScheduleScene.js?v=7';
+import { ResultScene } from './scenes/ResultScene.js?v=7';
+import { initLang } from './i18n/i18n.js?v=7';
+import { storage } from './ui/widgets.js?v=7';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;
@@ -16,7 +21,7 @@ function start() {
     parent: 'game',
     backgroundColor: '#141a2e',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 720, height: 1280 },
-    scene: [GuideScene, SetupScene, OpponentScene, StrategyScene, BoutScene],
+    scene: [GuideScene, SetupScene, NameScene, TrainingScene, BanzukeScene, ScheduleScene, OpponentScene, StrategyScene, BoutScene, ResultScene],
   });
 }
 

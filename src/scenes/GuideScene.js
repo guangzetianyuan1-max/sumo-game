@@ -1,8 +1,9 @@
-// src/scenes/GuideScene.js — 最初の画面：案内役（相手の弱みを教えてくれる女子）を3人から選ぶ
-import { GUIDE_IDS } from '../data/guides.js?v=6b';
-import { t, getLang, setLang } from '../i18n/i18n.js?v=6b';
-import { session } from '../state.js?v=6b';
-import { button, fitText, roundBox, hitZone, textStyle, preloadGuideArt, COLORS, storage } from '../ui/widgets.js?v=6b';
+// src/scenes/GuideScene.js — 最初の画面：案内役（相手の弱みを教えてくれる女子）を3人から選ぶ。
+// 一代記の記録があれば「つづきから」（その時の画面へ）と「はじめから」（記録は入門を終えた時に上書き）
+import { GUIDE_IDS } from '../data/guides.js?v=7';
+import { t, getLang, setLang, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=7';
+import { session, loadSaved, useCareer, resumeScene } from '../state.js?v=7';
+import { button, fitText, roundBox, hitZone, textStyle, preloadGuideArt, COLORS, storage } from '../ui/widgets.js?v=7';
 
 const CARD_W = 205;
 const CARD_H = 480;
@@ -28,9 +29,20 @@ export class GuideScene extends Phaser.Scene {
     }, { size: 28, color: COLORS.buttonSub });
     const left = (width - (GUIDE_IDS.length * CARD_W + (GUIDE_IDS.length - 1) * GAP)) / 2;
     GUIDE_IDS.forEach((id, i) => this.card(id, left + CARD_W / 2 + i * (CARD_W + GAP), 220 + CARD_H / 2));
-    // 選ぶまでは「次へ」を薄い色にして押しても進まない
-    button(this, width / 2, 1190, 460, 110, t('guide.next'), () => {
-      if (session.guide) this.scene.start('setup');
+    const saved = loadSaved();
+    if (saved) {
+      // つづきから：記録の案内役・タイプのまま、その時の画面へ（場所の途中なら取組の順・始め直さない）
+      const who = t('career.who', { name: shikonaLabel(saved.name), rank: rankLabel(saved.pos) });
+      button(this, width / 2, 840, 560, 130, t('guide.continue'), () => {
+        useCareer(saved);
+        this.scene.start(resumeScene(saved));
+      }, { size: 40, sub: who, subSize: 24 });
+    }
+    // 選ぶまでは「次へ／はじめから」を薄い色にして押しても進まない
+    button(this, width / 2, 1190, 460, 110, t(saved ? 'guide.new' : 'guide.next'), () => {
+      if (!session.guide) return;
+      session.career = null; // 新しく始める（記録は消さず、入門を終えた時に上書き）
+      this.scene.start('setup');
     }, { size: 38, color: session.guide ? COLORS.button : COLORS.buttonSub });
   }
 

@@ -1,13 +1,14 @@
-// src/scenes/OpponentScene.js — 今日の相手の情報（タイプの絵・得意・弱み・心技体）と、案内役の女子のひとこと。作戦表の前に見せる
-import { TYPES } from '../data/types.js?v=6b';
-import { defaultStrategy, SCENES } from '../core/strategy.js?v=6b';
-import { recommendStrategy, recommendReason } from '../core/recommend.js?v=6b';
-import { makeWrestler } from '../core/wrestler.js?v=6b';
-import { t, techLabel } from '../i18n/i18n.js?v=6b';
-import { session } from '../state.js?v=6b';
-import { button, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadGuideArt, COLORS } from '../ui/widgets.js?v=6b';
+// src/scenes/OpponentScene.js — 今日の相手の情報（しこ名・番付・タイプの絵・得意・弱み・心技体）と、案内役の女子のひとこと。作戦表の前に見せる
+// 相手は一代記の場所の今日の相手（currentOpponent）。作戦表は prepareOpponent が組む（同じ相手に戻った時は組み直さない）
+import { TYPES } from '../data/types.js?v=7';
+import { SCENES } from '../core/strategy.js?v=7';
+import { recommendStrategy, recommendReason } from '../core/recommend.js?v=7';
+import { t, techLabel, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=7';
+import { session, prepareOpponent } from '../state.js?v=7';
+import { button, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadGuideArt, COLORS } from '../ui/widgets.js?v=7';
 
-const ART_H = 300;
+const ART_H = 240;
+const ART_Y = 285; // 絵の札の中心（札は 140〜430）
 const FACE_W = 140;
 const BUBBLE = { x: 200, y: 872, w: 480, h: 232 }; // 吹き出し（左上・幅・高さ）
 
@@ -23,16 +24,21 @@ export class OpponentScene extends Phaser.Scene {
 
   create() {
     const { width } = this.scale;
+    // 今日の相手から、相手の作戦表と自分のお勧めを組む（作戦表の画面と取組で同じものを使う）
+    this.foe = prepareOpponent();
+    if (!this.foe) {
+      this.scene.start(session.career ? 'schedule' : 'guide');
+      return;
+    }
     const opp = session.opp;
-    // 相手の作戦表はここで組み、作戦表の画面と取組で同じものを使う
-    session.oppStrategy ??= defaultStrategy(TYPES[opp].sample, opp);
 
-    fitText(this.add.text(width / 2, 50, t('opp.title'), textStyle(54, COLORS.gold)).setOrigin(0.5), width - 80);
-    roundBox(this, width / 2, 270, 640, 340, COLORS.panel, { radius: 36, stroke: COLORS.frame });
-    this.add.circle(width / 2, 270, 150, 0x2a3456);
+    fitText(this.add.text(width / 2, 44, t('opp.title'), textStyle(50, COLORS.gold)).setOrigin(0.5), width - 80);
+    fitText(this.add.text(width / 2, 104, t('career.who', { name: shikonaLabel(this.foe.name), rank: rankLabel(this.foe.pos) }), textStyle(36, COLORS.ink)).setOrigin(0.5), width - 80);
+    roundBox(this, width / 2, ART_Y, 640, 290, COLORS.panel, { radius: 36, stroke: COLORS.frame });
+    this.add.circle(width / 2, ART_Y, 125, 0x2a3456);
     const key = `type-${opp}`;
     if (this.textures.exists(key)) {
-      const img = this.add.image(width / 2, 270, key);
+      const img = this.add.image(width / 2, ART_Y, key);
       img.setScale(ART_H / img.height);
       img.setFlipX(true); // 自分のほうを向く
     }
@@ -49,14 +55,13 @@ export class OpponentScene extends Phaser.Scene {
     button(this, width / 2, 1190, 460, 110, t('opp.go'), () => this.scene.start('strategy'), { size: 38 });
   }
 
-  // 心・技・体：左があなた・右が相手
+  // 心・技・体：左があなた（一代記の値）・右が相手（今日の相手の値）
   drawStats(width) {
     const colW = 300;
     const xs = [width / 2 - colW - 20, width / 2 + 20];
-    [[xs[0], 'stat.you', session.you], [xs[1], 'stat.opp', session.opp]].forEach(([x, head, type]) => {
+    [[xs[0], 'stat.you', session.career.stats], [xs[1], 'stat.opp', this.foe.stats]].forEach(([x, head, stats]) => {
       fitText(this.add.text(x + colW / 2, 640, t(head), textStyle(28, COLORS.gold)).setOrigin(0.5), colW - 20);
-      const w = makeWrestler(type);
-      statBars(this, x, 664, colW, { shin: w.shin, gi: w.gi, tai: w.tai });
+      statBars(this, x, 664, colW, stats);
     });
   }
 

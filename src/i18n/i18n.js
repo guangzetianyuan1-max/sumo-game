@@ -1,7 +1,8 @@
 // 言葉の切り替えと文の引き方。画面の文字は全部ここを通す。
-import ja from './ja.js?v=6b';
-import en from './en.js?v=6b';
-import { KIMARITE } from '../data/kimarite.js?v=6b';
+import ja from './ja.js?v=7';
+import en from './en.js?v=7';
+import { KIMARITE } from '../data/kimarite.js?v=7';
+import { rankParts } from '../core/banzuke.js?v=7';
 
 export const TABLES = { ja, en };
 export const LANGS = ['ja', 'en'];
@@ -48,6 +49,26 @@ export function techLabel(id, l = lang) {
   const k = KIMARITE[id];
   if (k) return l === 'ja' ? k.ja : k.id;
   return t(`tech.${id}`, {}, l);
+}
+
+// 番付の名前（例「前頭3枚目（西）」・「Maegashira 3 West」）。横綱・大関・関脇・小結は枚目を付けない
+const NO_NUMBER = new Set(['yokozuna', 'ozeki', 'sekiwake', 'komusubi']);
+export function rankLabel(pos, l = lang) {
+  const { division, number, side } = rankParts(pos);
+  const div = t(`div.${division}`, {}, l);
+  const sideName = t(`rank.${side}`, {}, l);
+  if (NO_NUMBER.has(division)) return t('rank.plain', { div, side: sideName }, l);
+  return t('rank.numbered', { div, num: t('rank.number', { n: number }, l), side: sideName }, l);
+}
+
+// しこ名：日本語は漢字・英語はローマ字（部品の表の読み）
+export function shikonaLabel(name, l = lang) {
+  return l === 'ja' ? name.ja : name.en;
+}
+
+// 場所の名前（例「一月場所（東京）」・「July Basho (Nagoya)」）
+export function bashoLabel(basho, l = lang) {
+  return t('basho.label', { month: t(`month.${basho.month}`, {}, l), place: t(`place.${basho.place}`, {}, l) }, l);
 }
 
 export function missingKeys(tables) {
