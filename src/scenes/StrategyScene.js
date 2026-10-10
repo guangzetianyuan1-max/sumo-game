@@ -1,11 +1,11 @@
 // src/scenes/StrategyScene.js — 作戦表（設計書 §2）。四角を押すと1つ上へ・長押しで外す・下の覚えた手を押すと段に入る
-import { SCENES, ROW, addTech, raise, remove, defaultStrategy } from '../core/strategy.js?v=4';
-import { TYPES } from '../data/types.js?v=4';
-import { KIMARITE } from '../data/kimarite.js?v=4';
-import { classifyPress, LONG_PRESS_MS } from '../ui/press.js?v=4';
-import { t, techLabel, getLang } from '../i18n/i18n.js?v=4';
-import { session } from '../state.js?v=4';
-import { button, fitText, roundBox, hitZone, textStyle, COLORS, GROUP_COLOR } from '../ui/widgets.js?v=4';
+import { SCENES, ROW, addTech, raise, remove, defaultStrategy } from '../core/strategy.js?v=5';
+import { TYPES } from '../data/types.js?v=5';
+import { KIMARITE } from '../data/kimarite.js?v=5';
+import { classifyPress, LONG_PRESS_MS } from '../ui/press.js?v=5';
+import { t, techLabel, getLang } from '../i18n/i18n.js?v=5';
+import { session } from '../state.js?v=5';
+import { button, fitText, roundBox, hitZone, textStyle, COLORS, GROUP_COLOR } from '../ui/widgets.js?v=5';
 
 const ICON = 120;
 
