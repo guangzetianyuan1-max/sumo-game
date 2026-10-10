@@ -1,6 +1,9 @@
 // 一代記の状態・稽古・疲れ・成長・場所の経験・記録（設計書 §3）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=9';
-import { LADDER_SIZE } from '../data/ranks.js?v=9';
+import { TYPES } from '../data/types.js?v=10';
+import { LADDER_SIZE } from '../data/ranks.js?v=10';
+
+// 古い iPhone の Safari（iOS 15.4 より前）には Object.hasOwn が無い＝札を押すと止まっていた（10/10）
+const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
 export const TRAININGS = ['shiko', 'teppo', 'chanko', 'waza', 'butsukari', 'moushiai', 'rest'];
 const GAIN = {
@@ -37,7 +40,7 @@ export function newCareer({ guide, type, name, seed }) {
 
 export function train(career, kind) {
   if (career.trainingLeft <= 0) return career;
-  if (!Object.hasOwn(GAIN, kind)) return career;
+  if (!hasOwn(GAIN, kind)) return career;
   if (kind === 'rest') {
     return { ...career, fatigue: Math.max(0, career.fatigue - 2), trainingLeft: career.trainingLeft - 1 };
   }
@@ -69,7 +72,7 @@ const validHistory = (h) => !!h && typeof h === 'object' && validPos(h.pos) && c
 const MONTHS = [1, 3, 5, 7, 9, 11]; // basho.js の BASHO_MONTHS と同じ（読み込むと輪になるので写し）
 
 // 場所の相手：しこ名・タイプ・席・心技体がそろっている
-const validOpponent = (o) => !!o && typeof o === 'object' && validName(o.name) && Object.hasOwn(TYPES, o.type)
+const validOpponent = (o) => !!o && typeof o === 'object' && validName(o.name) && hasOwn(TYPES, o.type)
   && validPos(o.pos) && validStats(o.stats);
 
 // 場所の記録：月・場所の名・4つの配列が同じ長さ・相手が全員そろう・day は 0〜日の数の整数
@@ -88,7 +91,7 @@ export function deserialize(text) {
   try {
     const c = JSON.parse(text);
     if (!c || typeof c !== 'object' || c.version !== VERSION) return null;
-    if (!Object.hasOwn(TYPES, c.type)) return null;
+    if (!hasOwn(TYPES, c.type)) return null;
     if (!validStats(c.stats)) return null;
     if (![c.pos, c.fatigue, c.trainingLeft, c.bashoIndex].every(Number.isFinite)) return null;
     if (!validPos(c.pos) || c.fatigue < 0 || !Number.isInteger(c.trainingLeft) || c.trainingLeft < 0 || c.trainingLeft > 6) return null;

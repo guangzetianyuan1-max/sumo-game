@@ -1,9 +1,9 @@
 // src/scenes/GuideScene.js — 最初の画面：案内役（相手の弱みを教えてくれる女子）を3人から選ぶ。
 // 一代記の記録があれば「つづきから」（その時の画面へ）と「はじめから」（記録は入門を終えた時に上書き）
-import { GUIDE_IDS } from '../data/guides.js?v=9';
-import { t, getLang, setLang, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=9';
-import { session, loadSaved, useCareer, resumeScene } from '../state.js?v=9';
-import { button, fitText, roundBox, hitZone, textStyle, preloadGuideArt, COLORS, storage } from '../ui/widgets.js?v=9';
+import { GUIDE_IDS } from '../data/guides.js?v=10';
+import { t, getLang, setLang, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=10';
+import { session, loadSaved, useCareer, resumeScene } from '../state.js?v=10';
+import { button, fitText, roundBox, hitZone, textStyle, preloadGuideArt, COLORS, storage } from '../ui/widgets.js?v=10';
 
 const CARD_W = 205;
 const CARD_H = 480;

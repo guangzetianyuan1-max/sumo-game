@@ -1,12 +1,12 @@
 // src/scenes/StrategyScene.js — 作戦表（設計書 §2）。四角を押すと1つ上へ・長押しで外す・下の覚えた手を押すと段に入る
-import { SCENES, ROW, addTech, raise, remove, defaultStrategy } from '../core/strategy.js?v=9';
-import { recommendStrategy } from '../core/recommend.js?v=9';
-import { TYPES } from '../data/types.js?v=9';
-import { KIMARITE } from '../data/kimarite.js?v=9';
-import { classifyPress, LONG_PRESS_MS } from '../ui/press.js?v=9';
-import { t, techLabel, getLang } from '../i18n/i18n.js?v=9';
-import { session } from '../state.js?v=9';
-import { button, fitText, roundBox, hitZone, textStyle, COLORS, GROUP_COLOR } from '../ui/widgets.js?v=9';
+import { SCENES, ROW, addTech, raise, remove, defaultStrategy } from '../core/strategy.js?v=10';
+import { recommendStrategy } from '../core/recommend.js?v=10';
+import { TYPES } from '../data/types.js?v=10';
+import { KIMARITE } from '../data/kimarite.js?v=10';
+import { classifyPress, LONG_PRESS_MS } from '../ui/press.js?v=10';
+import { t, techLabel, getLang } from '../i18n/i18n.js?v=10';
+import { session } from '../state.js?v=10';
+import { button, fitText, roundBox, hitZone, textStyle, COLORS, GROUP_COLOR } from '../ui/widgets.js?v=10';
 
 const ICON = 120;
 
@@ -16,8 +16,8 @@ export class StrategyScene extends Phaser.Scene {
   }
 
   create() {
-    session.strategy ??= recommendStrategy(TYPES[session.you].sample, session.you, session.opp);
-    session.oppStrategy ??= defaultStrategy(TYPES[session.opp].sample, session.opp);
+    session.strategy = session.strategy ?? recommendStrategy(TYPES[session.you].sample, session.you, session.opp);
+    session.oppStrategy = session.oppStrategy ?? defaultStrategy(TYPES[session.opp].sample, session.opp);
     this.msg = '';
     this.draw();
   }

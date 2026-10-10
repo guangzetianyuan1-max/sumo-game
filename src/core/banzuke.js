@@ -1,5 +1,5 @@
 // 席（0＝一番上）⇄ 番付・次の場所の席・大関と横綱の条件（設計書 §1）
-import { DIVISIONS, LADDER_SIZE } from '../data/ranks.js?v=9';
+import { DIVISIONS, LADDER_SIZE } from '../data/ranks.js?v=10';
 
 const FIRST = {};
 {
@@ -75,7 +75,7 @@ export function neighbourRows(career) {
   for (const e of entries) {
     const { division, number, side } = rankParts(e.pos);
     const key = `${division}:${number}`;
-    let row = rows.at(-1);
+    let row = rows[rows.length - 1];
     if (!row || row.key !== key) rows.push((row = { key, east: null, west: null }));
     row[side] = e;
   }

@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-title" content="SUMO">
 <meta name="theme-color" content="#141a2e">
 <script>
-(function(){var mine="9";
+(function(){var mine="10";
 fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){
   if(j&&j.v&&String(j.v)!==mine){var u=new URL(location.href);if(u.searchParams.get("v")!==String(j.v)){u.searchParams.set("v",j.v);location.replace(u.toString());}}
 }).catch(function(){});})();
@@ -27,7 +27,24 @@ fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r
 </head>
 <body>
 <div id="game"></div>
+<div id="err" style="display:none;position:fixed;left:0;right:0;bottom:0;padding:8px 12px;background:#b3261e;color:#fff;font:13px/1.4 sans-serif;z-index:9;white-space:pre-wrap"></div>
+<script>
+// テスト中だけ：スマホで起きたエラーを画面の下に赤で出す（写真で送ってもらえるように）
+(function () {
+  var box = document.getElementById('err'), seen = {};
+  function show(msg) {
+    if (seen[msg]) return; seen[msg] = 1;
+    box.style.display = 'block';
+    box.textContent = (box.textContent ? box.textContent + '\n' : '') + 'エラー: ' + msg;
+  }
+  window.addEventListener('error', function (e) {
+    var where = e.filename ? ' (' + e.filename.split('/').pop().split('?')[0] + ':' + e.lineno + ')' : '';
+    show(String(e.message) + where);
+  });
+  window.addEventListener('unhandledrejection', function (e) { show(String(e.reason)); });
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.90.0/phaser.min.js"></script>
-<script type="module" src="src/main.js?v=9"></script>
+<script type="module" src="src/main.js?v=10"></script>
 </body>
 </html>

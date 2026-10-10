@@ -1,12 +1,12 @@
 // src/scenes/BoutScene.js — 取組を仮の四角で見せる（ドットの絵は第4段）。一代記：自分（東）＝career の値・相手（西）＝今日の相手の値
 // 取組を計算したらすぐ recordBout → 保存（動きは結果を見せるだけ）。ボタンは「取組の順へ」だけ
-import { runBout } from '../core/bout.js?v=9';
-import { makeWrestler } from '../core/wrestler.js?v=9';
-import { currentOpponent } from '../core/basho.js?v=9';
-import { TYPES } from '../data/types.js?v=9';
-import { t, techLabel, shikonaLabel } from '../i18n/i18n.js?v=9';
-import { session, recordNow, boutSeed } from '../state.js?v=9';
-import { button, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=9';
+import { runBout } from '../core/bout.js?v=10';
+import { makeWrestler } from '../core/wrestler.js?v=10';
+import { currentOpponent } from '../core/basho.js?v=10';
+import { TYPES } from '../data/types.js?v=10';
+import { t, techLabel, shikonaLabel } from '../i18n/i18n.js?v=10';
+import { session, recordNow, boutSeed } from '../state.js?v=10';
+import { button, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=10';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
@@ -119,7 +119,7 @@ export class BoutScene extends Phaser.Scene {
     if (this.done) return;
     const log = this.result.log;
     if (session.speed === 'result') {
-      this.showEntry(log.at(-1));
+      this.showEntry(log[log.length - 1]);
       this.finish();
       return;
     }
