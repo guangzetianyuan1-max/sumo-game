@@ -2,14 +2,19 @@
 // 幕下以下は2番目から相手が前の日に決まる：未定の日は「未定」・決まった相手はタイプの横に星（自分と同じ星）
 // 全部済むまで「次の取組へ」→ 相手の情報。全部済んだら「場所の結果へ」＝ここで1度だけ締めて保存してから結果の画面へ
 // 休場の場所（疲れ10で入った）は全部の行が「休」で、始めから済んでいる＝すぐ「場所の結果へ」
-import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=19';
-import { recordNote } from '../core/honors.js?v=19';
-import { session, prepareOpponent, closeBasho, decideNow } from '../state.js?v=19';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=19';
+// 取組が残っている間は下の段の左に「自動で取る」（10/11 本人「場所において自動モード」）：今日の相手のお勧めの作戦表で、結果だけの速さで1番取って
+// ここへ戻り、0.6秒おいて次へ（session.autoBasho）。最中は左のボタンが「止める」・取組で画面を押しても止まる。全部済んだら止まる
+import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=20';
+import { recordNote } from '../core/honors.js?v=20';
+import { session, prepareOpponent, closeBasho, decideNow } from '../state.js?v=20';
+import { nextAutoStep } from '../core/auto.js?v=20';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=20';
 
 const LIST = { top: 146, bottom: 1126, w: 664 }; // 15日でも1行65（番付の字22を入れる）
 const COL = { day: 46, who: 152, type: 404, mark: 650, right: 618 }; // 左から：日／しこ名・番付／タイプ・決まり手／○●
 const TODAY = 0x39436a;
+const BOTTOM = { y: 1190, w: 320, h: 110, dx: 170 }; // 取組が残っている時の下の段の2つ（左＝自動で取る／止める・右＝次の取組へ）
+const AUTO_WAIT_MS = 600; // 自動の時、戻って来た取組の順（新しい ○●）を見せる長さ
 
 export class ScheduleScene extends Phaser.Scene {
   constructor() {
@@ -25,7 +30,10 @@ export class ScheduleScene extends Phaser.Scene {
     }
     const b = c.basho;
     const { width } = this.scale;
-    backButton(this, () => this.scene.start('banzuke'));
+    backButton(this, () => {
+      session.autoBasho = false;
+      this.scene.start('banzuke');
+    });
     saveButton(this);
     topTitle(this, 52, t('sched.title'), 56, COLORS.gold, { save: true });
     const wins = b.results.filter((r) => r === 'win').length;
@@ -52,16 +60,41 @@ export class ScheduleScene extends Phaser.Scene {
 
     const finished = b.day >= n;
     if (finished) {
+      session.autoBasho = false; // 全部済んだら自動は止まる（結果へは本人が押す）
       button(this, width / 2, 1190, 460, 110, t('sched.done'), () => {
         closeBasho(); // 全部済んだ場所を1度だけ締めて保存（結果は session.lastResult）
         this.scene.start('result');
       }, { size: 38 });
     } else {
-      button(this, width / 2, 1190, 460, 110, t('sched.go'), () => {
+      const auto = session.autoBasho;
+      button(this, width / 2 - BOTTOM.dx, BOTTOM.y, BOTTOM.w, BOTTOM.h, t(auto ? 'auto.stop' : 'auto.bouts'), () => {
+        if (session.autoBasho) {
+          session.autoBasho = false; // 止める：待ちを消して描き直す
+          this.scene.restart();
+          return;
+        }
+        session.autoBasho = true;
+        this.autoBout();
+      }, { size: 34, color: COLORS.buttonSub });
+      button(this, width / 2 + BOTTOM.dx, BOTTOM.y, BOTTOM.w, BOTTOM.h, t('sched.go'), () => {
+        session.autoBasho = false; // 自分で取る時は自動を止める
         prepareOpponent();
         this.scene.start('opponent');
-      }, { size: 38 });
+      }, { size: 34 });
+      if (nextAutoStep(c, auto) === 'bout') this.time.delayedCall(AUTO_WAIT_MS, () => this.autoBout());
     }
+  }
+
+  // 自動の1番：今日の相手のお勧めの作戦表を組んで、そのまま取組へ（相手の情報と作戦表は飛ばす）。組めなければ止める
+  autoBout() {
+    if (nextAutoStep(session.career, session.autoBasho) !== 'bout') return;
+    const opp = prepareOpponent();
+    if (!opp || !session.strategy || !session.oppStrategy) {
+      session.autoBasho = false;
+      this.scene.restart();
+      return;
+    }
+    this.scene.start('bout');
   }
 
   // 1日の行。日（真ん中）・上の段＝しこ名・タイプ・下の段＝番付・決まり手・右に ○●

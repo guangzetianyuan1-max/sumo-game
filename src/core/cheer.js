@@ -1,7 +1,7 @@
 // 稽古の応援と、稽古の画面の右下の助言（10/11 本人「女子は、ちゃんこと休みの際に応援。親方はそれ以外の稽古で応援」
 // 「画面右下に親方また女子が現れ、アドバイスをする」）。who＝娘の id か部屋の id・key＝i18n の鍵
-import { HEYA, heyaOfGuide } from '../data/heya.js?v=19';
-import { TRAININGS, GAIN } from './career.js?v=19';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=20';
+import { TRAININGS, GAIN } from './career.js?v=20';
 
 const DAUGHTER_KINDS = ['chanko', 'rest'];
 const STATS = ['shin', 'gi', 'tai'];
@@ -16,14 +16,14 @@ export function cheerKey(guide, kind, count) {
 }
 
 // 一番低い値（同じなら 心 → 技 → 体）
-function lowestStat(stats) {
+export function lowestStat(stats) {
   let best = STATS[0];
   for (const s of STATS) if (stats[s] < stats[best]) best = s;
   return best;
 }
 
 // その値を一番伸ばす稽古（GAIN の表・同じなら稽古の並びの先）。部屋の得意がその値を伸ばすなら得意
-function bestTraining(stat, specialty) {
+export function bestTraining(stat, specialty) {
   if (GAIN[specialty] && GAIN[specialty][stat]) return specialty;
   let best = null;
   for (const kind of TRAININGS) {

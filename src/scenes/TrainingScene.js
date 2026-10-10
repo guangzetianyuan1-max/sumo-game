@@ -2,22 +2,26 @@
 // 右下（休みの札の右の空き）に親方か娘が出て助言する（trainingAdvice・描き直すたびに出し直す）
 // 疲れ10で「番付を見る」を押すと休場の場所に入る（番付 → 取組の順は全部「休」→ 結果）
 // 押すと train → 保存 → 効果音 → 描き直した上に稽古の絵と効き目の札と応援の1行（2.4秒で閉じる・応援が無い時は1.6秒・押せばすぐ閉じる）。0回になったら「番付を見る」→ 場所を始めて（保存）→ 番付
-import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=19';
-import { t, getLang, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=19';
-import { session, trainNow, beginBasho } from '../state.js?v=19';
-import { HEYA, heyaOfGuide } from '../data/heya.js?v=19';
-import { cheerKey, trainingAdvice } from '../core/cheer.js?v=19';
+// 下の段の左「おまかせ稽古」（10/11 本人「自動モード」）：残りの稽古を親方の助言どおり（autoTrainingChoice）に1回ずつ・札は0.9秒で次へ。どこかを押すと今の1回の後で止まる
+import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=20';
+import { t, getLang, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=20';
+import { session, trainNow, beginBasho } from '../state.js?v=20';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=20';
+import { cheerKey, trainingAdvice } from '../core/cheer.js?v=20';
 import {
   button, fitText, roundBox, hitZone, textStyle, statBars, preloadTypeArt, preloadTrainingIndex, loadTrainingArt, preloadWordsIndex, loadWordsArt, preloadVoiceIndex, loadVoice, preloadGuideArt, preloadOyakataArt,
   speakerFace, speechBubble, COLORS, CONDITION_COLOR, cssColor, clearScene, backButton, saveButton, TOP_LEFT_FREE,
-} from '../ui/widgets.js?v=19';
-import { playTraining } from '../ui/sfx.js?v=19';
-import { wordsFor, wordSpot, WORD_COLOR, wordArt, voiceSet, voiceKey } from '../data/words.js?v=19';
+} from '../ui/widgets.js?v=20';
+import { playTraining } from '../ui/sfx.js?v=20';
+import { autoTrainingChoice } from '../core/auto.js?v=20';
+import { wordsFor, wordSpot, WORD_COLOR, wordArt, voiceSet, voiceKey } from '../data/words.js?v=20';
 
 const BARS = { x: 40, y: 226, w: 640 }; // 心技体の棒（statBars の大きい版：行の高さ44・名前の幅96・数の幅46）
 const CARD = { w: 310, h: 150, cols: [190, 530], top: 450, step: 170 };
 const POP = { w: 560, artW: 420, artH: 300, ms: 1600, cheerMs: 2400, stepMs: 150, face: 110, rowH: 130, gap: 16 }; // 稽古の絵の札（応援の段＝顔110・高さ130）
 const BUTTON_TOP = 1190 - 55; // 「番付を見る」の上の端（札はこれより上に収める）
+const BOTTOM = { y: 1190, w: 320, h: 110, dx: 170 }; // 下の段の2つ（左＝おまかせ稽古・右＝番付を見る）。真ん中から左右へ dx
+const AUTO_MS = 900; // おまかせの間の稽古の札の長さ（声と言葉は出す）
 // 右下の助言：休みの札（左の列の4段目）の右の空き。札の右の列は x 375〜685・4段目は y 885〜1035
 const ADVICE = { left: 384, right: 700, top: 885, h: 150, face: 96 };
 const HEAD = { name: 50, rank: 98, heya: 128 }; // 上の真ん中の3行（しこ名・番付・部屋の名）の高さ
@@ -44,6 +48,14 @@ export class TrainingScene extends Phaser.Scene {
       return;
     }
     this.popup = null;
+    this.auto = null; // おまかせの最中は { stop }（どこかを押すと stop＝今の1回の後で止まる）
+    this.hint = null;
+    // 画面のどこを押しても、おまかせの最中なら止める（場面に1つだけ・描き直しでは増えない・場面を出る時に外す）
+    const onDown = () => {
+      if (this.auto) this.auto.stop = true;
+    };
+    this.input.on('pointerdown', onDown);
+    this.events.once('shutdown', () => this.input.off('pointerdown', onDown));
     loadTrainingArt(this); // 本人の稽古の絵は後から届く（目録 assets/training/index.json にある物だけ）
     loadWordsArt(this, getLang()); // 効果文字の絵（assets/words・英語は assets/words/en）と稽古の声（assets/voice/<言葉>/<タイプ>）も同じ・目録にある物だけ
     loadVoice(this, getLang(), session.career.type);
@@ -54,12 +66,13 @@ export class TrainingScene extends Phaser.Scene {
   redraw(pop) {
     this.time.delayedCall(0, () => {
       this.draw();
-      if (pop) this.showPopup(pop.kind, pop.effects);
+      if (pop) this.showPopup(pop.kind, pop.effects, pop.auto);
     });
   }
 
   draw() {
     this.popup = null;
+    this.hint = null; // 字は clearScene で消える
     this.tweens.killAll(); // 前の札の字の動きを消してから描き直す
     clearScene(this);
     const c = session.career;
@@ -81,7 +94,9 @@ export class TrainingScene extends Phaser.Scene {
     this.advisor();
 
     const done = c.trainingLeft === 0;
-    button(this, width / 2, 1190, 460, 110, t('train.done'), () => {
+    button(this, width / 2 - BOTTOM.dx, BOTTOM.y, BOTTOM.w, BOTTOM.h, t('auto.train'), () => this.startAuto(), { size: 34, color: COLORS.buttonSub });
+    button(this, width / 2 + BOTTOM.dx, BOTTOM.y, BOTTOM.w, BOTTOM.h, t('train.done'), () => {
+      if (this.auto) return;
       if (session.career.trainingLeft > 0) {
         this.needMore(); // 押しても進まない理由を出す（本人「番付を見るから進まない」）
         return;
@@ -130,10 +145,47 @@ export class TrainingScene extends Phaser.Scene {
 
   // 稽古が残っている時に「番付を見る」を押したら、ボタンの上に理由を出して少し揺らす
   needMore() {
+    this.showHint(t('hint.trainFirst', { n: session.career.trainingLeft }));
+  }
+
+  // 下の段のボタンの上の1行（金・少し揺れる）。もう一度出したら前の行は消す
+  showHint(text) {
     this.hint?.destroy();
     const { width } = this.scale;
-    this.hint = fitText(this.add.text(width / 2, 1100, t('hint.trainFirst', { n: session.career.trainingLeft }), textStyle(30, COLORS.gold, { align: 'center' })).setOrigin(0.5), width - 60);
+    this.hint = fitText(this.add.text(width / 2, 1100, text, textStyle(30, COLORS.gold, { align: 'center' })).setOrigin(0.5), width - 60);
     this.tweens.add({ targets: this.hint, x: { from: width / 2 - 12, to: width / 2 }, duration: 300, ease: 'Bounce.Out' });
+  }
+
+  // 「おまかせ稽古」：残りが無ければ理由を出す・あれば1回目から
+  startAuto() {
+    if (this.auto) return;
+    if (session.career.trainingLeft <= 0) {
+      this.showHint(t('auto.trainDone'));
+      return;
+    }
+    this.auto = { stop: false };
+    this.autoStep();
+  }
+
+  // おまかせの1回：選ぶ → train → 保存 → 効果音 → 短い札。札が閉じたら closePopup がまたここへ来る
+  autoStep() {
+    if (!this.auto) return;
+    const kind = autoTrainingChoice(session.career);
+    if (!kind || this.auto.stop) {
+      const stopped = this.auto.stop && kind !== null;
+      this.auto = null;
+      if (stopped) this.showHint(t('auto.trainStopped'));
+      return;
+    }
+    this.doTrain(kind, true);
+  }
+
+  // 稽古を1回（札を押した時とおまかせで同じ）
+  doTrain(kind, auto) {
+    const before = session.career;
+    const after = trainNow(kind);
+    playTraining(kind, this.hasVoice(kind) ? WORD.sfxWithVoice : 1); // 声が付く稽古は効果音を下げて声を聞こえやすく
+    this.redraw({ kind, effects: trainingEffects(before, after), auto });
   }
 
   // 稽古の札：名前と効き目の2行。回数が残っていない時は薄く、押しても何もしない
@@ -167,18 +219,16 @@ export class TrainingScene extends Phaser.Scene {
     });
     zone.on('pointerup', () => {
       gfx.setAlpha(1);
-      if (!down || session.career.trainingLeft <= 0) return;
+      if (!down || this.auto || session.career.trainingLeft <= 0) return; // おまかせの最中は札を押しても稽古しない（二重の稽古を防ぐ）
       down = false;
-      const before = session.career;
-      const after = trainNow(kind);
-      playTraining(kind, this.hasVoice(kind) ? WORD.sfxWithVoice : 1); // 声が付く稽古は効果音を下げて声を聞こえやすく
-      this.redraw({ kind, effects: trainingEffects(before, after) });
+      this.doTrain(kind, false);
     });
   }
 
   // 稽古の絵の札（10/11 本人「各ボタンを押すと、イラストが表示される。休みは寝ている姿。イラスト表示中に疲れ-1などの教示」）
   // 暗幕は画面全体の押し当たり＝開いている間、下の札とボタンは反応しない。どこかを押すか 1.6 秒で閉じて描き直す
-  showPopup(kind, effects) {
+  // auto＝おまかせの1回（AUTO_MS で閉じる）
+  showPopup(kind, effects, auto = false) {
     const { width, height } = this.scale;
     const D = 1000;
     const objs = [];
@@ -241,7 +291,7 @@ export class TrainingScene extends Phaser.Scene {
     this.showWords(kind, cx, artY, D + 3, objs);
     this.playVoice(kind);
 
-    const timer = this.time.delayedCall(cheer ? POP.cheerMs : POP.ms, () => this.closePopup());
+    const timer = this.time.delayedCall(auto ? AUTO_MS : (cheer ? POP.cheerMs : POP.ms), () => this.closePopup());
     // 押した瞬間に閉じる（離しは描き直した札に当たるが、札は押しがその札で始まった時だけ効く）
     overlay.on('pointerdown', () => this.time.delayedCall(0, () => this.closePopup()));
     this.popup = { objs, timer };
@@ -300,6 +350,7 @@ export class TrainingScene extends Phaser.Scene {
     this.popup.timer.remove(false);
     this.popup = null;
     this.draw();
+    if (this.auto) this.autoStep(); // おまかせの続き（止められていれば、ここで止めて理由を出す）
   }
 
   // 効き目の行 [文, 色]：伸びは金・疲れが増えたら今の調子の色・減ったら緑・調子が変わったら新しい調子の色

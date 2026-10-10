@@ -1,11 +1,11 @@
 // src/state.js — 場面をまたぐ選び。strategy は自分の作戦表（新しい相手ごとにお勧めで組む）
 // career は一代記（入門を終えるまで null）。一代記の移り変わりはここの関数で行い、そのたびに保存する
-import { TYPE_IDS, TYPES } from './data/types.js?v=19';
-import { recommendStrategy } from './core/recommend.js?v=19';
-import { defaultStrategy } from './core/strategy.js?v=19';
-import { newCareer, train, saveCareer, loadCareer, CAREER_KEY } from './core/career.js?v=19';
-import { startBasho, currentOpponent, decideOpponent, recordBout, finishBasho } from './core/basho.js?v=19';
-import { makeRng } from './core/rng.js?v=19';
+import { TYPE_IDS, TYPES } from './data/types.js?v=20';
+import { recommendStrategy } from './core/recommend.js?v=20';
+import { defaultStrategy } from './core/strategy.js?v=20';
+import { newCareer, train, saveCareer, loadCareer, CAREER_KEY } from './core/career.js?v=20';
+import { startBasho, currentOpponent, decideOpponent, recordBout, finishBasho } from './core/basho.js?v=20';
+import { makeRng } from './core/rng.js?v=20';
 
 export const session = {
   you: 'heavy',
@@ -19,6 +19,7 @@ export const session = {
   oppKey: null, // 作戦表を組んだ相手（場所の番号:日）。同じ相手なら組み直さない
   lastResult: null, // 締めた場所の結果（場所の結果の画面が読む）
   slot: 1, // 記録①〜③のどれで遊んでいるか（セーブも読み直しもここ）
+  autoBasho: false, // 場所の自動（取組の順の「自動で取る」）の最中か。記録には書かない＝読み直すと止まる
 };
 
 // 次の相手を引く（5タイプから一様・自分と同じタイプもあり）。画面の層の選びなので Math.random でよい（取組の計算の乱数とは別）
@@ -90,6 +91,7 @@ export function useCareer(career) {
   session.guide = career.guide;
   session.oppKey = null;
   session.lastResult = null;
+  session.autoBasho = false;
 }
 
 // 入門を終えた時：新しい一代記を作って今の記録（session.slot）へ保存（その記録の前の中身はここで上書き）
