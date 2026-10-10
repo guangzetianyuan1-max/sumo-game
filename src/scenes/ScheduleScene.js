@@ -2,10 +2,10 @@
 // 幕下以下は2番目から相手が前の日に決まる：未定の日は「未定」・決まった相手はタイプの横に星（自分と同じ星）
 // 全部済むまで「次の取組へ」→ 相手の情報。全部済んだら「場所の結果へ」＝ここで1度だけ締めて保存してから結果の画面へ
 // 休場の場所（疲れ10で入った）は全部の行が「休」で、始めから済んでいる＝すぐ「場所の結果へ」
-import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=17';
-import { recordNote } from '../core/honors.js?v=17';
-import { session, prepareOpponent, closeBasho, decideNow } from '../state.js?v=17';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=17';
+import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=18';
+import { recordNote } from '../core/honors.js?v=18';
+import { session, prepareOpponent, closeBasho, decideNow } from '../state.js?v=18';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=18';
 
 const LIST = { top: 146, bottom: 1126, w: 664 }; // 15日でも1行65（番付の字22を入れる）
 const COL = { day: 46, who: 152, type: 404, mark: 650, right: 618 }; // 左から：日／しこ名・番付／タイプ・決まり手／○●
