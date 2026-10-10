@@ -1,9 +1,9 @@
 // src/scenes/GuidePickScene.js — 新しい一代記の1歩目：案内役（相手の弱みを教えてくれる女子）を3人から選ぶ → 入門（タイプ）へ。
 // 初めの画面で空きの記録（またははじめから）を押すとここへ来る。保存先の記録は session.slot（初めの画面で決めてある）
-import { GUIDE_IDS } from '../data/guides.js?v=13';
-import { t, getLang } from '../i18n/i18n.js?v=13';
-import { session } from '../state.js?v=13';
-import { button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, preloadGuideArt, COLORS } from '../ui/widgets.js?v=13';
+import { GUIDE_IDS } from '../data/guides.js?v=14';
+import { t, getLang } from '../i18n/i18n.js?v=14';
+import { session } from '../state.js?v=14';
+import { button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, preloadGuideArt, COLORS } from '../ui/widgets.js?v=14';
 
 const CARD_W = 205;
 const CARD_H = 480;

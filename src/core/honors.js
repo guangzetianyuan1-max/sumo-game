@@ -1,7 +1,7 @@
 // 本物の相撲の表示（10/11 本人「調査結果、表示すべきものがあれば、どんどんいれてください」）。番付の動きや強さは変えない＝見せるだけ
 // 星の印（勝ち越し・負け越し・全勝）・昇進の知らせ（新十両・新入幕・新三役・大関・横綱）・金星と三賞
-import { divisionOf, rankParts } from './banzuke.js?v=13';
-import { KIMARITE } from '../data/kimarite.js?v=13';
+import { divisionOf, rankParts } from './banzuke.js?v=14';
+import { KIMARITE } from '../data/kimarite.js?v=14';
 
 // 星の印：勝ちが過半数に届いたら勝ち越し（15番の8勝・7番の4勝）・負けが届いたら負け越し・全部勝ったら全勝
 export function recordNote(wins, losses, bouts) {
@@ -14,14 +14,18 @@ export function recordNote(wins, losses, bouts) {
 // 段の番号（0＝横綱・1＝大関・2＝関脇・3＝小結・4＝前頭・5＝十両・6〜＝幕下より下）
 const level = (pos) => divisionOf(pos).index;
 
-// 昇進の知らせ。history＝この場所より前の場所（各 pos）。大関・横綱は上がるたび（再昇進も）、
+// 昇進の知らせ（大関に落ちた直後に戻った時は ozekiReturn）。history＝この場所より前の場所（各 pos）。大関・横綱は上がるたび（再昇進も）、
 // 新三役・新入幕・新十両はそれより上の段に一度も座ったことが無い時だけ。飛び級は着いた段の印
 export function promotionNote(fromPos, toPos, history = []) {
   const to = level(toPos);
   const from = level(fromPos);
   if (to >= from) return null;
   if (to === 0) return 'yokozuna';
-  if (to === 1) return 'ozeki';
+  if (to === 1) {
+    // 大関から落ちた直後の場所で10勝して戻った＝返り咲き（前の場所が大関）
+    const last = history[history.length - 1];
+    return from === 2 && last && level(last.pos) === 1 ? 'ozekiReturn' : 'ozeki';
+  }
   const best = Math.min(from, ...history.map((h) => level(h.pos)));
   if (to >= best) return null;
   if (to <= 3) return 'shinSanyaku';

@@ -1,11 +1,11 @@
 // src/state.js — 場面をまたぐ選び。strategy は自分の作戦表（新しい相手ごとにお勧めで組む）
 // career は一代記（入門を終えるまで null）。一代記の移り変わりはここの関数で行い、そのたびに保存する
-import { TYPE_IDS, TYPES } from './data/types.js?v=13';
-import { recommendStrategy } from './core/recommend.js?v=13';
-import { defaultStrategy } from './core/strategy.js?v=13';
-import { newCareer, train, saveCareer, loadCareer, CAREER_KEY } from './core/career.js?v=13';
-import { startBasho, currentOpponent, recordBout, finishBasho } from './core/basho.js?v=13';
-import { makeRng } from './core/rng.js?v=13';
+import { TYPE_IDS, TYPES } from './data/types.js?v=14';
+import { recommendStrategy } from './core/recommend.js?v=14';
+import { defaultStrategy } from './core/strategy.js?v=14';
+import { newCareer, train, saveCareer, loadCareer, CAREER_KEY } from './core/career.js?v=14';
+import { startBasho, currentOpponent, decideOpponent, recordBout, finishBasho } from './core/basho.js?v=14';
+import { makeRng } from './core/rng.js?v=14';
 
 export const session = {
   you: 'heavy',
@@ -115,9 +115,21 @@ export function beginBasho(store = localStore()) {
   return session.career;
 }
 
-// 相手の情報に入る時：今日の相手から相手の作戦表と自分のお勧めを組む。同じ相手にもう一度来た時は組み直さない
-export function prepareOpponent() {
+// 今日の相手が未定（幕下以下の2番目から）なら決めて、すぐ保存する（読み直しても同じ相手）
+export function decideNow(store = localStore()) {
   const c = session.career;
+  if (!c?.basho) return c;
+  const d = decideOpponent(c);
+  if (d !== c) {
+    session.career = d;
+    saveNow(store);
+  }
+  return session.career;
+}
+
+// 相手の情報に入る時：今日の相手から相手の作戦表と自分のお勧めを組む。同じ相手にもう一度来た時は組み直さない
+export function prepareOpponent(store = localStore()) {
+  const c = decideNow(store);
   const opp = c ? currentOpponent(c) : null;
   if (!opp) return null;
   const key = `${c.bashoIndex}:${c.basho.day}`;

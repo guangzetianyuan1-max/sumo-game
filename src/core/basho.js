@@ -1,16 +1,16 @@
 // 場所：相手と取組の順・結果の記録・締め（優勝・番付・経験）。乱数は career.seed と場所の番号から
-import { LADDER_SIZE } from '../data/ranks.js?v=13';
-import { TYPES, TYPE_IDS } from '../data/types.js?v=13';
-import { divisionOf, nextPos } from './banzuke.js?v=13';
-import { makeShikona } from './shikona.js?v=13';
-import { addExperience, train, condition, boutStats, newCareer } from './career.js?v=13';
-import { makeRng } from './rng.js?v=13';
-import { makeWrestler } from './wrestler.js?v=13';
-import { defaultStrategy } from './strategy.js?v=13';
-import { recommendStrategy } from './recommend.js?v=13';
-import { runBout } from './bout.js?v=13';
-import { OPP_TOTAL } from './tuning.js?v=13';
-import { bashoAwards, promotionNote } from './honors.js?v=13';
+import { LADDER_SIZE, DIVISIONS } from '../data/ranks.js?v=14';
+import { TYPES, TYPE_IDS } from '../data/types.js?v=14';
+import { divisionOf, nextPos } from './banzuke.js?v=14';
+import { makeShikona } from './shikona.js?v=14';
+import { addExperience, train, condition, boutStats, newCareer } from './career.js?v=14';
+import { makeRng } from './rng.js?v=14';
+import { makeWrestler } from './wrestler.js?v=14';
+import { defaultStrategy } from './strategy.js?v=14';
+import { recommendStrategy } from './recommend.js?v=14';
+import { runBout } from './bout.js?v=14';
+import { OPP_TOTAL } from './tuning.js?v=14';
+import { bashoAwards, promotionNote } from './honors.js?v=14';
 
 export const BASHO_MONTHS = [1, 3, 5, 7, 9, 11];
 export const BASHO_PLACES = ['tokyo', 'osaka', 'tokyo', 'nagoya', 'tokyo', 'fukuoka'];
@@ -37,38 +37,73 @@ export function oppStatsForPos(type, pos) {
   return { shin: Math.min(100, r1(b.shin * k)), gi: Math.min(100, r1(b.gi * k)), tai: Math.min(100, r1(b.tai * k)) };
 }
 
+const clampPos = (p) => Math.max(0, Math.min(LADDER_SIZE - 1, p));
+
+// 1人の相手：席は from〜to の中の空いた席（自分の席と、この場所で使った席は除く）・タイプ・しこ名（重ならない）
+function drawOpponent(rng, from, to, seats, taken) {
+  let pos;
+  do { pos = from + Math.floor(rng() * (to - from + 1)); } while (seats.has(pos));
+  seats.add(pos);
+  const type = TYPE_IDS[Math.floor(rng() * TYPE_IDS.length)];
+  return { name: makeShikona(rng, taken), type, pos, stats: oppStatsForPos(type, pos) };
+}
+
+// 場所の相手（10/11 本物の組み方）：十両から上（15番）は始めに全部・±20。
+// 幕下以下（7番）は1番目だけ同じ段の±4席（同じ地位どうし）で、2番目からは前の日の取組の後に決める（null＝未定）
 export function startBasho(career) {
   const rng = makeRng(career.seed * 1000 + career.bashoIndex + 1);
-  const bouts = divisionOf(career.pos).bouts;
-  const days = bouts === 7 ? [1, 3, 5, 7, 9, 11, 13] : Array.from({ length: 15 }, (_, i) => i + 1);
+  const here = divisionOf(career.pos);
+  const seven = here.bouts === 7;
+  const days = seven ? [1, 3, 5, 7, 9, 11, 13] : Array.from({ length: 15 }, (_, i) => i + 1);
   const taken = new Set([career.name.ja]);
-  const seats = new Set([career.pos]); // 1つの席に1人（自分の席も除く）。±20の中に席は20以上あるので必ず見つかる
-  const opponents = days.map(() => {
-    let pos;
-    do { pos = Math.max(0, Math.min(LADDER_SIZE - 1, career.pos + Math.round((rng() * 2 - 1) * 20))); } while (seats.has(pos));
-    seats.add(pos);
-    const type = TYPE_IDS[Math.floor(rng() * TYPE_IDS.length)];
-    return { name: makeShikona(rng, taken), type, pos, stats: oppStatsForPos(type, pos) };
-  });
+  const seats = new Set([career.pos]); // 1つの席に1人（自分の席も除く）
+  let opponents;
+  if (seven) {
+    const lo = Math.max(here.firstPos, career.pos - 4);
+    const hi = Math.min(here.firstPos + DIVISIONS[here.index].slots - 1, career.pos + 4);
+    opponents = days.map((d, i) => (i === 0 ? drawOpponent(rng, lo, hi, seats, taken) : null));
+  } else {
+    // ±20の中に席は20以上あるので必ず見つかる
+    opponents = days.map(() => drawOpponent(rng, clampPos(career.pos - 20), clampPos(career.pos + 20), seats, taken));
+  }
   const m = career.bashoIndex % 6;
   const basho = { month: BASHO_MONTHS[m], place: BASHO_PLACES[m], days, opponents, results: days.map(() => null), kimarite: days.map(() => null), day: 0 };
-  // 疲れ10で場所に入ったら休場：相手は同じに引いておき、全部「休み」で始めから済ませる
+  // 疲れ10で場所に入ったら休場：相手は同じに引いておき、全部「休み」で始めから済ませる（幕下以下の2番目からは未定のまま）
   if (condition(career.fatigue).id === 'out') return { ...career, basho: { ...basho, kyujo: true, results: days.map(() => 'absent'), day: days.length } };
   return { ...career, basho };
 }
 
-export function currentOpponent(career) {
+// 今日の相手が未定（幕下以下の2番目から）なら決めた一代記を返す（決まっていれば同じ物を返す）。
+// 相手＝±20の中の空いた席・自分と同じ星（record）・しこ名は重ならない。乱数は種・場所の番号・日から＝何度決めても同じ
+export function decideOpponent(career) {
   const b = career.basho;
-  return b && b.day < b.days.length ? b.opponents[b.day] : null;
+  if (!b || b.kyujo === true || b.day >= b.days.length || b.opponents[b.day]) return career;
+  const rng = makeRng(((career.seed * 1000 + career.bashoIndex + 1) * 16 + b.day + 3) >>> 0);
+  const done = b.opponents.filter(Boolean);
+  const seats = new Set([career.pos, ...done.map((o) => o.pos)]);
+  const taken = new Set([career.name.ja, ...done.map((o) => o.name.ja)]);
+  const opp = drawOpponent(rng, clampPos(career.pos - 20), clampPos(career.pos + 20), seats, taken);
+  const wins = b.results.filter((r) => r === 'win').length;
+  opp.record = { wins, losses: b.day - wins };
+  const opponents = b.opponents.map((o, i) => (i === b.day ? opp : o));
+  return { ...career, basho: { ...b, opponents } };
 }
 
-export function recordBout(career, won, kimarite) {
+export function currentOpponent(career) {
   const b = career.basho;
+  if (!b || b.day >= b.days.length) return null;
+  return b.opponents[b.day] || decideOpponent(career).basho.opponents[b.day];
+}
+
+// 取組を記録して日を進める。幕下以下は次の日の相手をここで決める（取組は前の日に決まる）
+export function recordBout(career, won, kimarite) {
+  const c = decideOpponent(career);
+  const b = c.basho;
   const results = [...b.results];
   const kim = [...b.kimarite];
   results[b.day] = won ? 'win' : 'loss';
   kim[b.day] = kimarite;
-  return { ...career, basho: { ...b, results, kimarite: kim, day: b.day + 1 } };
+  return decideOpponent({ ...c, basho: { ...b, results, kimarite: kim, day: b.day + 1 } });
 }
 
 export function finishBasho(career, rng) {

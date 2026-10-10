@@ -1,7 +1,7 @@
 // 作戦表＝3場面×5手の優先順（設計書 §2）。どの関数も元を書き換えず、新しい作戦表を返す。
-import { KIMARITE } from '../data/kimarite.js?v=13';
-import { ARCH } from './tuning.js?v=13';
-import { TYPES } from '../data/types.js?v=13';
+import { KIMARITE } from '../data/kimarite.js?v=14';
+import { ARCH } from './tuning.js?v=14';
+import { TYPES } from '../data/types.js?v=14';
 
 export const SCENES = ['tachiai', 'mid', 'edge'];
 export const ROW = 5;

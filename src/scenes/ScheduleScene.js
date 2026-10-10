@@ -1,10 +1,11 @@
 // src/scenes/ScheduleScene.js — 取組の順：日ごとの行（日・相手のしこ名・番付・タイプ・済んだ日は ○● と決まり手）。今日の行を光らせる
+// 幕下以下は2番目から相手が前の日に決まる：未定の日は「未定」・決まった相手はタイプの横に星（自分と同じ星）
 // 全部済むまで「次の取組へ」→ 相手の情報。全部済んだら「場所の結果へ」＝ここで1度だけ締めて保存してから結果の画面へ
 // 休場の場所（疲れ10で入った）は全部の行が「休」で、始めから済んでいる＝すぐ「場所の結果へ」
-import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=13';
-import { recordNote } from '../core/honors.js?v=13';
-import { session, prepareOpponent, closeBasho } from '../state.js?v=13';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=13';
+import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=14';
+import { recordNote } from '../core/honors.js?v=14';
+import { session, prepareOpponent, closeBasho, decideNow } from '../state.js?v=14';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=14';
 
 const LIST = { top: 146, bottom: 1126, w: 664 }; // 15日でも1行65（番付の字22を入れる）
 const COL = { day: 46, who: 152, type: 404, mark: 650, right: 618 }; // 左から：日／しこ名・番付／タイプ・決まり手／○●
@@ -16,6 +17,7 @@ export class ScheduleScene extends Phaser.Scene {
   }
 
   create() {
+    decideNow(); // 今日の相手が未定のまま読み直した記録でも、ここで決めて保存（ふだんは前の取組の後に決まっている）
     const c = session.career;
     if (!c?.basho) {
       this.scene.start(c ? 'training' : 'guide');
@@ -84,9 +86,16 @@ export class ScheduleScene extends Phaser.Scene {
       dayText.setText(dayText.text.replace(' (', '\n(')).setFontSize(Math.min(big, Math.floor(h * 0.4))).setLineSpacing(-4);
     }
     fitText(dayText, dayW);
-    fitText(this.add.text(COL.who, top, shikonaLabel(o.name), textStyle(big, dim)).setOrigin(0, 0.5), COL.type - COL.who - 14);
-    fitText(this.add.text(COL.who, bottom, rankLabel(o.pos), textStyle(small, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), COL.type - COL.who - 14);
-    fitText(this.add.text(COL.type, top, t(`type.${o.type}.name`), textStyle(small, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), COL.right - COL.type);
+    if (o) {
+      fitText(this.add.text(COL.who, top, shikonaLabel(o.name), textStyle(big, dim)).setOrigin(0, 0.5), COL.type - COL.who - 14);
+      fitText(this.add.text(COL.who, bottom, rankLabel(o.pos), textStyle(small, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), COL.type - COL.who - 14);
+      // 幕下以下の2番目からは、決まった時の相手の星（自分と同じ星）をタイプの横に
+      const type = t(`type.${o.type}.name`) + (o.record ? `  ${t('result.record', { w: o.record.wins, l: o.record.losses })}` : '');
+      fitText(this.add.text(COL.type, top, type, textStyle(small, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), COL.right - COL.type);
+    } else if (!res) {
+      // 幕下以下の2番目から：取組は前の日の取組の後に決まる＝それまでは「未定」
+      fitText(this.add.text(COL.who, cy, t('sched.tbd'), textStyle(big, COLORS.sub)).setOrigin(0, 0.5), COL.type - COL.who - 14);
+    }
     if (res === 'absent') {
       // 休場の日は「休」だけ（決まり手は無い）
       fitText(this.add.text(COL.mark, cy, t('sched.absent'), textStyle(big, COLORS.sub)).setOrigin(0.5), 2 * (width / 2 + LIST.w / 2 - COL.mark) - 8);

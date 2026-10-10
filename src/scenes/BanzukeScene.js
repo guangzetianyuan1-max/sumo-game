@@ -1,9 +1,9 @@
 // src/scenes/BanzukeScene.js — 番付：場所の名前と、自分の席の上下5人ずつ（東を左・西を右）。相手は場所の相手から席が近い順
 // 番付表の絵（art_in の番付枠）は第4段で入れる。いまは角丸の和紙色の札
-import { neighbourRows } from '../core/banzuke.js?v=13';
-import { t, rankLabel, shikonaLabel, bashoLabel } from '../i18n/i18n.js?v=13';
-import { session } from '../state.js?v=13';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=13';
+import { neighbourRows } from '../core/banzuke.js?v=14';
+import { t, rankLabel, shikonaLabel, bashoLabel } from '../i18n/i18n.js?v=14';
+import { session } from '../state.js?v=14';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=14';
 
 const PAPER = 0xf3e6c8; // 和紙色
 const INK_DARK = '#3a2a20'; // 和紙の上の墨

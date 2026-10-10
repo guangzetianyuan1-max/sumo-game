@@ -1,11 +1,11 @@
 // src/scenes/TrainingScene.js — 稽古（場所の前に6回）：上に自分のしこ名・番付・残りの回数・疲れの目盛りと調子、心技体の棒、稽古7つの札（2列×4段）
 // 疲れ10で「番付を見る」を押すと休場の場所に入る（番付 → 取組の順は全部「休」→ 結果）
 // 押すと train → 保存 → 効果音 → 描き直した上に稽古の絵と効き目の札（1.6秒で閉じる・押せばすぐ閉じる）。0回になったら「番付を見る」→ 場所を始めて（保存）→ 番付
-import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=13';
-import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=13';
-import { session, trainNow, beginBasho } from '../state.js?v=13';
-import { button, fitText, roundBox, hitZone, textStyle, statBars, preloadTypeArt, preloadTrainingIndex, loadTrainingArt, COLORS, CONDITION_COLOR, cssColor, clearScene, backButton, saveButton, TOP_LEFT_FREE, TOP_RIGHT_FREE } from '../ui/widgets.js?v=13';
-import { playTraining } from '../ui/sfx.js?v=13';
+import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=14';
+import { t, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=14';
+import { session, trainNow, beginBasho } from '../state.js?v=14';
+import { button, fitText, roundBox, hitZone, textStyle, statBars, preloadTypeArt, preloadTrainingIndex, loadTrainingArt, COLORS, CONDITION_COLOR, cssColor, clearScene, backButton, saveButton, TOP_LEFT_FREE, TOP_RIGHT_FREE } from '../ui/widgets.js?v=14';
+import { playTraining } from '../ui/sfx.js?v=14';
 
 const BARS = { x: 40, y: 226, w: 640 }; // 心技体の棒（statBars の大きい版：行の高さ44・名前の幅96・数の幅46）
 const CARD = { w: 310, h: 150, cols: [190, 530], top: 450, step: 170 };

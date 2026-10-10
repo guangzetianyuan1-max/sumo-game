@@ -1,7 +1,7 @@
 // 一代記の状態・稽古・疲れ・成長・場所の経験・記録（設計書 §3）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=13';
-import { LADDER_SIZE } from '../data/ranks.js?v=13';
-import { GROWTH } from './tuning.js?v=13';
+import { TYPES } from '../data/types.js?v=14';
+import { LADDER_SIZE } from '../data/ranks.js?v=14';
+import { GROWTH } from './tuning.js?v=14';
 
 // 古い iPhone の Safari（iOS 15.4 より前）には Object.hasOwn が無い＝札を押すと止まっていた（10/10）
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
@@ -114,14 +114,15 @@ const validHistory = (h) => !!h && typeof h === 'object' && validPos(h.pos) && c
   && (h.yusho === undefined || typeof h.yusho === 'boolean');
 const MONTHS = [1, 3, 5, 7, 9, 11]; // basho.js の BASHO_MONTHS と同じ（読み込むと輪になるので写し）
 
-// 場所の相手：しこ名・タイプ・席・心技体がそろっている
+// 場所の相手：しこ名・タイプ・席・心技体がそろっている。星（record・幕下以下の2番目から）は書いてあれば0以上の整数の勝ち・負け
+const validRecord = (r) => !!r && typeof r === 'object' && count(r.wins) && count(r.losses);
 const validOpponent = (o) => !!o && typeof o === 'object' && validName(o.name) && hasOwn(TYPES, o.type)
-  && validPos(o.pos) && validStats(o.stats);
+  && validPos(o.pos) && validStats(o.stats) && (o.record === undefined || validRecord(o.record));
 
 // 取組の結果：まだ（null）・勝ち・負け・休み（休場の場所）
 const RESULTS = [null, 'win', 'loss', 'absent'];
 
-// 場所の記録：月・場所の名・4つの配列が同じ長さ・相手が全員そろう・day は 0〜日の数の整数・休場（kyujo）は書いてあれば真偽
+// 場所の記録：月・場所の名・4つの配列が同じ長さ・相手がそろう（未定は下の決まりの時だけ）・day は 0〜日の数の整数・休場（kyujo）は書いてあれば真偽
 function validBasho(b) {
   if (!b || typeof b !== 'object') return false;
   if (!MONTHS.includes(b.month) || !nonEmpty(b.place)) return false;
@@ -130,8 +131,11 @@ function validBasho(b) {
   if (!arrs.every(Array.isArray)) return false;
   const len = b.days.length;
   if (!arrs.every((a) => a.length === len)) return false;
-  if (!b.opponents.every(validOpponent)) return false;
   if (!b.results.every((r) => RESULTS.includes(r))) return false;
+  if (!Number.isInteger(b.day)) return false;
+  // 未定の相手（null）は幕下以下の2番目から・今日より先の日か休みの日だけ（10/11 取組は前の日に決まる）
+  const undecidedOk = (i) => i > 0 && (i >= b.day || b.results[i] === 'absent');
+  if (!b.opponents.every((o, i) => (o === null ? undecidedOk(i) : validOpponent(o)))) return false;
   return Number.isInteger(b.day) && b.day >= 0 && b.day <= len;
 }
 

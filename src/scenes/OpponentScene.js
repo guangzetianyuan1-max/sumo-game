@@ -1,13 +1,13 @@
 // src/scenes/OpponentScene.js — 今日の相手の情報（しこ名・番付・タイプの絵・得意・弱み・心技体）と、案内役の女子のひとこと。作戦表の前に見せる
 // 相手は一代記の場所の今日の相手（currentOpponent）。作戦表は prepareOpponent が組む（同じ相手に戻った時は組み直さない）
-import { TYPES } from '../data/types.js?v=13';
-import { boutStats, condition } from '../core/career.js?v=13';
-import { SCENES } from '../core/strategy.js?v=13';
-import { recommendStrategy, recommendReason } from '../core/recommend.js?v=13';
-import { adviceKeys } from '../core/advice.js?v=13';
-import { t, techLabel, rankLabel, shikonaLabel, getLang } from '../i18n/i18n.js?v=13';
-import { session, prepareOpponent } from '../state.js?v=13';
-import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadGuideArt, COLORS, CONDITION_COLOR, cssColor } from '../ui/widgets.js?v=13';
+import { TYPES } from '../data/types.js?v=14';
+import { boutStats, condition } from '../core/career.js?v=14';
+import { SCENES } from '../core/strategy.js?v=14';
+import { recommendStrategy, recommendReason } from '../core/recommend.js?v=14';
+import { adviceKeys } from '../core/advice.js?v=14';
+import { t, techLabel, rankLabel, shikonaLabel, getLang } from '../i18n/i18n.js?v=14';
+import { session, prepareOpponent } from '../state.js?v=14';
+import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadGuideArt, COLORS, CONDITION_COLOR, cssColor } from '../ui/widgets.js?v=14';
 
 const ART_H = 240;
 const ART_Y = 285; // 絵の札の中心（札は 140〜430）
