@@ -1,5 +1,5 @@
 // 席（0＝一番上）⇄ 番付・次の場所の席・大関と横綱の条件（設計書 §1）
-import { DIVISIONS, LADDER_SIZE } from '../data/ranks.js?v=12';
+import { DIVISIONS, LADDER_SIZE } from '../data/ranks.js?v=13';
 
 const FIRST = {};
 {
@@ -47,6 +47,10 @@ export function nextPos(pos, wins, losses, history, yusho = false) {
   }
   const step = divisionOf(pos).bouts === 7 ? 12 : 2;
   let next = clamp(pos - (wins - losses) * step);
+  // 1場所で上がれるのは1つ上の段まで（本物：三段目以下の全勝は1つ上の段へ・幕下の全勝は十両まで）。
+  // これが無いと幕下筆頭の7戦全勝で十両と前頭を飛ばして関脇まで上がった（10/11）
+  const up = DIVISIONS[divisionOf(pos).index - 1];
+  if (up && next < FIRST[up.id]) next = FIRST[up.id];
   // 勝ち越しは東（偶数の席）・負け越しは西（奇数の席）に座る。step が偶数なので、これが無いと東西が入れ替わらない
   if (wins > losses && next % 2 === 1) next -= 1;
   if (wins < losses && next % 2 === 0) next = clamp(next + 1);

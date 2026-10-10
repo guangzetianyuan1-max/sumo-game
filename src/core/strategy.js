@@ -1,7 +1,7 @@
 // 作戦表＝3場面×5手の優先順（設計書 §2）。どの関数も元を書き換えず、新しい作戦表を返す。
-import { KIMARITE } from '../data/kimarite.js?v=12';
-import { ARCH } from './tuning.js?v=12';
-import { TYPES } from '../data/types.js?v=12';
+import { KIMARITE } from '../data/kimarite.js?v=13';
+import { ARCH } from './tuning.js?v=13';
+import { TYPES } from '../data/types.js?v=13';
 
 export const SCENES = ['tachiai', 'mid', 'edge'];
 export const ROW = 5;
@@ -45,6 +45,40 @@ export function remove(strat, scene, i) {
   const s = copy(strat);
   s[scene].splice(i, 1);
   return s;
+}
+
+// 長押しで持ち上げた手を置く（10/11 本人「移動先がいっぱいの場合、押されたほうが覚えた手に戻る」）。
+// from＝{ scene, index }（段から持ち上げた）か null（覚えた手から）。to＝{ scene, index }（落とした枠）・'learned'（覚えた手へ）・null（どこでもない＝戻す）。
+// 返り値 { ok, strategy, returned }（returned＝押し出されて段から抜けた手）か { ok:false, strategy, reason }。
+export function moveTech(strat, { id, from = null, to = null }) {
+  const same = { ok: true, strategy: strat, returned: null };
+  if (from && strat[from.scene]?.[from.index] !== id) return { ok: false, strategy: strat, reason: 'from' };
+  if (!to) return same;
+  if (to === 'learned') {
+    if (!from) return same;
+    return { ok: true, strategy: remove(strat, from.scene, from.index), returned: null };
+  }
+  const sc = to.scene;
+  if (!canPlace(id, sc)) return { ok: false, strategy: strat, reason: 'scene' };
+  const s = copy(strat);
+  const row = s[sc];
+  if (from && from.scene === sc) {
+    // 同じ段の中は並べ替え（抜いてから、落とした枠へ差し込む）
+    row.splice(from.index, 1);
+    row.splice(Math.max(0, Math.min(to.index, row.length)), 0, id);
+    return { ok: true, strategy: s, returned: null };
+  }
+  if (row.includes(id)) return { ok: false, strategy: strat, reason: 'dup' };
+  if (from) s[from.scene].splice(from.index, 1);
+  if (row.length < ROW) {
+    row.splice(Math.max(0, Math.min(to.index, row.length)), 0, id);
+    return { ok: true, strategy: s, returned: null };
+  }
+  // 満杯：落とした枠の手が段から抜けて（＝覚えた手に戻って）、そこへ入る
+  const at = Math.max(0, Math.min(to.index, ROW - 1));
+  const returned = row[at];
+  row[at] = id;
+  return { ok: true, strategy: s, returned };
 }
 
 // 相手（と最初の自分）の作戦：覚えた手を場面ごとに、効き方の好みの順に5つまで並べる

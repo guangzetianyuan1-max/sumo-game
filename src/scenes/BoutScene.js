@@ -1,18 +1,20 @@
 // src/scenes/BoutScene.js — 取組を仮の四角で見せる（ドットの絵は第4段）。一代記：自分（東）＝career の値・相手（西）＝今日の相手の値
 // 取組を計算したらすぐ recordBout → 保存（動きは結果を見せるだけ）。ボタンは「取組の順へ」だけ
-import { runBout } from '../core/bout.js?v=12';
-import { makeWrestler } from '../core/wrestler.js?v=12';
-import { currentOpponent } from '../core/basho.js?v=12';
-import { TYPES } from '../data/types.js?v=12';
-import { t, techLabel, shikonaLabel } from '../i18n/i18n.js?v=12';
-import { session, recordNow, boutSeed } from '../state.js?v=12';
-import { button, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=12';
+import { runBout } from '../core/bout.js?v=13';
+import { makeWrestler } from '../core/wrestler.js?v=13';
+import { currentOpponent } from '../core/basho.js?v=13';
+import { boutStats } from '../core/career.js?v=13';
+import { TYPES } from '../data/types.js?v=13';
+import { t, techLabel, shikonaLabel } from '../i18n/i18n.js?v=13';
+import { session, recordNow, boutSeed } from '../state.js?v=13';
+import { button, backButton, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=13';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
 const EAST_BAND = 0x3f6aa8;
 const WEST_BAND = 0xc8553d;
 const FEET_Y = 640; // 土俵の上の縁（力士の足もと）
+const READY_MS = 1000; // 立ち合いの前の1行（塩をまいて、時間いっぱい）を見せる長さ
 
 export class BoutScene extends Phaser.Scene {
   constructor() {
@@ -30,7 +32,7 @@ export class BoutScene extends Phaser.Scene {
       this.scene.start(career ? 'schedule' : 'guide');
       return;
     }
-    const you = makeWrestler(career.type, career.stats);
+    const you = makeWrestler(career.type, boutStats(career)); // 自分は疲れの調子を掛けた値（相手に疲れは無い）
     const opp = makeWrestler(foe.type, foe.stats);
     // 種は一代記・場所・日から（読み直して取り直しても同じ取組）
     this.result = runBout({ wrestler: you, strategy: session.strategy }, { wrestler: opp, strategy: session.oppStrategy }, boutSeed(career));
@@ -57,7 +59,11 @@ export class BoutScene extends Phaser.Scene {
     this.sceneLabel = this.add.text(30, 808, '', textStyle(28, COLORS.gold));
     this.lines = this.add.text(30, 852, '', textStyle(30, COLORS.ink, { lineSpacing: 12, wordWrap: { width: width - 60, useAdvancedWrap: true } }));
     this.speedBtn = button(this, width - 160, 50, 270, 72, this.speedLabel(), () => this.cycleSpeed(), { color: COLORS.buttonSub, size: 26 });
-    this.play();
+    // 結果はもう記録してある＝取組の順へ戻っても取り直しにはならない
+    backButton(this, () => this.scene.start('schedule'));
+    // 立ち合いの前に1行だけ（時間いっぱいの長さは段ごとに違うが、分は出さない）。速さを「結果だけ」に替えたらすぐ始まる
+    this.lines.setText(t('bout.ready'));
+    this.time.delayedCall(READY_MS, () => this.play());
   }
 
   speedLabel() {

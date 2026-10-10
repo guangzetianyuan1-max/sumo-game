@@ -1,8 +1,8 @@
 // 言葉の切り替えと文の引き方。画面の文字は全部ここを通す。
-import ja from './ja.js?v=12';
-import en from './en.js?v=12';
-import { KIMARITE } from '../data/kimarite.js?v=12';
-import { rankParts } from '../core/banzuke.js?v=12';
+import ja from './ja.js?v=13';
+import en from './en.js?v=13';
+import { KIMARITE } from '../data/kimarite.js?v=13';
+import { rankParts } from '../core/banzuke.js?v=13';
 
 export const TABLES = { ja, en };
 export const LANGS = ['ja', 'en'];
@@ -66,9 +66,15 @@ export function shikonaLabel(name, l = lang) {
   return l === 'ja' ? name.ja : name.en;
 }
 
-// 場所の名前（例「一月場所（東京）」・「July Basho (Nagoya)」）
+// 場所の名前：日本語は通り名（例「初場所（東京）」・名古屋場所と九州場所は場所の名を重ねない）・英語は「July Basho (Nagoya)」
 export function bashoLabel(basho, l = lang) {
-  return t('basho.label', { month: t(`month.${basho.month}`, {}, l), place: t(`place.${basho.place}`, {}, l) }, l);
+  return t(`basho.m${basho.month}`, { place: t(`place.${basho.place}`, {}, l) }, l);
+}
+
+// 日の名前：1日目＝初日・8日目＝中日・15日目＝千秋楽・ほかは N日目
+const DAY_NAMES = { 1: 'day.first', 8: 'day.mid', 15: 'day.last' };
+export function dayLabel(day, l = lang) {
+  return DAY_NAMES[day] ? t(DAY_NAMES[day], {}, l) : t('sched.day', { n: day }, l);
 }
 
 export function missingKeys(tables) {

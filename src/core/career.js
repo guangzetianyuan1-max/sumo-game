@@ -1,18 +1,20 @@
 // 一代記の状態・稽古・疲れ・成長・場所の経験・記録（設計書 §3）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=12';
-import { LADDER_SIZE } from '../data/ranks.js?v=12';
+import { TYPES } from '../data/types.js?v=13';
+import { LADDER_SIZE } from '../data/ranks.js?v=13';
+import { GROWTH } from './tuning.js?v=13';
 
 // 古い iPhone の Safari（iOS 15.4 より前）には Object.hasOwn が無い＝札を押すと止まっていた（10/10）
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
 export const TRAININGS = ['shiko', 'teppo', 'chanko', 'waza', 'butsukari', 'moushiai', 'rest'];
-const GAIN = {
-  shiko: { tai: 2, shin: 1 },
-  teppo: { tai: 2, gi: 1 },
-  chanko: { tai: 2 },
-  waza: { gi: 3 },
-  butsukari: { shin: 2, tai: 1 },
-  moushiai: { gi: 1, shin: 1 },
+// 稽古1回の伸び（GROWTH.gain・伸びやすさ・伸びの鈍りを掛ける前）。体の稽古は疲れで減るぶん少し厚くしてある（10/11 試運転で合わせた）
+export const GAIN = {
+  shiko: { tai: 2, shin: 1.5 },
+  teppo: { tai: 2.5, gi: 1.25 },
+  chanko: { tai: 3 },
+  waza: { gi: 2.5 },
+  butsukari: { shin: 2.8, tai: 2.4 },
+  moushiai: { gi: 1.5, shin: 1.5 },
   rest: {},
 };
 const MULT = {
@@ -22,19 +24,44 @@ const MULT = {
   yotsu: { shin: 1.5, gi: 0.75 },
   tall: { gi: 1.25, tai: 1.25, shin: 0.5 },
 };
-const KEY = 'sumo.career';
-const VERSION = 1;
+export const CAREER_KEY = 'sumo.career'; // 記録①の置き場（記録が1つだった頃からの鍵）
+const KEY = CAREER_KEY;
+const VERSION = 2; // 10/11 心技体の目盛りを作り直した（10以下から始まる）＝前の記録は読まない
 const r1 = (v) => Math.round(v * 10) / 10;
 const cap = (v) => Math.min(100, r1(v));
 
 export const growthMult = (type, stat) => MULT[type]?.[stat] ?? 1;
 
-export function newCareer({ guide, type, name, seed }) {
+// 伸びは値が上がるほど鈍る（横綱でようやく100）
+export const diminish = (v) => Math.max(GROWTH.dimFloor, 1 - v / GROWTH.dimDen);
+// 入門の値：タイプの形（base・和150）を GROWTH.start 倍（どの値も10以下）
+export const startStats = (type) => {
   const b = TYPES[type].base;
+  return { shin: r1(b.shin * GROWTH.start), gi: r1(b.gi * GROWTH.start), tai: r1(b.tai * GROWTH.start) };
+};
+
+// 疲れは10まで。10になったら次の場所は休場（10/11 本人「10まで行くとアウト場所に出れない、それまでは高い方が調子を落とす」）
+export const FATIGUE_MAX = 10;
+// 調子：0〜3 好調 ×1・4〜6 普通 ×0.9・7〜9 不調 ×0.7・10 休場（取組に出ない）
+export function condition(fatigue) {
+  if (fatigue >= FATIGUE_MAX) return { id: 'out', mult: 0 };
+  if (fatigue >= 7) return { id: 'poor', mult: 0.7 };
+  if (fatigue >= 4) return { id: 'normal', mult: 0.9 };
+  return { id: 'good', mult: 1 };
+}
+
+// 取組で使う自分の心技体＝値×調子（相手には疲れが無い）
+export function boutStats(career) {
+  const m = condition(career.fatigue).mult;
+  const s = career.stats;
+  return { shin: r1(s.shin * m), gi: r1(s.gi * m), tai: r1(s.tai * m) };
+}
+
+export function newCareer({ guide, type, name, seed }) {
   return {
     version: VERSION, guide, type, name,
-    stats: { shin: b.shin, gi: b.gi, tai: b.tai },
-    fatigue: 0, pos: LADDER_SIZE - 1, bashoIndex: 0, history: [], trainingLeft: 6, basho: null, seed,
+    stats: startStats(type),
+    fatigue: 0, pos: LADDER_SIZE - 1, bashoIndex: 0, history: [], trainingLeft: 6, basho: null, seed, kinboshi: 0,
   };
 }
 
@@ -46,16 +73,32 @@ export function train(career, kind) {
   }
   const stats = { ...career.stats };
   for (const [stat, g] of Object.entries(GAIN[kind])) {
-    let add = g * growthMult(career.type, stat);
+    let add = g * GROWTH.gain * growthMult(career.type, stat) * diminish(stats[stat]);
     if (stat === 'tai') add *= Math.max(0, 1 - 0.25 * career.fatigue);
     stats[stat] = cap(stats[stat] + add);
   }
-  return { ...career, stats, fatigue: career.fatigue + 1, trainingLeft: career.trainingLeft - 1 };
+  return { ...career, stats, fatigue: Math.min(FATIGUE_MAX, career.fatigue + 1), trainingLeft: career.trainingLeft - 1 };
+}
+
+// 稽古の前後から、札の絵の下に出す効き目の行を作る（変わった物だけ）：
+// 心・技・体の伸び（この順）→ 疲れの増減 → 調子の帯が変わった時だけ調子の行
+export function trainingEffects(before, after) {
+  const out = [];
+  for (const key of ['shin', 'gi', 'tai']) {
+    const delta = r1(after.stats[key] - before.stats[key]);
+    if (delta !== 0) out.push({ key, delta });
+  }
+  const df = after.fatigue - before.fatigue;
+  if (df !== 0) out.push({ key: 'fatigue', delta: df });
+  const from = condition(before.fatigue).id;
+  const to = condition(after.fatigue).id;
+  if (from !== to) out.push({ key: 'condition', from, to });
+  return out;
 }
 
 export function addExperience(career, wins) {
   const stats = { ...career.stats };
-  for (const s of ['shin', 'gi', 'tai']) stats[s] = cap(stats[s] + wins * 0.4 * growthMult(career.type, s));
+  for (const s of ['shin', 'gi', 'tai']) stats[s] = cap(stats[s] + wins * GROWTH.exp * growthMult(career.type, s) * diminish(stats[s]));
   return { ...career, stats };
 }
 
@@ -75,15 +118,20 @@ const MONTHS = [1, 3, 5, 7, 9, 11]; // basho.js の BASHO_MONTHS と同じ（読
 const validOpponent = (o) => !!o && typeof o === 'object' && validName(o.name) && hasOwn(TYPES, o.type)
   && validPos(o.pos) && validStats(o.stats);
 
-// 場所の記録：月・場所の名・4つの配列が同じ長さ・相手が全員そろう・day は 0〜日の数の整数
+// 取組の結果：まだ（null）・勝ち・負け・休み（休場の場所）
+const RESULTS = [null, 'win', 'loss', 'absent'];
+
+// 場所の記録：月・場所の名・4つの配列が同じ長さ・相手が全員そろう・day は 0〜日の数の整数・休場（kyujo）は書いてあれば真偽
 function validBasho(b) {
   if (!b || typeof b !== 'object') return false;
   if (!MONTHS.includes(b.month) || !nonEmpty(b.place)) return false;
+  if (b.kyujo !== undefined && typeof b.kyujo !== 'boolean') return false;
   const arrs = [b.days, b.opponents, b.results, b.kimarite];
   if (!arrs.every(Array.isArray)) return false;
   const len = b.days.length;
   if (!arrs.every((a) => a.length === len)) return false;
   if (!b.opponents.every(validOpponent)) return false;
+  if (!b.results.every((r) => RESULTS.includes(r))) return false;
   return Number.isInteger(b.day) && b.day >= 0 && b.day <= len;
 }
 
@@ -98,16 +146,27 @@ export function deserialize(text) {
     if (!Array.isArray(c.history) || !c.history.every(validHistory)) return null;
     if (!validName(c.name)) return null;
     if (c.basho !== null && !validBasho(c.basho)) return null;
+    // 金星の数（10/11 足した）：無い記録は0（版は2のまま）・数でなければ読まない
+    if (c.kinboshi === undefined) c.kinboshi = 0;
+    else if (!count(c.kinboshi)) return null;
+    c.fatigue = Math.min(FATIGUE_MAX, c.fatigue); // 疲れに上が無かった頃の記録は10で止める
     return c;
   } catch {
     return null;
   }
 }
 
-export function saveCareer(storage, career) {
-  try { storage?.setItem(KEY, serialize(career)); } catch { /* 保存できない端末でも遊びは続ける */ }
+// 書けたら true・保存先が無い／投げる端末では false（遊びは続ける）。key＝記録①〜③の置き場（既定は①）
+export function saveCareer(storage, career, key = KEY) {
+  if (!storage) return false;
+  try {
+    storage.setItem(key, serialize(career));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export function loadCareer(storage) {
-  try { return deserialize(storage?.getItem(KEY) ?? ''); } catch { return null; }
+export function loadCareer(storage, key = KEY) {
+  try { return deserialize(storage?.getItem(key) ?? ''); } catch { return null; }
 }

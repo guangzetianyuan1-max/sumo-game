@@ -1,11 +1,11 @@
 // src/state.js — 場面をまたぐ選び。strategy は自分の作戦表（新しい相手ごとにお勧めで組む）
 // career は一代記（入門を終えるまで null）。一代記の移り変わりはここの関数で行い、そのたびに保存する
-import { TYPE_IDS, TYPES } from './data/types.js?v=12';
-import { recommendStrategy } from './core/recommend.js?v=12';
-import { defaultStrategy } from './core/strategy.js?v=12';
-import { newCareer, train, saveCareer, loadCareer } from './core/career.js?v=12';
-import { startBasho, currentOpponent, recordBout, finishBasho } from './core/basho.js?v=12';
-import { makeRng } from './core/rng.js?v=12';
+import { TYPE_IDS, TYPES } from './data/types.js?v=13';
+import { recommendStrategy } from './core/recommend.js?v=13';
+import { defaultStrategy } from './core/strategy.js?v=13';
+import { newCareer, train, saveCareer, loadCareer, CAREER_KEY } from './core/career.js?v=13';
+import { startBasho, currentOpponent, recordBout, finishBasho } from './core/basho.js?v=13';
+import { makeRng } from './core/rng.js?v=13';
 
 export const session = {
   you: 'heavy',
@@ -18,6 +18,7 @@ export const session = {
   career: null, // 一代記（入門を終えるまで null）
   oppKey: null, // 作戦表を組んだ相手（場所の番号:日）。同じ相手なら組み直さない
   lastResult: null, // 締めた場所の結果（場所の結果の画面が読む）
+  slot: 1, // 記録①〜③のどれで遊んでいるか（セーブも読み直しもここ）
 };
 
 // 次の相手を引く（5タイプから一様・自分と同じタイプもあり）。画面の層の選びなので Math.random でよい（取組の計算の乱数とは別）
@@ -39,12 +40,47 @@ export function localStore() {
   }
 }
 
-export function saveNow(store = localStore()) {
-  saveCareer(store, session.career);
+// 記録①〜③（10/11 本人「昔話と同じように最大3つの四股名ですすめられるように」）。①は記録が1つだった頃の鍵＝今の記録はそのまま①
+export const SLOT_COUNT = 3;
+export const slotKey = (n) => (n > 1 ? `${CAREER_KEY}.${n}` : CAREER_KEY);
+const LAST_SLOT_KEY = 'sumo.slot';
+const validSlot = (n) => Number.isInteger(n) && n >= 1 && n <= SLOT_COUNT;
+
+// 前に使った記録の番号（無い・壊れた・読めない時は①）
+export function lastSlot(store = localStore()) {
+  try {
+    const n = Number(store ? store.getItem(LAST_SLOT_KEY) : null);
+    return validSlot(n) ? n : 1;
+  } catch {
+    return 1;
+  }
 }
 
-export function loadSaved(store = localStore()) {
-  return loadCareer(store);
+// この記録で遊ぶ（session.slot）と決め、前に使った記録として覚える（書けない端末でも選びは効く）
+export function rememberSlot(n, store = localStore()) {
+  session.slot = n;
+  try { if (store) store.setItem(LAST_SLOT_KEY, String(n)); } catch { /* 覚えられなくても遊べる */ }
+}
+
+// はじめから：その記録だけ消す
+export function clearSlot(n, store = localStore()) {
+  try { if (store) store.removeItem(slotKey(n)); } catch { /* 消せない端末では、入門を終えた時に上書きされる */ }
+}
+
+// 初めの画面の札：しこ名・番付の席・タイプ（空きは null）
+export function slotSummary(career) {
+  if (!career) return null;
+  return { name: career.name, rankPos: career.pos, type: career.type };
+}
+
+// 今の記録（session.slot）へ書く。書けたら true・一代記が無い／保存先が無い／投げる端末は false
+export function saveNow(store = localStore()) {
+  if (!session.career) return false;
+  return saveCareer(store, session.career, slotKey(session.slot));
+}
+
+export function loadSaved(store = localStore(), n = session.slot) {
+  return loadCareer(store, slotKey(n));
 }
 
 // 読み直した記録を session に入れる（自分のタイプと案内役も記録から）
@@ -56,9 +92,10 @@ export function useCareer(career) {
   session.lastResult = null;
 }
 
-// 入門を終えた時：新しい一代記を作って保存（前の記録はここで上書き）
+// 入門を終えた時：新しい一代記を作って今の記録（session.slot）へ保存（その記録の前の中身はここで上書き）
 export function startCareer({ guide, type, name, seed }, store = localStore()) {
   useCareer(newCareer({ guide, type, name, seed }));
+  rememberSlot(session.slot, store);
   saveNow(store);
   return session.career;
 }

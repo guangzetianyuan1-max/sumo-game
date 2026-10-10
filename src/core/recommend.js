@@ -1,8 +1,8 @@
 // src/core/recommend.js — 相手の情報から、お勧めの作戦表を機械で組む（純粋な関数・乱数なし）
-import { KIMARITE } from '../data/kimarite.js?v=12';
-import { TYPES } from '../data/types.js?v=12';
-import { ARCH } from './tuning.js?v=12';
-import { SCENES, ROW, canPlace, emptyStrategy, rank } from './strategy.js?v=12';
+import { KIMARITE } from '../data/kimarite.js?v=13';
+import { TYPES } from '../data/types.js?v=13';
+import { ARCH } from './tuning.js?v=13';
+import { SCENES, ROW, canPlace, emptyStrategy, rank, scenesOf } from './strategy.js?v=13';
 
 // 各場面の典型の組み方。弱みの when（apart 離れ／grip 組む）がこの場面で効くかを決める。mid は両方
 const GRIP = { tachiai: 'apart', mid: null, edge: 'grip' };
@@ -13,6 +13,13 @@ function weaknessApplies(opp, a, sc) {
   if (!wk || !wk.arch.includes(a)) return false;
   if (!wk.when || sc === 'mid') return true;
   return wk.when === GRIP[sc];
+}
+
+// 今日の相手に効く手：その手の型が、手を使える場面のどれか1つで相手の弱みに当たる（作戦表の覚えた手を光らせる・10/11 本人）
+export function effectiveAgainst(id, oppType) {
+  const k = KIMARITE[id];
+  if (!k) return false;
+  return scenesOf(id).some((sc) => weaknessApplies(oppType, k.arch, sc));
 }
 
 function score(id, sc, myType, oppType) {

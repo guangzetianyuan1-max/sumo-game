@@ -1,19 +1,22 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { GuideScene } from './scenes/GuideScene.js?v=12';
-import { SetupScene } from './scenes/SetupScene.js?v=12';
-import { OpponentScene } from './scenes/OpponentScene.js?v=12';
-import { StrategyScene } from './scenes/StrategyScene.js?v=12';
-import { BoutScene } from './scenes/BoutScene.js?v=12';
-import { NameScene } from './scenes/NameScene.js?v=12';
-import { TrainingScene } from './scenes/TrainingScene.js?v=12';
-import { BanzukeScene } from './scenes/BanzukeScene.js?v=12';
-import { ScheduleScene } from './scenes/ScheduleScene.js?v=12';
-import { ResultScene } from './scenes/ResultScene.js?v=12';
-import { initLang } from './i18n/i18n.js?v=12';
-import { storage } from './ui/widgets.js?v=12';
+import { GuideScene } from './scenes/GuideScene.js?v=13';
+import { GuidePickScene } from './scenes/GuidePickScene.js?v=13';
+import { SetupScene } from './scenes/SetupScene.js?v=13';
+import { OpponentScene } from './scenes/OpponentScene.js?v=13';
+import { StrategyScene } from './scenes/StrategyScene.js?v=13';
+import { BoutScene } from './scenes/BoutScene.js?v=13';
+import { NameScene } from './scenes/NameScene.js?v=13';
+import { TrainingScene } from './scenes/TrainingScene.js?v=13';
+import { BanzukeScene } from './scenes/BanzukeScene.js?v=13';
+import { ScheduleScene } from './scenes/ScheduleScene.js?v=13';
+import { ResultScene } from './scenes/ResultScene.js?v=13';
+import { initLang } from './i18n/i18n.js?v=13';
+import { storage } from './ui/widgets.js?v=13';
+import { session, lastSlot } from './state.js?v=13';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;
+session.slot = lastSlot(storage()); // 前に使った記録（初めの画面で札を押すと決め直す）
 
 function start() {
   new Phaser.Game({
@@ -21,7 +24,7 @@ function start() {
     parent: 'game',
     backgroundColor: '#141a2e',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 720, height: 1280 },
-    scene: [GuideScene, SetupScene, NameScene, TrainingScene, BanzukeScene, ScheduleScene, OpponentScene, StrategyScene, BoutScene, ResultScene],
+    scene: [GuideScene, GuidePickScene, SetupScene, NameScene, TrainingScene, BanzukeScene, ScheduleScene, OpponentScene, StrategyScene, BoutScene, ResultScene],
   });
 }
 

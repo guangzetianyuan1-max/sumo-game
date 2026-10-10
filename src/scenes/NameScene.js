@@ -1,9 +1,9 @@
 // src/scenes/NameScene.js — しこ名を選ぶ：候補3つを大きな札で縦に並べる・引き直せる・決めると一代記が始まる（保存）→ 稽古
-import { shikonaCandidates } from '../core/shikona.js?v=12';
-import { makeRng } from '../core/rng.js?v=12';
-import { t, getLang, shikonaLabel } from '../i18n/i18n.js?v=12';
-import { session, startCareer } from '../state.js?v=12';
-import { button, fitText, roundBox, hitZone, textStyle, COLORS } from '../ui/widgets.js?v=12';
+import { shikonaCandidates } from '../core/shikona.js?v=13';
+import { makeRng } from '../core/rng.js?v=13';
+import { t, getLang, shikonaLabel } from '../i18n/i18n.js?v=13';
+import { session, startCareer } from '../state.js?v=13';
+import { button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=13';
 
 const CARD_W = 600;
 const CARD_H = 170;
@@ -30,15 +30,15 @@ export class NameScene extends Phaser.Scene {
   }
 
   draw() {
-    this.children.removeAll(true);
+    clearScene(this);
     const { width } = this.scale;
-    fitText(this.add.text(width / 2, 70, t('name.title'), textStyle(56, COLORS.gold)).setOrigin(0.5), width - 80);
+    backButton(this, () => this.scene.start('setup'));
+    topTitle(this, 70, t('name.title'), 56, COLORS.gold);
     this.cands.forEach((name, i) => this.card(name, i, width / 2, CARD_Y[i]));
     button(this, width / 2, 900, 360, 84, t('name.reroll'), () => {
       this.roll();
       this.redraw();
     }, { color: COLORS.buttonSub, size: 30 });
-    button(this, width / 2, 1075, 320, 64, t('common.back'), () => this.scene.start('setup'), { color: COLORS.buttonSub, size: 26 });
     button(this, width / 2, 1190, 460, 110, t('name.go'), () => {
       startCareer({ guide: session.guide ?? 'chizuru', type: session.you, name: this.cands[this.pick], seed: Date.now() % 1000000 });
       this.scene.start('training');

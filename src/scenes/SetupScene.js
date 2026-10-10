@@ -1,8 +1,8 @@
 // src/scenes/SetupScene.js — 入門：育てる自分のタイプを1つ選ぶ → しこ名へ（一代記の間、タイプは変わらない）
-import { TYPE_IDS } from '../data/types.js?v=12';
-import { t, getLang, setLang } from '../i18n/i18n.js?v=12';
-import { session } from '../state.js?v=12';
-import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, storage } from '../ui/widgets.js?v=12';
+import { TYPE_IDS } from '../data/types.js?v=13';
+import { t, getLang, setLang } from '../i18n/i18n.js?v=13';
+import { session } from '../state.js?v=13';
+import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=13';
 
 export class SetupScene extends Phaser.Scene {
   constructor() {
@@ -15,7 +15,8 @@ export class SetupScene extends Phaser.Scene {
 
   create() {
     const { width } = this.scale;
-    fitText(this.add.text(40, 55, t('title'), textStyle(60, COLORS.gold)).setOrigin(0, 0.5), width - 280);
+    backButton(this, () => this.scene.start('guidePick')); // 案内役を選び直す（前の下の「案内役を選び直す」の代わり）
+    fitText(this.add.text(TOP_LEFT_FREE, 55, t('title'), textStyle(60, COLORS.gold)).setOrigin(0, 0.5), width - 190 - 16 - TOP_LEFT_FREE);
     button(this, width - 105, 55, 170, 70, t('lang.toggle'), () => {
       setLang(getLang() === 'ja' ? 'en' : 'ja', storage());
       document.documentElement.lang = getLang();
@@ -25,7 +26,6 @@ export class SetupScene extends Phaser.Scene {
     TYPE_IDS.forEach((id, i) => this.card(id, 270 + i * 170));
     // session.you は札を押した時に決まっている → しこ名を選ぶ
     button(this, width / 2, 1190, 460, 110, t('setup.start'), () => this.scene.start('name'), { size: 38 });
-    button(this, width / 2, 1085, 320, 64, t('setup.changeGuide'), () => this.scene.start('guide'), { color: COLORS.buttonSub, size: 26 });
   }
 
   // 名前・得意・弱みの3行の札

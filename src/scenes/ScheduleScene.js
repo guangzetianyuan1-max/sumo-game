@@ -1,8 +1,10 @@
 // src/scenes/ScheduleScene.js — 取組の順：日ごとの行（日・相手のしこ名・番付・タイプ・済んだ日は ○● と決まり手）。今日の行を光らせる
 // 全部済むまで「次の取組へ」→ 相手の情報。全部済んだら「場所の結果へ」＝ここで1度だけ締めて保存してから結果の画面へ
-import { t, techLabel, rankLabel, shikonaLabel, bashoLabel } from '../i18n/i18n.js?v=12';
-import { session, prepareOpponent, closeBasho } from '../state.js?v=12';
-import { button, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=12';
+// 休場の場所（疲れ10で入った）は全部の行が「休」で、始めから済んでいる＝すぐ「場所の結果へ」
+import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=13';
+import { recordNote } from '../core/honors.js?v=13';
+import { session, prepareOpponent, closeBasho } from '../state.js?v=13';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=13';
 
 const LIST = { top: 146, bottom: 1126, w: 664 }; // 15日でも1行65（番付の字22を入れる）
 const COL = { day: 46, who: 152, type: 404, mark: 650, right: 618 }; // 左から：日／しこ名・番付／タイプ・決まり手／○●
@@ -21,15 +23,30 @@ export class ScheduleScene extends Phaser.Scene {
     }
     const b = c.basho;
     const { width } = this.scale;
-    fitText(this.add.text(width / 2, 52, t('sched.title'), textStyle(56, COLORS.gold)).setOrigin(0.5), width - 80);
+    backButton(this, () => this.scene.start('banzuke'));
+    saveButton(this);
+    topTitle(this, 52, t('sched.title'), 56, COLORS.gold, { save: true });
     const wins = b.results.filter((r) => r === 'win').length;
-    const losses = b.results.filter((r) => r === 'loss').length;
-    fitText(this.add.text(30, 116, bashoLabel(b), textStyle(30, COLORS.ink)).setOrigin(0, 0.5), width - 230);
-    fitText(this.add.text(width - 30, 116, t('result.record', { w: wins, l: losses }), textStyle(32, COLORS.gold)).setOrigin(1, 0.5), 170);
+    const losses = b.results.filter((r) => r === 'loss' || r === 'absent').length; // 休みは負けに数える
+    // 見出しの段：右から 星・星の印（勝ち越し・負け越し・全勝）・左に場所の名（印の手前まで）
+    const rec = fitText(this.add.text(width - 30, 116, t('result.record', { w: wins, l: losses }), textStyle(32, COLORS.gold)).setOrigin(1, 0.5), 170);
+    let room = width - 30 - rec.displayWidth;
+    const note = recordNote(wins, losses, b.days.length);
+    if (note) {
+      const nt = fitText(this.add.text(room - 16, 116, t(`note.${note}`), textStyle(26, note === 'makekoshi' ? COLORS.sub : COLORS.gold)).setOrigin(1, 0.5), 220);
+      room = room - 16 - nt.displayWidth;
+    }
+    fitText(this.add.text(30, 116, bashoLabel(b), textStyle(30, COLORS.ink)).setOrigin(0, 0.5), room - 16 - 30);
 
+    // 休場は見出しの下に理由の1行を足し、そのぶん行を下げる
+    let listTop = LIST.top;
+    if (b.kyujo) {
+      fitText(this.add.text(width / 2, LIST.top + 8, t('sched.kyujo'), textStyle(28, COLORS.gold)).setOrigin(0.5), width - 60);
+      listTop += 40;
+    }
     const n = b.days.length;
-    const rowH = Math.min(110, (LIST.bottom - LIST.top) / n);
-    b.days.forEach((d, i) => this.row(b, i, Math.round(LIST.top + rowH * (i + 0.5)), Math.floor(rowH - 6)));
+    const rowH = Math.min(110, (LIST.bottom - listTop) / n);
+    b.days.forEach((d, i) => this.row(b, i, Math.round(listTop + rowH * (i + 0.5)), Math.floor(rowH - 6)));
 
     const finished = b.day >= n;
     if (finished) {
@@ -60,11 +77,20 @@ export class ScheduleScene extends Phaser.Scene {
     const big = Math.min(28, Math.floor(h * 0.41));
     const small = 22;
     const dim = res ? COLORS.sub : COLORS.ink;
-    fitText(this.add.text(COL.day, cy, t('sched.day', { n: b.days[i] }), textStyle(big, today ? COLORS.gold : COLORS.sub)).setOrigin(0, 0.5), COL.who - COL.day - 10);
+    // 日の名前（初日・中日・千秋楽）。英語の「Day 8 (mid)」のように欄に入らない時は括弧から2行にする
+    const dayW = COL.who - COL.day - 10;
+    const dayText = this.add.text(COL.day, cy, dayLabel(b.days[i]), textStyle(big, today ? COLORS.gold : COLORS.sub)).setOrigin(0, 0.5);
+    if (dayText.width > dayW && dayText.text.indexOf(' (') > 0) {
+      dayText.setText(dayText.text.replace(' (', '\n(')).setFontSize(Math.min(big, Math.floor(h * 0.4))).setLineSpacing(-4);
+    }
+    fitText(dayText, dayW);
     fitText(this.add.text(COL.who, top, shikonaLabel(o.name), textStyle(big, dim)).setOrigin(0, 0.5), COL.type - COL.who - 14);
     fitText(this.add.text(COL.who, bottom, rankLabel(o.pos), textStyle(small, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), COL.type - COL.who - 14);
     fitText(this.add.text(COL.type, top, t(`type.${o.type}.name`), textStyle(small, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), COL.right - COL.type);
-    if (res) {
+    if (res === 'absent') {
+      // 休場の日は「休」だけ（決まり手は無い）
+      fitText(this.add.text(COL.mark, cy, t('sched.absent'), textStyle(big, COLORS.sub)).setOrigin(0.5), 2 * (width / 2 + LIST.w / 2 - COL.mark) - 8);
+    } else if (res) {
       this.add.text(COL.mark, cy, t(res === 'win' ? 'sched.win' : 'sched.loss'), textStyle(big + 6, res === 'win' ? COLORS.ink : COLORS.sub)).setOrigin(0.5);
       fitText(this.add.text(COL.type, bottom, techLabel(b.kimarite[i]), textStyle(small, COLORS.ink, { fontStyle: '500' })).setOrigin(0, 0.5), COL.right - COL.type);
     }

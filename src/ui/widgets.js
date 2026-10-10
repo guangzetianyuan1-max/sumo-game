@@ -1,7 +1,8 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=12';
-import { GUIDE_IDS } from '../data/guides.js?v=12';
-import { t } from '../i18n/i18n.js?v=12';
+import { TYPE_IDS } from '../data/types.js?v=13';
+import { GUIDE_IDS } from '../data/guides.js?v=13';
+import { t } from '../i18n/i18n.js?v=13';
+import { saveNow } from '../state.js?v=13';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -18,6 +19,10 @@ export const COLORS = {
   empty: 0x1b2238, // 空いた枠
 };
 
+// 調子の色（疲れの目盛りと調子の字）：好調＝緑・普通＝金・不調＝赤・休場＝深い赤
+export const CONDITION_COLOR = { good: 0x6fb26f, normal: 0xe3c27a, poor: 0xd9644a, out: 0xa8322d };
+export const cssColor = (n) => `#${n.toString(16).padStart(6, '0')}`;
+
 // 組ごとの色（和の色）
 export const GROUP_COLOR = { kihon: 0xc8553d, kake: 0x4f8a68, nage: 0x3f6aa8, hineri: 0x8a6fb0, sori: 0xcf9a3c, tokushu: 0x6c7487 };
 
@@ -30,6 +35,28 @@ export function preloadTypeArt(scene) {
 export function preloadGuideArt(scene) {
   GUIDE_IDS.forEach((id) => scene.load.image(`guide-${id}`, `assets/guides/${id}_normal.png`));
 }
+
+// 本人が Gemini で描いて少しずつ足す絵（決まり手の図解・稽古の絵）。あるものだけを <dir>/index.json（id の並び）に書く。
+// 1段目＝目録を preload で読む／2段目＝create から目録にある絵だけを読む（無い絵を読みに行って 404 を出さない）
+function preloadArtIndex(scene, key, dir) {
+  if (!scene.cache.json.exists(key)) scene.load.json(key, `${dir}/index.json`);
+}
+
+function loadIndexedArt(scene, key, prefix, dir) {
+  const ids = scene.cache.json.get(key);
+  if (!Array.isArray(ids)) return;
+  const todo = ids.filter((id) => typeof id === 'string' && !scene.textures.exists(`${prefix}${id}`));
+  if (!todo.length) return;
+  todo.forEach((id) => scene.load.image(`${prefix}${id}`, `${dir}/${id}.png`));
+  scene.load.start();
+}
+
+// 決まり手の図解：絵の鍵は kim-<id>
+export const preloadKimariteIndex = (scene) => preloadArtIndex(scene, 'kim-index', 'assets/kimarite');
+export const loadKimariteArt = (scene) => loadIndexedArt(scene, 'kim-index', 'kim-', 'assets/kimarite');
+// 稽古の絵：絵の鍵は train-<kind>
+export const preloadTrainingIndex = (scene) => preloadArtIndex(scene, 'train-index', 'assets/training');
+export const loadTrainingArt = (scene) => loadIndexedArt(scene, 'train-index', 'train-', 'assets/training');
 
 // 丸みのある太字（本人 10/10「ドット字ではなく、少し丸みを帯びた字で」）。小さな補足の行だけ extra で fontStyle: '500'
 export const textStyle = (size, color, extra = {}) => ({
@@ -120,6 +147,61 @@ export function button(scene, x, y, w, h, label, onTap, { color = COLORS.button,
   return { box: zone, text };
 }
 
+// 左上の「もどる」（10/11 本人「初め以外の画面に『戻る』を入れて、前の画面に戻ることができるように」）。
+// どの画面でも同じ場所（左20・上20・150×56）。押した時の行き先は画面ごとに onTap で渡す（遊びの状態は戻さない）
+export const BACK = { x: 20, y: 20, w: 150, h: 56 };
+export const TOP_LEFT_FREE = BACK.x + BACK.w + 16; // 左上の「もどる」の右の端＋すき間＝上の段の字はここから右に置く
+
+export function backButton(scene, onTap) {
+  return button(scene, BACK.x + BACK.w / 2, BACK.y + BACK.h / 2, BACK.w, BACK.h, t('common.backTop'), onTap, { color: COLORS.buttonSub, size: 24 });
+}
+
+// 右上の「セーブ」（10/11 本人「セーブボタンを要所に入れて欲しい」）。「もどる」と左右対称（右20・上20・150×56）。
+// 稽古・番付・取組の順・場所の結果の4つだけに置く。押すと今の記録（session.slot）へ書き、下に1.5秒だけ知らせる（自動の保存はそのまま）
+export const SAVE = { right: 20, y: 20, w: 150, h: 56 };
+export const TOP_RIGHT_FREE = SAVE.right + SAVE.w + 16; // 右上の「セーブ」の左の端＋すき間（画面の右からの幅）
+const TOAST_MS = 1500;
+
+export function saveButton(scene) {
+  const { width } = scene.scale;
+  const x = width - SAVE.right - SAVE.w / 2;
+  return button(scene, x, SAVE.y + SAVE.h / 2, SAVE.w, SAVE.h, t('save.button'), () => showSaveToast(scene, saveNow()), { color: COLORS.buttonSub, size: 24 });
+}
+
+// 画面の下・大きなボタンのすぐ上に出す小さな札（押しても進まない時の理由の1行と同じ所）。
+// ボタンのすぐ下に出すと場所の名に重なった（10/11 バグ出し）。もう一度押したら前の札は消して出し直す
+function showSaveToast(scene, ok) {
+  const { width } = scene.scale;
+  const old = scene.saveToast;
+  if (old) {
+    old.timer.remove(false);
+    old.objs.forEach((o) => o.destroy());
+  }
+  const D = 900;
+  const cy = 1100;
+  const text = scene.add.text(width / 2, cy, t(ok ? 'save.done' : 'save.fail'), textStyle(26, ok ? COLORS.gold : COLORS.ink, { fontStyle: '500' }))
+    .setOrigin(0.5).setDepth(D + 1);
+  fitText(text, width - 2 * SAVE.right - 36);
+  const w = text.displayWidth + 40;
+  const box = roundBox(scene, width / 2, cy, w, 52, ok ? COLORS.panel : COLORS.panelOn, { radius: 26, stroke: COLORS.frame }).setDepth(D);
+  const objs = [box, text];
+  const timer = scene.time.delayedCall(TOAST_MS, () => {
+    objs.forEach((o) => o.destroy());
+    if (scene.saveToast && scene.saveToast.objs === objs) scene.saveToast = null;
+  });
+  scene.saveToast = { objs, timer };
+}
+
+// 画面の一番上の見出し：真ん中に置いて「もどる」に掛からなければそのまま。掛かる長さなら「もどる」の右から左そろえで置き、右の余白までに縮める。
+// save＝右上に「セーブ」がある画面（左そろえの時の右の端を「セーブ」の左の手前までにする。真ん中の時は左右対称なので元から掛からない）
+export function topTitle(scene, y, str, size, color, { save = false } = {}) {
+  const { width } = scene.scale;
+  const text = scene.add.text(width / 2, y, str, textStyle(size, color)).setOrigin(0.5);
+  if (text.width <= (width / 2 - TOP_LEFT_FREE) * 2) return text;
+  text.setOrigin(0, 0.5).setX(TOP_LEFT_FREE);
+  return fitText(text, width - (save ? TOP_RIGHT_FREE : 30) - TOP_LEFT_FREE);
+}
+
 // 心・技・体の3本の横棒（金の棒＋暗い溝・値は 0〜100 で棒の長さ・右に数）。x,y は左上。使った高さを返す。
 // compact＝3本を横に1列に並べた小さい版（取組の画面用）。ラベルの文は stat.shin / stat.gi / stat.tai
 export function statBars(scene, x, y, w, stats, { compact = false } = {}) {
@@ -156,4 +238,10 @@ export function statBars(scene, x, y, w, stats, { compact = false } = {}) {
     scene.add.text(x + w, cy, String(Math.round(stats[k])), textStyle(26, COLORS.gold)).setOrigin(1, 0.5);
   });
   return ROWH * keys.length;
+}
+
+// 画面を描き直す前に、今の部品を全部こわす。⚠ this.children.removeAll(true) は「こわす」でなく「知らせを省く」の意味で、
+// 見えない古い札や暗幕が押せる部品として裏に残り、押しを横取りしていた（10/11 稽古の札が効かない）
+export function clearScene(scene) {
+  scene.children.list.slice().forEach((o) => o.destroy());
 }
