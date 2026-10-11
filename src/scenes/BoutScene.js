@@ -2,17 +2,17 @@
 // 取組を計算したらすぐ recordBout → 保存（動きは結果を見せるだけ）。ボタンは「取組の順へ」だけ
 // 結果が出たら右下に一言（10/11 本人）：勝ち＝娘が祝う・負け＝親方が心技体の不足と技の選びを言う（boutComment）。動きの記録はその時に最後の1行だけにする
 // 場所の自動（session.autoBasho）の時：速さは結果だけ（本人の速さの設定は変えない）・速さのボタンは出さない・結果を0.8秒見せて取組の順へ戻る。どこかを押すと自動を止めて取組の順へ
-import { runBout } from '../core/bout.js?v=22';
-import { makeWrestler } from '../core/wrestler.js?v=22';
-import { currentOpponent } from '../core/basho.js?v=22';
-import { boutStats } from '../core/career.js?v=22';
-import { TYPES } from '../data/types.js?v=22';
-import { t, techLabel, shikonaLabel } from '../i18n/i18n.js?v=22';
-import { session, recordNow, boutSeed } from '../state.js?v=22';
-import { boutComment } from '../core/advice.js?v=22';
+import { runBout } from '../core/bout.js?v=23';
+import { makeWrestler } from '../core/wrestler.js?v=23';
+import { currentOpponent } from '../core/basho.js?v=23';
+import { boutStats } from '../core/career.js?v=23';
+import { TYPES } from '../data/types.js?v=23';
+import { t, techLabel, shikonaLabel } from '../i18n/i18n.js?v=23';
+import { session, recordNow, boutSeed } from '../state.js?v=23';
+import { boutComment } from '../core/advice.js?v=23';
 import {
   button, backButton, fitText, roundBox, textStyle, statBars, speakerFace, speechBubble, preloadGuideArt, preloadOyakataArt, COLORS,
-} from '../ui/widgets.js?v=22';
+} from '../ui/widgets.js?v=23';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
