@@ -1,7 +1,7 @@
 // 作戦表＝3場面×5手の優先順（設計書 §2）。どの関数も元を書き換えず、新しい作戦表を返す。
-import { KIMARITE } from '../data/kimarite.js?v=23';
-import { ARCH } from './tuning.js?v=23';
-import { TYPES } from '../data/types.js?v=23';
+import { KIMARITE, inGame } from '../data/kimarite.js?v=24';
+import { ARCH } from './tuning.js?v=24';
+import { TYPES } from '../data/types.js?v=24';
 
 export const SCENES = ['tachiai', 'mid', 'edge'];
 export const ROW = 5;
@@ -15,11 +15,12 @@ export function scenesOf(id) {
   return k.scenes ?? ARCH[k.arch].scenes;
 }
 
-export const canPlace = (id, scene) => scenesOf(id).includes(scene);
+// 段に置けるのはゲームの手（IN_GAME）だけ。scenesOf は表のまま（ゲームに無い手も場面は引ける）
+export const canPlace = (id, scene) => inGame(id) && scenesOf(id).includes(scene);
 
 // 覚えた手を押したとき：使える段のうち、空きがあり同じ手がまだ無い最初の段の一番下へ
 export function addTech(strat, id) {
-  const scenes = scenesOf(id);
+  const scenes = inGame(id) ? scenesOf(id) : [];
   if (!scenes.length) return { ok: false, strategy: strat, reason: 'unknown' };
   for (const sc of scenes) {
     if (strat[sc].length < ROW && !strat[sc].includes(id)) {

@@ -1,12 +1,12 @@
 // 取組の計算（設計書 §2）。画面には触らない。state は毎回 新しい物を返す（元を書き換えない）。
 // 位置 pos：0＝真ん中・東の俵が −100・西の俵が +100。東が押すと + へ動く。
-import { KIMARITE, NON_TECH } from '../data/kimarite.js?v=23';
+import { KIMARITE, NON_TECH, inGame } from '../data/kimarite.js?v=24';
 import {
   ARCH, DEFAULT_MOVES, NOISE, EDGE_AT, OUT_AT, TURN_LIMIT, RECOVER, OKURI_BELOW, NON_TECH_P,
   COUNTER_BONUS, PUSH_RATIO_EXP,
-} from './tuning.js?v=23';
-import { strongBonus, weakBonus } from './wrestler.js?v=23';
-import { makeRng } from './rng.js?v=23';
+} from './tuning.js?v=24';
+import { strongBonus, weakBonus } from './wrestler.js?v=24';
+import { makeRng } from './rng.js?v=24';
 
 const other = (side) => (side === 'east' ? 'west' : 'east');
 const dirOf = (side) => (side === 'east' ? 1 : -1);
@@ -33,7 +33,8 @@ export function usable(state, side, id) {
 export function pickMove(state, side) {
   const scene = sceneFor(state, side);
   const row = state[side].strategy?.[scene] ?? [];
-  for (const id of row) if (KIMARITE[id] && usable(state, side, id)) return { id, scene };
+  // ゲームに無い手（IN_GAME の外・古い作戦表）は無い手と同じに飛ばす＝決まり手に出ない。使える手が無ければ既定の動き
+  for (const id of row) if (inGame(id) && usable(state, side, id)) return { id, scene };
   return { id: state.grip === 'grip' ? '_shake' : '_press', scene };
 }
 
@@ -67,7 +68,7 @@ function score(state, side, id, rng, oppId) {
 // 押し出された側の相手の決まり手（引いて自分が出たときなど）
 const outKimarite = (pick, grip) => {
   const m = moveOf(pick.id);
-  if (KIMARITE[pick.id] && m.kind === 'drive') return pick.id;
+  if (inGame(pick.id) && m.kind === 'drive') return pick.id;
   return grip === 'grip' ? 'yorikiri' : 'oshidashi';
 };
 

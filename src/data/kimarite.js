@@ -102,6 +102,18 @@ export const KIMARITE = Object.fromEntries(KIMARITE_LIST.map((k) => [k.id, k]));
 export const GROUP_COUNTS = Object.fromEntries(GROUPS.map((g) => [g, KIMARITE_LIST.filter((k) => k.group === g).length]));
 export const NON_TECH = ['isamiashi', 'koshikudake', 'tsukite', 'tsukihiza', 'fumidashi'];
 
+// ゲームで使う手（10/11 本人「Bで完成をさせ、状況に応じて増やす」＝82手から21手に絞った）。足す時はここに1行。
+// 表（KIMARITE_LIST・KIMARITE）は82手のまま＝古い記録の決まり手の名前と説明は引ける。覚える・置く・取組で出るのはここの手だけ
+export const IN_GAME = [
+  'oshidashi', 'oshitaoshi', 'tsukidashi', 'tsukitaoshi', 'yorikiri', 'yoritaoshi', 'abisetaoshi',
+  'hatakikomi', 'hikiotoshi', 'tsukiotoshi', 'katasukashi',
+  'uwatenage', 'shitatenage', 'kotenage', 'sukuinage', 'uwatedashinage',
+  'sotogake', 'uchigake',
+  'tsuridashi', 'okuridashi', 'utchari',
+];
+export const GAME_LIST = KIMARITE_LIST.filter((k) => IN_GAME.includes(k.id)); // 表の順のまま
+export const inGame = (id) => IN_GAME.includes(id);
+
 const EXPECTED = { kihon: 7, kake: 18, nage: 13, hineri: 19, sori: 6, tokushu: 19 };
 
 // 表の検査。誤りを文で返す（空なら正しい）

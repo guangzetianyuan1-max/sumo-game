@@ -1,8 +1,8 @@
 // src/core/recommend.js — 相手の情報から、お勧めの作戦表を機械で組む（純粋な関数・乱数なし）
-import { KIMARITE } from '../data/kimarite.js?v=23';
-import { TYPES } from '../data/types.js?v=23';
-import { ARCH } from './tuning.js?v=23';
-import { SCENES, ROW, canPlace, emptyStrategy, rank, scenesOf } from './strategy.js?v=23';
+import { KIMARITE, inGame } from '../data/kimarite.js?v=24';
+import { TYPES } from '../data/types.js?v=24';
+import { ARCH } from './tuning.js?v=24';
+import { SCENES, ROW, canPlace, emptyStrategy, rank, scenesOf } from './strategy.js?v=24';
 
 // 各場面の典型の組み方。弱みの when（apart 離れ／grip 組む）がこの場面で効くかを決める。mid は両方
 const GRIP = { tachiai: 'apart', mid: null, edge: 'grip' };
@@ -18,7 +18,7 @@ function weaknessApplies(opp, a, sc) {
 // 今日の相手に効く手：その手の型が、手を使える場面のどれか1つで相手の弱みに当たる（作戦表の覚えた手を光らせる・10/11 本人）
 export function effectiveAgainst(id, oppType) {
   const k = KIMARITE[id];
-  if (!k) return false;
+  if (!k || !inGame(id)) return false; // ゲームに無い手は光らせない
   return scenesOf(id).some((sc) => weaknessApplies(oppType, k.arch, sc));
 }
 
@@ -42,7 +42,7 @@ export function recommendStrategy(known, myType, oppType) {
   for (const sc of SCENES) {
     const cands = known
       .map((id, i) => ({ id, i }))
-      .filter(({ id }) => KIMARITE[id] && canPlace(id, sc))
+      .filter(({ id }) => canPlace(id, sc)) // canPlace＝ゲームの手（IN_GAME）で、その場面に置ける
       .map((c) => ({ ...c, s: score(c.id, sc, myType, oppType), pin: sc === 'edge' && ARCH[KIMARITE[c.id].arch].kind === 'reverse' ? 0 : 1 }));
     // 土俵際の逆転（うっちゃり）は +3 に加えて必ず先頭に据える（他の加点が重なると 3.3 まで届くため）
     cands.sort((x, y) => x.pin - y.pin || y.s - x.s || rank(sc, x.id) - rank(sc, y.id) || x.i - y.i);

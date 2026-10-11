@@ -1,8 +1,9 @@
 // 一代記の状態・稽古・疲れ・成長・場所の経験・記録（設計書 §3）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=23';
-import { LADDER_SIZE } from '../data/ranks.js?v=23';
-import { GROWTH, SPECIALTY_MULT } from './tuning.js?v=23';
-import { HEYA, heyaOfGuide } from '../data/heya.js?v=23';
+import { TYPES } from '../data/types.js?v=24';
+import { LADDER_SIZE } from '../data/ranks.js?v=24';
+import { GROWTH, SPECIALTY_MULT } from './tuning.js?v=24';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=24';
+import { inGame } from '../data/kimarite.js?v=24';
 
 // 古い iPhone の Safari（iOS 15.4 より前）には Object.hasOwn が無い＝札を押すと止まっていた（10/10）
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
@@ -143,6 +144,21 @@ function validBasho(b) {
   return Number.isInteger(b.day) && b.day >= 0 && b.day <= len;
 }
 
+// 覚えた手（known）と作戦表（strategy）を書いた記録は、ゲームの手（IN_GAME・10/11 21手に絞った）だけ残す。
+// 記録は捨てない＝その手だけ落とす。覚えた手が空になったらタイプの始めの手を入れ直す（今の記録はどちらも書かない＝何もしない）
+const SCENE_KEYS = ['tachiai', 'mid', 'edge'];
+function keepInGameMoves(c) {
+  if (c.known !== undefined) {
+    const kept = Array.isArray(c.known) ? c.known.filter(inGame) : [];
+    c.known = kept.length ? kept : [...TYPES[c.type].start];
+  }
+  if (c.strategy !== undefined) {
+    const s = c.strategy && typeof c.strategy === 'object' ? c.strategy : {};
+    c.strategy = {};
+    for (const sc of SCENE_KEYS) c.strategy[sc] = Array.isArray(s[sc]) ? s[sc].filter(inGame) : [];
+  }
+}
+
 export function deserialize(text) {
   try {
     const c = JSON.parse(text);
@@ -158,6 +174,7 @@ export function deserialize(text) {
     if (c.kinboshi === undefined) c.kinboshi = 0;
     else if (!count(c.kinboshi)) return null;
     c.fatigue = Math.min(FATIGUE_MAX, c.fatigue); // 疲れに上が無かった頃の記録は10で止める
+    keepInGameMoves(c);
     return c;
   } catch {
     return null;

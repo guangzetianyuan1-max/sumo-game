@@ -1,6 +1,7 @@
 // 5つのタイプ（設計書 §1 入門）。base の和は150でそろえる（同じ強さ）。高い=60・中=45〜50・低い=40。
 // strong＝得意な動きの型（上乗せ STRONG_BONUS）。weak＝この型を受けると弱い。by の値を上げると弱みが減る。when＝その組みのときだけ効く。
 // start＝始めに覚えている3手。sample＝第1段で覚えさせておく見本の10手（習得は第3段で作る）。
+// どちらもゲームの手（kimarite.js の IN_GAME・10/11 21手に絞った）だけで書く
 export const TYPE_IDS = ['heavy', 'small', 'balance', 'yotsu', 'tall'];
 
 export const TYPES = {
@@ -17,7 +18,7 @@ export const TYPES = {
     strong: ['hineri', 'kake', 'hiki', 'okuri'],
     weak: { arch: ['yori', 'nage', 'tsuri'], by: ['tai'], when: 'grip' },
     start: ['oshidashi', 'hatakikomi', 'hikiotoshi'],
-    sample: ['oshidashi', 'hatakikomi', 'hikiotoshi', 'katasukashi', 'tsukiotoshi', 'ashitori', 'uchigake', 'okuridashi', 'shitatenage', 'kekaeshi'],
+    sample: ['oshidashi', 'hatakikomi', 'hikiotoshi', 'katasukashi', 'tsukiotoshi', 'sotogake', 'uchigake', 'okuridashi', 'shitatenage', 'tsukidashi'],
     girth: 1, tall: false,
   },
   balance: {
@@ -41,7 +42,7 @@ export const TYPES = {
     strong: ['nage', 'tsuri', 'hiki'],
     weak: { arch: ['kake', 'sori', 'hineri'], by: ['shin'] },
     start: ['yorikiri', 'uwatenage', 'tsuridashi'],
-    sample: ['yorikiri', 'uwatenage', 'tsuridashi', 'tsuriotoshi', 'hatakikomi', 'hikiotoshi', 'kotenage', 'kimedashi', 'oshidashi', 'utchari'],
+    sample: ['yorikiri', 'uwatenage', 'tsuridashi', 'shitatenage', 'hatakikomi', 'hikiotoshi', 'kotenage', 'sukuinage', 'oshidashi', 'utchari'],
     girth: 2, tall: true,
   },
 };
