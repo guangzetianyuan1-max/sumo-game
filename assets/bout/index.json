@@ -1,0 +1,40 @@
+{
+ "east": {
+  "shikiri": {"w": 164, "h": 203, "front": 163},
+  "tachiai": {"w": 230, "h": 221, "front": 229},
+  "both": {"w": 265, "h": 250, "front": 264},
+  "grip": {"w": 194, "h": 258, "front": 193},
+  "grip2": {"w": 244, "h": 256, "front": 243},
+  "throw": {"w": 287, "h": 249, "front": 286},
+  "recoil": {"w": 216, "h": 251, "front": 215},
+  "stagger": {"w": 219, "h": 253, "front": 218},
+  "fall": {"w": 255, "h": 196, "front": 254},
+  "push": {"w": 200, "h": 258, "front": 199},
+  "brace": {"w": 234, "h": 237, "front": 233},
+  "rise": {"w": 217, "h": 216, "front": 216},
+  "tsR": {"w": 213, "h": 244, "front": 212},
+  "tsL": {"w": 186, "h": 244, "front": 185},
+  "hit": {"w": 182, "h": 262, "front": 181},
+  "back": {"w": 212, "h": 230, "front": 211},
+  "topple": {"w": 211, "h": 236, "front": 210}
+ },
+ "west": {
+  "shikiri": {"w": 164, "h": 203, "front": 0},
+  "tachiai": {"w": 230, "h": 221, "front": 0},
+  "both": {"w": 265, "h": 250, "front": 0},
+  "grip": {"w": 194, "h": 258, "front": 0},
+  "grip2": {"w": 244, "h": 256, "front": 0},
+  "throw": {"w": 287, "h": 249, "front": 0},
+  "recoil": {"w": 216, "h": 251, "front": 0},
+  "stagger": {"w": 219, "h": 253, "front": 0},
+  "fall": {"w": 255, "h": 196, "front": 0},
+  "push": {"w": 200, "h": 258, "front": 0},
+  "brace": {"w": 234, "h": 237, "front": 0},
+  "rise": {"w": 217, "h": 216, "front": 0},
+  "tsR": {"w": 213, "h": 244, "front": 0},
+  "tsL": {"w": 186, "h": 244, "front": 0},
+  "hit": {"w": 182, "h": 262, "front": 0},
+  "back": {"w": 212, "h": 230, "front": 0},
+  "topple": {"w": 211, "h": 236, "front": 0}
+ }
+}

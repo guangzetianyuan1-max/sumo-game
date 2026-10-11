@@ -1,28 +1,50 @@
-// src/scenes/BoutScene.js — 取組を仮の四角で見せる（ドットの絵は第4段）。一代記：自分（東）＝career の値・相手（西）＝今日の相手の値
+// src/scenes/BoutScene.js — 取組を本人のドットの力士で見せる（10/11 本人「3の動きで『動画を入れて』」・見本＝art_src/動画試作/bout_video.py）
+// 一代記：自分（東）＝career の値・相手（西）＝今日の相手の値
 // 取組を計算したらすぐ recordBout → 保存（動きは結果を見せるだけ）。ボタンは「取組の順へ」だけ
 // 結果が出たら右下に一言（10/11 本人）：勝ち＝娘が祝う・負け＝親方が心技体の不足と技の選びを言う（boutComment）。動きの記録はその時に最後の1行だけにする
 // 場所の自動（session.autoBasho）の時：速さは結果だけ（本人の速さの設定は変えない）・速さのボタンは出さない・結果を0.8秒見せて取組の順へ戻る。どこかを押すと自動を止めて取組の順へ
-import { runBout } from '../core/bout.js?v=24';
-import { makeWrestler } from '../core/wrestler.js?v=24';
-import { currentOpponent } from '../core/basho.js?v=24';
-import { boutStats } from '../core/career.js?v=24';
-import { TYPES } from '../data/types.js?v=24';
-import { t, techLabel, shikonaLabel } from '../i18n/i18n.js?v=24';
-import { session, recordNow, boutSeed } from '../state.js?v=24';
-import { boutComment } from '../core/advice.js?v=24';
+// 土俵：横に広い世界（WORLD.w）を container に入れ、触れ合う所を追って横に動かす（屋根と四房は画面に止めたまま）
+// 力士：assets/bout/<east|west>/<姿勢>.png（tools/prep_bout.py）。姿勢の選びと位置の計算は src/core/boutanim.js
+// 決まり方：突き押しの「出し」＝俵の外へ押し出して土俵の下へ／「倒し」＝俵際で倒れる／ほか＝踏ん張る勝ちと倒れる負け（技ごとの動きは後の段で1つずつ）
+import { runBout } from '../core/bout.js?v=25';
+import { makeWrestler } from '../core/wrestler.js?v=25';
+import { currentOpponent } from '../core/basho.js?v=25';
+import { boutStats } from '../core/career.js?v=25';
 import {
-  button, backButton, fitText, roundBox, textStyle, statBars, speakerFace, speechBubble, preloadGuideArt, preloadOyakataArt, COLORS,
-} from '../ui/widgets.js?v=24';
+  POSE_NAMES, WORLD, OVERLAP, stepPoses, finishKind, isThrust, contactX, clampContact, viewScroll, bodyLeft, bodyScale,
+} from '../core/boutanim.js?v=25';
+import { t, techLabel, shikonaLabel, getLang } from '../i18n/i18n.js?v=25';
+import { session, recordNow, boutSeed } from '../state.js?v=25';
+import { boutComment } from '../core/advice.js?v=25';
+import { WORD_COLOR, wordArt } from '../data/words.js?v=25';
+import { playBout } from '../ui/sfx.js?v=25';
+import {
+  button, backButton, fitText, textStyle, statBars, speakerFace, speechBubble, preloadGuideArt, preloadOyakataArt,
+  preloadWordsIndex, loadWordsArt, COLORS,
+} from '../ui/widgets.js?v=25';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
-const EAST_BAND = 0x3f6aa8;
-const WEST_BAND = 0xc8553d;
-const FEET_Y = 640; // 土俵の上の縁（力士の足もと）
+const PACE = { normal: 1, fast: 0.5 }; // 動きの長さに掛ける数（速いは見本の半分）
+const FEET_Y = WORLD.feetY; // 足もとの線（輪の中心の線）
+const STAGE = { top: 170, bottom: 810 }; // 土俵の画面の上下（床の下の端は場面の札 y808 のすぐ上）
 const READY_MS = 1000; // 立ち合いの前の1行（塩をまいて、時間いっぱい）を見せる長さ
 const AUTO_SHOW_MS = 800; // 自動の時、結果を見せる長さ
+// 動きの長さ（ms・普通の速さ＝見本の間）。押し出しの決まり方は押し 900＋倒れる 650＋結果まで 250＝1.8秒
+const MS = {
+  rise: 120, charge: 180, hold: 150, // 立ち合い：立ち上がる・当たる・当たったまま（ドーン）
+  slide: 180, recoilAt: 300, recoil: 80, // 1手：新しい所へ滑る・突いた手を引くまで・引いて離れる
+  push: 900, pushdown: 700, fall: 650, fallDown: 600, banner: 250,
+  word: 380, doon: 450, pop: 120, shake: 100, shakeHit: 60,
+};
+const WORD = { y: 275, w: 372, edge: 8 }; // 効果文字：画面の y・幅（絵 600px の 0.62）・画面の端からの余白
+// 結果の札：顔（頭の上の端 y≈337）にかからないよう屋根の所まで上げた（前は y231〜381）
+const BANNER = { top: 172, h: 150, win: 221, kim: 286 };
 // 結果の後の一言：動きの記録（y852〜・最後の1行だけ＝折れても2行で y940 まで）の下・「取組の順へ」（上の端 y1145）の上
 const COMMENT = { left: 30, right: 700, top: 952, h: 180, face: 110 };
+const SIDES = ['east', 'west'];
+const other = (side) => (side === 'east' ? 'west' : 'east');
+const lerp = (a, b, u) => a + (b - a) * Math.max(0, Math.min(1, u));
 
 export class BoutScene extends Phaser.Scene {
   constructor() {
@@ -32,6 +54,13 @@ export class BoutScene extends Phaser.Scene {
   preload() {
     preloadGuideArt(this); // 勝った時の娘の顔
     preloadOyakataArt(this); // 負けた時の親方の顔
+    preloadWordsIndex(this); // 効果文字（ドーン！・バチーン！など）
+    // 力士の姿勢の絵と目録（大きさと前の端）
+    if (!this.cache.json.exists('bout-index')) this.load.json('bout-index', 'assets/bout/index.json');
+    SIDES.forEach((side) => POSE_NAMES.forEach((p) => {
+      const key = `bout-${side}-${p}`;
+      if (!this.textures.exists(key)) this.load.image(key, `assets/bout/${side}/${p}.png`);
+    }));
   }
 
   create() {
@@ -63,7 +92,18 @@ export class BoutScene extends Phaser.Scene {
 
     const { width } = this.scale;
     this.cx = width / 2;
+    loadWordsArt(this, getLang()); // 目録にある効果文字の絵だけ（届く前に出す時は字で代える）
+    this.boutIndex = this.cache.json.get('bout-index');
+    this.sizes = { east: bodyScale(career.type), west: bodyScale(foe.type) };
+    this.anims = []; // 動いている動きの tween（結果だけに替えた時に止める）
+    this.words = []; // 出ている効果文字
+    this.thrustN = 0; // 突っ張りの数（バチーン！とバシッ！を交互に）
+    this.tachiaiDone = false;
+    this.shown = false;
+    // 立ち合いの前：仕切り・二人の間 120
+    this.view = { contact: WORLD.ringX, gap: 120, east: { pose: 'shikiri', dy: 0 }, west: { pose: 'shikiri', dy: 0 } };
     this.drawStage();
+    this.layout();
     const half = width / 2 - 40;
     // 東西の札は一段上げ、その下に心・技・体の小さな棒（屋根は y170 から）
     // 東西の名前はしこ名（自分は東）
@@ -71,10 +111,6 @@ export class BoutScene extends Phaser.Scene {
     fitText(this.add.text(width - 30, 88, t('bout.sideType', { side: t('bout.west'), type: this.names.west }), textStyle(30, COLORS.ink)).setOrigin(1, 0), half);
     statBars(this, 30, 128, width / 2 - 50, { shin: you.shin, gi: you.gi, tai: you.tai }, { compact: true });
     statBars(this, width / 2 + 20, 128, width / 2 - 50, { shin: opp.shin, gi: opp.gi, tai: opp.tai }, { compact: true });
-    this.east = this.body(career.type, EAST_BAND, 1);
-    this.west = this.body(foe.type, WEST_BAND, -1);
-    this.east.setPosition(this.cx - 80, FEET_Y);
-    this.west.setPosition(this.cx + 80, FEET_Y);
     this.sceneLabel = this.add.text(30, 808, '', textStyle(28, COLORS.gold));
     this.lines = this.add.text(30, 852, '', textStyle(30, COLORS.ink, { lineSpacing: 12, wordWrap: { width: width - 60, useAdvancedWrap: true } }));
     // 結果はもう記録してある＝取組の順へ戻っても取り直しにはならない
@@ -111,62 +147,228 @@ export class BoutScene extends Phaser.Scene {
     return t('bout.speed', { speed: t(`speed.${session.speed}`) });
   }
 
-  // 横から見た土俵（広間の奥・屋根・観客・土俵・床）。ドットの絵は第4段
+  // 土俵（見本と同じ見た目）：少し上から見た土俵の上の面・台の横の面と土の段・楕円の俵の輪・仕切り線・奥の観客
+  // 観客と土俵と力士は横に広い世界（container）の中・屋根と四房は画面に止める
   drawStage() {
     const { width } = this.scale;
-    this.add.rectangle(width / 2, 460, width, 600, 0x1b2238);
-    for (const y of [330, 370, 410]) {
-      for (let x = 18; x < width; x += 36) this.add.circle(x, y, 12, 0x39436a, 0.25);
+    const { w: WW, ringX: RC, rx: RX, ry: RY } = WORLD;
+    this.add.rectangle(width / 2, (STAGE.top + STAGE.bottom) / 2, width, STAGE.bottom - STAGE.top, 0x1b2238);
+    this.world = this.add.container(0, 0);
+    const g = this.add.graphics();
+    g.fillStyle(0x262e4a, 1);
+    for (const y of [150, 195, 240, 285]) {
+      for (let x = 18; x < WW; x += 36) g.fillCircle(x, STAGE.top + y, 12);
     }
-    // 屋根のにおわせ（飾りだけ）
+    const top = FEET_Y - RY - 40;
+    const near = FEET_Y + RY + 40;
+    const base = FEET_Y + RY + 95; // 800：場面の札（y808）の上
+    g.fillStyle(0xc9a46b, 1); // 土俵の上の面
+    g.fillPoints([{ x: 30, y: top }, { x: WW - 30, y: top }, { x: WW + 40, y: near }, { x: -40, y: near }], true);
+    g.fillStyle(0xa8824c, 1); // 台の横の面
+    g.fillRect(-40, near, WW + 80, base - near);
+    g.lineStyle(2, 0x987442, 1); // 横の面の土の段
+    for (let k = 0; k < 4; k++) g.lineBetween(-40, near + 12 + k * 12, WW + 40, near + 12 + k * 12);
+    g.lineStyle(12, 0xe8d6a8, 1); // 俵の輪
+    g.strokeEllipse(RC, FEET_Y, RX * 2 - 12, RY * 2 - 12, 96);
+    g.lineStyle(2, 0xc2ae80, 1);
+    g.strokeEllipse(RC, FEET_Y, RX * 2 - 26, RY * 2 - 22, 96);
+    g.lineStyle(5, 0xf6f1e6, 1); // 仕切り線
+    [RC - 45, RC + 45].forEach((x) => g.lineBetween(x, FEET_Y - 14, x, FEET_Y + 14));
+    g.fillStyle(0x2a2238, 1); // 床
+    g.fillRect(0, base, WW, STAGE.bottom - base);
+    this.world.add(g);
+    // 力士（原点は左下＝足もと）。東を手前に
+    this.bodies = {};
+    ['west', 'east'].forEach((side) => {
+      const img = this.add.image(0, FEET_Y, `bout-${side}-shikiri`).setOrigin(0, 1);
+      img.setScale(this.sizes[side].sx, this.sizes[side].sy);
+      this.bodies[side] = img;
+      this.world.add(img);
+    });
+    // 屋根のにおわせ（画面に止める）
     const roof = this.add.graphics();
     roof.fillStyle(0x3a2a20, 1);
     roof.fillPoints([{ x: 60, y: 170 }, { x: 660, y: 170 }, { x: 720, y: 230 }, { x: 0, y: 230 }], true);
     [[40, 0x3f6aa8], [253, 0xc8553d], [467, 0xf3e6c8], [680, 0x222222]].forEach(([x, c]) => this.add.rectangle(x, 245, 14, 30, c));
-    // 土俵（横から見た台形）
-    const dohyo = this.add.graphics();
-    dohyo.fillStyle(0xc9a46b, 1);
-    dohyo.fillPoints([{ x: 90, y: 640 }, { x: 630, y: 640 }, { x: 680, y: 760 }, { x: 40, y: 760 }], true);
-    dohyo.fillStyle(0xb08a52, 1);
-    dohyo.fillPoints([{ x: 90, y: 640 }, { x: 630, y: 640 }, { x: 638, y: 660 }, { x: 82, y: 660 }], true);
-    roundBox(this, width / 2, 637, 560, 10, 0xe8d6a8, { radius: 5, shadow: false }); // 俵
-    this.add.rectangle(width / 2, 780, width, 40, 0x2a2238);
   }
 
-  // 原点は足もと。dir は向き（東は右向き1・西は左向き-1）
-  body(type, color, dir) {
-    const T = TYPES[type];
-    const w = 70 + T.girth * 22;
-    const h = T.tall ? 210 : 180;
-    const c = this.add.container(0, 0);
-    c.add(roundBox(this, 0, -h / 2, w, h, 0xe8b48a, { radius: 24, stroke: 0x3a2a20, shadow: false }));
-    c.add(roundBox(this, 0, -h / 2 + h * 0.18, w, h * 0.16, color, { radius: 8, shadow: false }));
-    c.add(this.add.circle(0, -h - 26, 26, 0xe8b48a).setStrokeStyle(3, 0x3a2a20));
-    c.add(this.add.circle(dir * 12, -h - 30, 4, 0x3a2a20));
-    return c;
+  // 姿勢の絵の大きさと前の端（目録が読めなかった時の代わりの値）
+  meta(side, pose) {
+    const idx = this.boutIndex && this.boutIndex[side];
+    const m = idx && Object.prototype.hasOwnProperty.call(idx, pose) ? idx[pose] : null;
+    return m || { w: 200, h: 250, front: side === 'east' ? 199 : 0 };
   }
 
-  place(pos, grip) {
-    const gap = grip === 'grip' ? 40 : 80;
-    const p = Math.max(-80, Math.min(80, pos)); // 倒れる側が輪の外へ出ないように
-    this.lastPos = pos;
-    const x = this.cx + (p / 100) * 270;
-    this.tweens.add({ targets: this.east, x: x - gap, duration: 300 });
-    this.tweens.add({ targets: this.west, x: x + gap, duration: 300 });
+  // this.view（触れ合う所・二人の間・姿勢・上下のずれ）から、絵の置き場と画面の追いを決める
+  layout() {
+    const v = this.view;
+    this.world.x = -Math.round(viewScroll(v.contact));
+    SIDES.forEach((side) => {
+      const s = v[side];
+      const img = this.bodies[side];
+      const key = `bout-${side}-${s.pose}`;
+      if (img.texture.key !== key && this.textures.exists(key)) img.setTexture(key);
+      const m = this.meta(side, s.pose);
+      img.setPosition(Math.round(bodyLeft(side, v.contact, v.gap, m.front, this.sizes[side].sx)), Math.round(FEET_Y + s.dy));
+    });
   }
 
-  showEntry(e) {
-    this.place(e.pos, e.grip);
+  pace() {
+    return PACE[this.speed()] || 1;
+  }
+
+  // 0→1 の u で fn を呼ぶ動き1つ（終わったら done）
+  phase(ms, fn, done) {
+    const o = { u: 0 };
+    const tw = this.tweens.add({
+      targets: o, u: 1, duration: Math.max(1, Math.round(ms)),
+      onUpdate: () => {
+        fn(o.u);
+        this.layout();
+      },
+      onComplete: () => {
+        this.anims = this.anims.filter((a) => a !== tw);
+        fn(1);
+        this.layout();
+        if (done) done();
+      },
+    });
+    this.anims.push(tw);
+  }
+
+  // 動きの段を順に：steps＝[{ ms, fn(u), at: [[割合, 出来事]] }]。animate が偽なら、言葉も音も出さず最後の形にすぐ置く
+  runSteps(steps, done, animate) {
+    if (!animate) {
+      steps.forEach((st) => st.fn(1));
+      this.layout();
+      if (done) done();
+      return;
+    }
+    const next = (k) => {
+      if (k >= steps.length) {
+        if (done) done();
+        return;
+      }
+      const st = steps[k];
+      const ms = st.ms * this.pace();
+      (st.at || []).forEach(([f, cb]) => {
+        if (f <= 0) cb();
+        else this.time.delayedCall(f * ms, cb);
+      });
+      this.phase(ms, st.fn, () => next(k + 1));
+    };
+    next(0);
+  }
+
+  stopAnims() {
+    this.anims.forEach((tw) => tw.stop());
+    this.anims = [];
+  }
+
+  clearWords() {
+    this.words.forEach((o) => {
+      this.tweens.killTweensOf(o);
+      o.destroy();
+    });
+    this.words = [];
+  }
+
+  // 効果文字をぽんと出す（触れ合う所の上・dx だけ横へ）。絵が無ければ太い字で代える。life ms で消える
+  word(id, dx, life) {
+    const { width } = this.scale;
+    const art = wordArt(getLang(), id, this.cache.json.get('word-index'), this.cache.json.get('word-en-index'));
+    let obj;
+    if (art && this.textures.exists(art.key)) {
+      obj = this.add.image(0, WORD.y, art.key);
+      obj.setScale(WORD.w / obj.width);
+    } else {
+      obj = fitText(this.add.text(0, WORD.y, t(`word.${id}`), textStyle(56, WORD_COLOR[id], { stroke: '#1a1020', strokeThickness: 10 })).setOrigin(0.5), WORD.w);
+    }
+    const half = obj.displayWidth / 2;
+    const x = this.view.contact - viewScroll(this.view.contact) + dx;
+    obj.setX(Math.max(WORD.edge + half, Math.min(width - WORD.edge - half, x))).setDepth(5);
+    const full = obj.scaleX;
+    obj.setScale(full * 1.35);
+    this.tweens.add({ targets: obj, scale: full, duration: MS.pop * this.pace() });
+    this.words.push(obj);
+    this.time.delayedCall(life * this.pace(), () => {
+      this.tweens.killTweensOf(obj);
+      this.words = this.words.filter((o) => o !== obj);
+      obj.destroy();
+    });
+  }
+
+  // 画面を横にだけ揺らす（見本：当たりで 6px・突っ張りで 4px）
+  shake(px, ms) {
+    this.cameras.main.shake(ms * this.pace(), new Phaser.Math.Vector2(px / this.scale.width, 0));
+  }
+
+  // 立ち合い：仕切り → 立ち上がる → 当たる（ドーン！・どん・揺れ）
+  tachiai(done) {
+    const v = this.view;
+    const both = (pose) => {
+      v.east.pose = v.west.pose = pose;
+      v.east.dy = v.west.dy = 0;
+    };
+    this.runSteps([
+      { ms: MS.rise, fn: (u) => { both('rise'); v.gap = lerp(120, 95, u); } },
+      { ms: MS.charge, fn: (u) => { both('tachiai'); v.gap = lerp(95, 0, u); } },
+      {
+        ms: MS.hold, fn: () => both('tachiai'),
+        at: [[0, () => { this.word('doon', 0, MS.doon); playBout('thud'); this.shake(6, MS.shake); }]],
+      },
+    ], done, true);
+  }
+
+  // 突っ張りが当たった：バチーン！とバシッ！を交互に・平手の音・小さな揺れ
+  thrustHit(attacker) {
+    const id = this.thrustN % 2 === 0 ? 'bachiin' : 'bashi';
+    this.thrustN += 1;
+    this.word(id, id === 'bashi' ? (attacker === 'east' ? 50 : -50) : 0, MS.word);
+    playBout('slap');
+    this.shake(4, MS.shakeHit);
+  }
+
+  // 記録の1行：姿勢を選び、新しい触れ合う所へ滑る。突き押しは手を引いて少し離れる（見本の突っ張りの間）
+  showEntry(e, idx, animate) {
+    this.stopAnims();
+    const p = stepPoses(e, this.lastPos, idx);
+    this.lastPos = e.pos;
     this.sceneLabel.setText(t(`scene.${e.east.scene}`));
     this.history = [...this.history, t('bout.line', { east: techLabel(e.east.id), west: techLabel(e.west.id) })].slice(-4);
     this.lines.setText(this.history.join('\n'));
+    const v = this.view;
+    const from = v.contact;
+    const gap0 = v.gap;
+    const to = contactX(e.pos);
+    const thrust = !!p.attacker && isThrust(e[p.attacker].id);
+    const steps = [{
+      ms: MS.slide,
+      fn: (u) => {
+        v.east.pose = p.east;
+        v.west.pose = p.west;
+        v.east.dy = v.west.dy = 0;
+        v.contact = lerp(from, to, u);
+        v.gap = lerp(gap0, 0, u);
+      },
+      at: thrust ? [[0, () => this.thrustHit(p.attacker)]] : [],
+    }];
+    if (thrust && animate) {
+      const a = p.attacker;
+      steps.push({ ms: MS.recoilAt - MS.slide, fn: () => {} });
+      steps.push({ ms: MS.recoil, fn: (u) => { v[a].pose = 'grip'; v[other(a)].pose = 'back'; v.gap = lerp(0, 30, u); } });
+    }
+    this.runSteps(steps, null, animate);
   }
 
   play() {
     if (this.done) return;
     const log = this.result.log;
     if (this.speed() === 'result') {
-      this.showEntry(log[log.length - 1]);
+      // 結果だけ：言葉も音も出さず、最後の形へすぐ置く
+      this.stopAnims();
+      this.clearWords();
+      this.showEntry(log[log.length - 1], log.length - 1, false);
       this.finish();
       return;
     }
@@ -174,27 +376,109 @@ export class BoutScene extends Phaser.Scene {
       this.finish();
       return;
     }
-    this.showEntry(log[this.i++]);
+    if (!this.tachiaiDone) {
+      this.tachiaiDone = true;
+      this.tachiai(() => this.play());
+      return;
+    }
+    this.showEntry(log[this.i], this.i, true);
+    this.i += 1;
     this.time.delayedCall(STEP_MS[this.speed()], () => this.play());
+  }
+
+  // 決まり方の動きの段（finishKind で選ぶ）。最後の形は速さによらず同じ（結果だけ＝各段の u=1 を順に置く）
+  finishSteps() {
+    const { winner, kimarite } = this.result;
+    const W = winner;
+    const L = other(W);
+    const dir = W === 'east' ? 1 : -1;
+    const v = this.view;
+    const c0 = v.contact;
+    const g0 = v.gap;
+    const kind = finishKind(kimarite);
+    const fall = this.meta(L, 'fall');
+    const lyingOut = fall.h * this.sizes[L].sy * 0.25; // 見本：土俵の下へ落ちた絵は高さの 1/4 だけ下げる
+    // 輪の中心から dx 先の触れ合う所。二人の絵（使う姿勢のいちばん広いもの）が世界の外へ出ない所に止める
+    const edge = (dx, gap) => {
+      const ext = (side, poses) => Math.max(...poses.map((p) => this.meta(side, p).w * this.sizes[side].sx)) + gap / 2 - OVERLAP;
+      const win = ext(W, ['push', 'brace']);
+      const lose = ext(L, ['back', 'stagger', 'topple', 'fall']);
+      const x = WORLD.ringX + dir * dx;
+      return W === 'east' ? clampContact(x, win, lose) : clampContact(x, lose, win);
+    };
+    const bob = (u, ms) => -4 * Math.abs(Math.sin(u * (ms / 1000) * Math.PI * 6)); // 一歩ごとに小さく上下（1秒に3歩）
+    const setW = (pose, dy) => {
+      v[W].pose = pose;
+      v[W].dy = dy;
+    };
+    const setL = (pose, dy) => {
+      v[L].pose = pose;
+      v[L].dy = dy;
+    };
+    // 寄って押し込む（勝った側＝押す・負けた側＝後ずさり→よろける）。ズザザ！とすり足の音
+    const advance = (ms, cEnd) => ({
+      ms,
+      fn: (u) => {
+        v.contact = lerp(c0, cEnd, u);
+        v.gap = lerp(g0, 0, u * 4);
+        setW('push', u >= 1 ? 0 : bob(u, ms));
+        setL(u < 0.6 ? 'back' : 'stagger', 0);
+      },
+      at: [[0.17, () => { this.word('zuzaza', 50 * dir, MS.word * 2); playBout('scrape'); }]],
+    });
+    // 倒れる：前半は落ちる途中（topple）・後半は倒れた（fall）。out＝土俵の下へ落ちる
+    const topple = (ms, out, from, to, gapFrom, gapTo, sayDosun) => ({
+      ms,
+      fn: (u) => {
+        v.contact = lerp(from, to, u);
+        v.gap = lerp(gapFrom, gapTo, u);
+        setW('brace', 0);
+        if (u < 0.45) setL('topple', lerp(0, out ? 25 : 10, u / 0.45));
+        else {
+          const q = Math.pow((u - 0.45) / 0.55, 2);
+          setL('fall', out ? lyingOut + lerp(25, 120, q) : lerp(10, 16, q));
+        }
+      },
+      at: [[0.45, () => {
+        if (sayDosun) this.word('dosun', 60 * dir, MS.word);
+        playBout('thud');
+      }]],
+    });
+    const wait = { ms: MS.banner, fn: () => {} };
+    if (kind === 'pushout') {
+      const cEnd = edge(290, 60);
+      return [advance(MS.push, cEnd), topple(MS.fall, true, cEnd, cEnd, 0, 60, false), wait];
+    }
+    if (kind === 'pushdown') {
+      const cEnd = edge(230, 40);
+      return [advance(MS.pushdown, cEnd), topple(MS.fallDown, false, cEnd, cEnd, 0, 40, true), wait];
+    }
+    // ほかの決まり手：踏ん張る勝ちと倒れる負け。負けた側が俵の外にいれば（位置が勝った側の向きに100以上）土俵の下へ
+    const out = Math.abs(this.lastPos) >= 100 && Math.sign(this.lastPos) === dir;
+    const cEnd = out ? edge(290, 60) : c0;
+    return [topple(MS.fall, out, c0, cEnd, g0, 60, true), wait];
   }
 
   finish() {
     if (this.done) return;
     this.done = true;
+    this.runSteps(this.finishSteps(), () => this.showResult(), this.speed() !== 'result');
+  }
+
+  // 結果の札・一言・取組の順へ（前と同じ）
+  showResult() {
+    if (this.shown) return;
+    this.shown = true;
+    this.clearWords();
     const { winner, kimarite } = this.result;
-    const loser = winner === 'east' ? this.west : this.east;
-    this.tweens.add({ targets: loser, angle: winner === 'east' ? -80 : 80, duration: 400 });
-    // 倒れる向きは土俵の中央側（Phaser の角度は時計回り）。足もとは x 64 以上なので 0..720 に収まる
-    // 縁の外まで押し出された（|pos| が100以上）なら、土俵の縁から落ちる
-    if (Math.abs(this.lastPos ?? 0) >= 100) this.tweens.add({ targets: loser, y: FEET_Y + 120, duration: 400 });
     const side = this.names[winner];
     const { width } = this.scale;
     // 屋根や飾りの上でも読めるよう、字の下に濃い丸い台を敷く
     const back = this.add.graphics();
     back.fillStyle(COLORS.panel, 0.85);
-    back.fillRoundedRect(this.cx - 330, 231, 660, 150, 24);
-    fitText(this.add.text(this.cx, 280, t('bout.win', { side }), textStyle(72, COLORS.gold)).setOrigin(0.5), width - 60);
-    fitText(this.add.text(this.cx, 345, t('bout.kimarite', { tech: techLabel(kimarite) }), textStyle(46, COLORS.ink)).setOrigin(0.5), width - 60);
+    back.fillRoundedRect(this.cx - 330, BANNER.top, 660, BANNER.h, 24);
+    fitText(this.add.text(this.cx, BANNER.win, t('bout.win', { side }), textStyle(72, COLORS.gold)).setOrigin(0.5), width - 60);
+    fitText(this.add.text(this.cx, BANNER.kim, t('bout.kimarite', { tech: techLabel(kimarite) }), textStyle(46, COLORS.ink)).setOrigin(0.5), width - 60);
     this.comment();
     if (this.auto) {
       this.time.delayedCall(AUTO_SHOW_MS, () => this.scene.start('schedule')); // 自動：結果を見せて取組の順へ（そこで0.6秒おいて次の1番）

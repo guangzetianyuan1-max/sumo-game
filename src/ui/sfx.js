@@ -92,11 +92,24 @@ const SOUNDS = {
   },
 };
 
-// 稽古の札を押した時の音。知らない名前・鳴らせない端末では何もしない（遊びは止めない）
-// volume＝今までの音量に掛ける倍率（0〜1・既定 1）。声のファイルが付く稽古では 0.6 に下げて声を聞こえやすくする
-export function playTraining(kind, volume = 1) {
-  if (!Object.prototype.hasOwnProperty.call(SOUNDS, kind)) return;
-  const make = SOUNDS[kind];
+// 取組の画面の音（10/11 見本 bout_video.py の音を Web Audio で作り直した）
+const BOUT = {
+  // 当たり・倒れて落ちる「どん」（低い正弦波が下がる＋短い当たりの雑音・足して 0.35）
+  thud: (c, t) => {
+    tone(c, t, { freq: 130, freqEnd: 50, dur: 0.35, peak: 0.25 });
+    noise(c, t, { dur: 0.06, peak: 0.1, filter: 'lowpass', f: 800 });
+  },
+  // 突っ張りの平手「ぱん」（高めの短い雑音）
+  slap: (c, t) => noise(c, t, { dur: 0.12, peak: 0.3, filter: 'highpass', f: 1200, q: 0.7, attack: 0.002 }),
+  // 俵まで押し込む すり足「ずざざ」（低く絞った雑音が少しずつ消える）
+  scrape: (c, t) => noise(c, t, { dur: 0.75, peak: 0.2, filter: 'lowpass', f: 1400, fEnd: 500, q: 0.8, attack: 0.08 }),
+};
+export const BOUT_SOUNDS = Object.keys(BOUT);
+
+// 表 table の kind の音を鳴らす（知らない名前・鳴らせない端末では何もしない＝遊びは止めない）
+function play(table, kind, volume) {
+  if (!Object.prototype.hasOwnProperty.call(table, kind)) return;
+  const make = table[kind];
   const c = audio();
   if (!c) return;
   try {
@@ -110,4 +123,15 @@ export function playTraining(kind, volume = 1) {
   } catch {
     // 鳴らせなくても遊びは続ける
   }
+}
+
+// 稽古の札を押した時の音
+// volume＝今までの音量に掛ける倍率（0〜1・既定 1）。声のファイルが付く稽古では 0.6 に下げて声を聞こえやすくする
+export function playTraining(kind, volume = 1) {
+  play(SOUNDS, kind, volume);
+}
+
+// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）。volume は playTraining と同じ
+export function playBout(kind, volume = 1) {
+  play(BOUT, kind, volume);
 }

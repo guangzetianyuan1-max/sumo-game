@@ -1,7 +1,7 @@
 // 稽古の応援と、稽古の画面の右下の助言（10/11 本人「女子は、ちゃんこと休みの際に応援。親方はそれ以外の稽古で応援」
 // 「画面右下に親方また女子が現れ、アドバイスをする」）。who＝娘の id か部屋の id・key＝i18n の鍵
-import { HEYA, heyaOfGuide } from '../data/heya.js?v=24';
-import { TRAININGS, GAIN } from './career.js?v=24';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=25';
+import { TRAININGS, GAIN } from './career.js?v=25';
 
 const DAUGHTER_KINDS = ['chanko', 'rest'];
 const STATS = ['shin', 'gi', 'tai'];
