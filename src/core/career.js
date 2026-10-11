@@ -1,8 +1,8 @@
 // 一代記の状態・稽古・疲れ・成長・場所の経験・記録（設計書 §3）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=21';
-import { LADDER_SIZE } from '../data/ranks.js?v=21';
-import { GROWTH, SPECIALTY_MULT } from './tuning.js?v=21';
-import { HEYA, heyaOfGuide } from '../data/heya.js?v=21';
+import { TYPES } from '../data/types.js?v=22';
+import { LADDER_SIZE } from '../data/ranks.js?v=22';
+import { GROWTH, SPECIALTY_MULT } from './tuning.js?v=22';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=22';
 
 // 古い iPhone の Safari（iOS 15.4 より前）には Object.hasOwn が無い＝札を押すと止まっていた（10/10）
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
