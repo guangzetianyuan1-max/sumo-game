@@ -1,8 +1,8 @@
 // src/scenes/SetupScene.js — 入門：主人公を5人から1人選ぶ → 番付表へ（勝ち抜きの間、主人公は変わらない）
-import { TYPE_IDS } from '../data/types.js?v=28';
-import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=28';
-import { session, startRun } from '../state.js?v=28';
-import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=28';
+import { TYPE_IDS } from '../data/types.js?v=29';
+import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=29';
+import { session, startRun } from '../state.js?v=29';
+import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=29';
 
 export class SetupScene extends Phaser.Scene {
   constructor() {
@@ -11,6 +11,7 @@ export class SetupScene extends Phaser.Scene {
 
   preload() {
     preloadTypeArt(this);
+    preloadHeroFigures(this);
   }
 
   create() {
@@ -39,7 +40,7 @@ export class SetupScene extends Phaser.Scene {
     const gfx = roundBox(this, x, y, 640, 150, on ? COLORS.panelOn : COLORS.panel, { radius: 28, stroke: COLORS.frame });
     // 左に力士の絵（札の高さより12だけ低く・縦横比のまま）、右に3行（左そろえ）
     const left = x - 320;
-    const key = `type-${id}`;
+    const key = heroKey(this, id); // フィギュア風（無ければドット）
     if (this.textures.exists(key)) {
       const img = this.add.image(left + 70, y, key);
       img.setScale(138 / img.height);

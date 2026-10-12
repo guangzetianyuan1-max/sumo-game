@@ -1,10 +1,10 @@
 // src/scenes/GuideScene.js — 最初の画面：題・言葉の切り替え・記録①〜③の札（10/11 本人「昔話と同じように最大3つの四股名ですすめられるように」）。
 // 中身のある札を押す＝その記録のつづきへ（その時の画面へ）。空きの札を押す＝その記録で新しく入門（部屋の案内役 → 主人公 → 番付表）。
 // 中身のある札の「はじめから」は2度押し（1度目は知らせるだけ・指1本の二重発火は数えない）で、その記録を消して入門へ
-import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=28';
-import { session, SLOT_COUNT, slotState, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=28';
-import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, storage, clearScene } from '../ui/widgets.js?v=28';
-import { secondPress } from '../ui/press.js?v=28';
+import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=29';
+import { session, SLOT_COUNT, slotState, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=29';
+import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=29';
+import { secondPress } from '../ui/press.js?v=29';
 
 const CARD = { w: 640, h: 300, top: 210, gap: 40 }; // 札3枚：210〜1190（下に知らせの1行）
 const NEW = { w: 200, h: 64 }; // 札の右下の「はじめから」
@@ -18,6 +18,7 @@ export class GuideScene extends Phaser.Scene {
 
   preload() {
     preloadTypeArt(this);
+    preloadHeroFigures(this);
   }
 
   create() {
@@ -80,7 +81,7 @@ export class GuideScene extends Phaser.Scene {
       this.add.text(right - PAD, top + 38, t('slot.last'), textStyle(24, COLORS.gold, { fontStyle: '500' })).setOrigin(1, 0.5);
     }
     // 左に自分のタイプの絵、右にしこ名（大）・番付・タイプ
-    const key = `type-${sum.type}`;
+    const key = heroKey(this, sum.type);
     let tx = left + PAD;
     if (this.textures.exists(key)) {
       const img = this.add.image(0, y + 22, key);

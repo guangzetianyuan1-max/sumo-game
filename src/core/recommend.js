@@ -1,8 +1,8 @@
 // src/core/recommend.js — 相手の情報から、お勧めの作戦表を機械で組む（純粋な関数・乱数なし）
-import { KIMARITE, inGame } from '../data/kimarite.js?v=28';
-import { TYPES } from '../data/types.js?v=28';
-import { ARCH } from './tuning.js?v=28';
-import { SCENES, ROW, canPlace, emptyStrategy, rank, scenesOf } from './strategy.js?v=28';
+import { KIMARITE, inGame } from '../data/kimarite.js?v=29';
+import { TYPES } from '../data/types.js?v=29';
+import { ARCH } from './tuning.js?v=29';
+import { SCENES, ROW, canPlace, emptyStrategy, rank, scenesOf } from './strategy.js?v=29';
 
 // 各場面の典型の組み方。弱みの when（apart 離れ／grip 組む）がこの場面で効くかを決める。mid は両方
 const GRIP = { tachiai: 'apart', mid: null, edge: 'grip' };

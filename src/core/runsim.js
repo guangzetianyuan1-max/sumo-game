@@ -1,13 +1,13 @@
 // 勝ち抜きの試運転（強さ合わせと試験用）。取組は自動（お勧めの作戦表）
 // train: true＝負けたら毎回稽古（3コマとも一番低い値）してから挑み直す／false＝稽古なしで挑み直す（同じ相手に MAX_TRIES 回負けたら行き詰まり）
-import { newRun, currentFoe, recordResult, startTraining, trainStat, STATS } from './run.js?v=28';
-import { makeWrestler } from './wrestler.js?v=28';
-import { runBout } from './bout.js?v=28';
-import { recommendStrategy } from './recommend.js?v=28';
-import { defaultStrategy } from './strategy.js?v=28';
-import { TYPES } from '../data/types.js?v=28';
-import { learnMove } from './learn.js?v=28';
-import { makeRng } from './rng.js?v=28';
+import { newRun, currentFoe, recordResult, startTraining, trainStat, STATS } from './run.js?v=29';
+import { makeWrestler } from './wrestler.js?v=29';
+import { runBout } from './bout.js?v=29';
+import { recommendStrategy } from './recommend.js?v=29';
+import { defaultStrategy } from './strategy.js?v=29';
+import { TYPES } from '../data/types.js?v=29';
+import { learnMove } from './learn.js?v=29';
+import { makeRng } from './rng.js?v=29';
 
 const MAX_TRIES = 10;
 const MAX_BOUTS = 2000;

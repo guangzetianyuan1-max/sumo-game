@@ -1,12 +1,13 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=28';
-import { GUIDE_IDS } from '../data/guides.js?v=28';
-import { HEYA_IDS } from '../data/heya.js?v=28';
-import { t, getLang } from '../i18n/i18n.js?v=28';
-import { jaWrap } from '../data/wrap.js?v=28';
-import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=28';
-import { TRAININGS } from '../core/career.js?v=28';
-import { saveNow } from '../state.js?v=28';
+import { TYPE_IDS } from '../data/types.js?v=29';
+import { heroArt } from '../core/foeart.js?v=29';
+import { GUIDE_IDS } from '../data/guides.js?v=29';
+import { HEYA_IDS } from '../data/heya.js?v=29';
+import { t, getLang } from '../i18n/i18n.js?v=29';
+import { jaWrap } from '../data/wrap.js?v=29';
+import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=29';
+import { TRAININGS } from '../core/career.js?v=29';
+import { saveNow } from '../state.js?v=29';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -33,6 +34,27 @@ export const GROUP_COLOR = { kihon: 0xc8553d, kake: 0x4f8a68, nage: 0x3f6aa8, hi
 // 5タイプの絵を読み込む（場面ごとに呼んでよい・読み込み済みの鍵は Phaser が飛ばす）
 export function preloadTypeArt(scene) {
   TYPE_IDS.forEach((id) => scene.load.image(`type-${id}`, `assets/types/${id}.png`));
+}
+
+// フィギュア風の主人公5人（10/12 夜）。届いていなければ type- のドットの絵で代える（heroKey）
+export function preloadHeroFigures(scene) {
+  TYPE_IDS.forEach((id) => {
+    const a = heroArt(id);
+    if (!scene.textures.exists(a.key)) scene.load.image(a.key, a.path);
+  });
+}
+export const heroKey = (scene, type) => (scene.textures.exists(heroArt(type).key) ? heroArt(type).key : `type-${type}`);
+
+// 段階の光るオーラ（WebGL の時だけ・'rainbow' は色が回る）。color が無ければ何もしない
+export function addAura(scene, img, color) {
+  if (!color || !img.preFX) return;
+  const glow = img.preFX.addGlow(color === 'rainbow' ? 0xff4d4d : color, 6, 0, false, 0.1, 16);
+  if (color !== 'rainbow') return;
+  const o = { h: 0 };
+  scene.tweens.add({
+    targets: o, h: 1, duration: 2400, repeat: -1,
+    onUpdate: () => { glow.color = Phaser.Display.Color.HSVToRGB(o.h, 0.8, 1).color; },
+  });
 }
 
 // 案内役の顔（通常）を読み込む

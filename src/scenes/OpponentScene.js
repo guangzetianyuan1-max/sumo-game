@@ -1,13 +1,15 @@
 // src/scenes/OpponentScene.js — 今日の相手の情報（しこ名・番付・タイプの絵・得意・弱み・心技体）と、案内役の女子のひとこと。作戦表の前に見せる
 // 相手は一代記の場所の今日の相手（currentOpponent）。作戦表は prepareOpponent が組む（同じ相手に戻った時は組み直さない）
-import { TYPES } from '../data/types.js?v=28';
-import { boutStats } from '../core/career.js?v=28';
-import { SCENES } from '../core/strategy.js?v=28';
-import { recommendStrategy, recommendReason } from '../core/recommend.js?v=28';
-import { adviceKeys } from '../core/advice.js?v=28';
-import { t, techLabel, getLang, foeLabel } from '../i18n/i18n.js?v=28';
-import { session, prepareOpponent } from '../state.js?v=28';
-import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, bubbleText, preloadTypeArt, preloadGuideArt, COLORS } from '../ui/widgets.js?v=28';
+import { TYPES } from '../data/types.js?v=29';
+import { boutStats } from '../core/career.js?v=29';
+import { SCENES } from '../core/strategy.js?v=29';
+import { recommendStrategy, recommendReason } from '../core/recommend.js?v=29';
+import { adviceKeys } from '../core/advice.js?v=29';
+import { t, techLabel, getLang, foeLabel } from '../i18n/i18n.js?v=29';
+import { session, prepareOpponent } from '../state.js?v=29';
+import { currentFoe } from '../core/run.js?v=29';
+import { foeArt, stageAura, stageScale } from '../core/foeart.js?v=29';
+import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, bubbleText, preloadTypeArt, preloadGuideArt, addAura, COLORS } from '../ui/widgets.js?v=29';
 
 const ART_H = 240;
 const ART_Y = 285; // 絵の札の中心（札は 140〜430）
@@ -22,6 +24,12 @@ export class OpponentScene extends Phaser.Scene {
   preload() {
     preloadTypeArt(this);
     preloadGuideArt(this);
+    // 今の相手のフィギュア風の立ち絵（ふだん・本気・大ボス）
+    const foe = session.run ? currentFoe(session.run) : null;
+    if (foe) {
+      const a = foeArt(foe);
+      if (!this.textures.exists(a.key)) this.load.image(a.key, a.path);
+    }
   }
 
   create() {
@@ -39,14 +47,14 @@ export class OpponentScene extends Phaser.Scene {
     fitText(this.add.text(width / 2, 104, t('career.who', { name: foeLabel(this.foe), rank: t('opp.foeNo', { n: this.foe.index + 1 }) }), textStyle(36, COLORS.ink)).setOrigin(0.5), width - 80);
     roundBox(this, width / 2, ART_Y, 640, 290, COLORS.panel, { radius: 36, stroke: COLORS.frame });
     this.add.circle(width / 2, ART_Y, 125, 0x2a3456);
-    const key = `type-${opp}`;
+    // フィギュア風の敵（段階が上がるほど大きく・光るオーラ）。届いていなければタイプのドットの絵で代える
+    const fig = foeArt(this.foe).key;
+    const key = this.textures.exists(fig) ? fig : `type-${opp}`;
     if (this.textures.exists(key)) {
       const img = this.add.image(width / 2, ART_Y, key);
-      img.setScale(ART_H / img.height);
-      img.setFlipX(true); // 自分のほうを向く
-      // 段階ごとの仮の色（敵の絵が届くまで・設計書 §8）
-      const STAGE_TINT = [0xffffff, 0xb8dcff, 0xffe08a, 0xff9e9e, 0xd6a8ff];
-      img.setTint(STAGE_TINT[this.foe.stage] ?? 0xffffff);
+      img.setScale((ART_H * stageScale(this.foe.stage)) / img.height);
+      if (key !== fig) img.setFlipX(true); // ドットの力士は横向き＝自分のほうを向ける
+      addAura(this, img, stageAura(this.foe.stage));
     }
 
     const line = (y, str, size, color, extra) => fitText(this.add.text(width / 2, y, str, textStyle(size, color, extra)).setOrigin(0.5), width - 80);

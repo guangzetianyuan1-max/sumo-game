@@ -1,0 +1,77 @@
+{
+"foe_alien_honki": [
+"push"
+],
+"foe_alien_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_astronaut_honki": [
+"push"
+],
+"foe_astronaut_normal": [
+"push"
+],
+"foe_boss": [
+"push"
+],
+"foe_daiku_honki": [
+"push"
+],
+"foe_daiku_normal": [
+"push"
+],
+"foe_itamae_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_kappa_honki": [
+"push"
+],
+"foe_kappa_normal": [
+"push"
+],
+"foe_manekineko_honki": [
+"push"
+],
+"foe_manekineko_normal": [
+"push"
+],
+"foe_ninja_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_prowrestler_honki": [
+"push"
+],
+"foe_prowrestler_normal": [
+"push"
+],
+"foe_robot_honki": [
+"push"
+],
+"foe_robot_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_samurai_honki": [
+"push"
+],
+"foe_samurai_normal": [
+"push"
+],
+"foe_shogi_honki": [
+"push"
+],
+"foe_shogi_normal": [
+"push"
+]
+}

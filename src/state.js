@@ -1,14 +1,14 @@
 // src/state.js — 場面をまたぐ選び。run は勝ち抜き（入門を終えるまで null）。移り変わりはここの関数で行い、そのたびに保存する
 // 10/12 夜 場所をやめて100体の勝ち抜きへ（設計書 §3）。場所の頃の関数は basho.js・career.js に残る（使わない）
-import { TYPE_IDS, TYPES } from './data/types.js?v=28';
-import { recommendStrategy } from './core/recommend.js?v=28';
-import { defaultStrategy } from './core/strategy.js?v=28';
-import { CAREER_KEY } from './core/career.js?v=28';
-import { learnMove } from './core/learn.js?v=28';
-import { rankOf } from './core/ladder.js?v=28';
+import { TYPE_IDS, TYPES } from './data/types.js?v=29';
+import { recommendStrategy } from './core/recommend.js?v=29';
+import { defaultStrategy } from './core/strategy.js?v=29';
+import { CAREER_KEY } from './core/career.js?v=29';
+import { learnMove } from './core/learn.js?v=29';
+import { rankOf } from './core/ladder.js?v=29';
 import {
   newRun, currentFoe, recordResult, startTraining, trainStat, trainNewTech, serializeRun, deserializeRun,
-} from './core/run.js?v=28';
+} from './core/run.js?v=29';
 
 export const session = {
   you: 'heavy',

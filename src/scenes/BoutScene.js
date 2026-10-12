@@ -6,22 +6,23 @@
 // 土俵：横に広い世界（WORLD.w）を container に入れ、触れ合う所を追って横に動かす（屋根と四房は画面に止めたまま）
 // 力士：assets/bout/<east|west>/<姿勢>.png（tools/prep_bout.py）。姿勢の選びと位置の計算は src/core/boutanim.js
 // 決まり方：突き押しの「出し」＝俵の外へ押し出して土俵の下へ／「倒し」＝俵際で倒れる／ほか＝踏ん張る勝ちと倒れる負け（技ごとの動きは後の段で1つずつ）
-import { runBout } from '../core/bout.js?v=28';
-import { makeWrestler } from '../core/wrestler.js?v=28';
-import { currentFoe } from '../core/run.js?v=28';
-import { boutStats } from '../core/career.js?v=28';
+import { runBout } from '../core/bout.js?v=29';
+import { makeWrestler } from '../core/wrestler.js?v=29';
+import { currentFoe } from '../core/run.js?v=29';
+import { foeArt, foePose, foeFrame, foePoseArt, stageAura, stageScale } from '../core/foeart.js?v=29';
+import { boutStats } from '../core/career.js?v=29';
 import {
   POSE_NAMES, WORLD, OVERLAP, stepPoses, finishKind, isThrust, contactX, clampContact, viewScroll, bodyLeft, bodyScale,
-} from '../core/boutanim.js?v=28';
-import { t, techLabel, getLang, heroName, foeLabel } from '../i18n/i18n.js?v=28';
-import { session, recordNow, boutSeed } from '../state.js?v=28';
-import { boutComment } from '../core/advice.js?v=28';
-import { WORD_COLOR, wordArt } from '../data/words.js?v=28';
-import { playBout } from '../ui/sfx.js?v=28';
+} from '../core/boutanim.js?v=29';
+import { t, techLabel, getLang, heroName, foeLabel } from '../i18n/i18n.js?v=29';
+import { session, recordNow, boutSeed } from '../state.js?v=29';
+import { boutComment } from '../core/advice.js?v=29';
+import { WORD_COLOR, wordArt } from '../data/words.js?v=29';
+import { playBout } from '../ui/sfx.js?v=29';
 import {
   button, backButton, fitText, textStyle, statBars, speakerFace, speechBubble, preloadGuideArt, preloadOyakataArt,
-  preloadWordsIndex, loadWordsArt, COLORS,
-} from '../ui/widgets.js?v=28';
+  preloadWordsIndex, loadWordsArt, addAura, COLORS,
+} from '../ui/widgets.js?v=29';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
@@ -61,6 +62,13 @@ export class BoutScene extends Phaser.Scene {
       const key = `bout-${side}-${p}`;
       if (!this.textures.exists(key)) this.load.image(key, `assets/bout/${side}/${p}.png`);
     }));
+    // 敵のドット（右にいて左を向く1枚・姿勢に合わせて傾ける）
+    const foe = session.run ? currentFoe(session.run) : null;
+    if (foe) {
+      const a = foeArt(foe);
+      if (!this.textures.exists(a.dotKey)) this.load.image(a.dotKey, a.dotPath);
+    }
+    if (!this.cache.json.exists('foe-poses')) this.load.json('foe-poses', 'assets/figures/dot/poses.json');
   }
 
   create() {
@@ -93,6 +101,25 @@ export class BoutScene extends Phaser.Scene {
     loadWordsArt(this, getLang()); // 目録にある効果文字の絵だけ（届く前に出す時は字で代える）
     this.boutIndex = this.cache.json.get('bout-index');
     this.sizes = { east: bodyScale(run.type), west: bodyScale(foe.type) };
+    // 敵のドットがあればそれを西に置く（大きさは段階ごと・光るオーラも）
+    const dot = foeArt(foe).dotKey;
+    this.foeDot = this.textures.exists(dot) ? dot : null;
+    this.foeAura = stageAura(foe.stage);
+    if (this.foeDot) {
+      const k = stageScale(foe.stage);
+      this.sizes.west = { sx: k, sy: k };
+    }
+    // 横向きの姿勢の絵（届いた物だけ）。まだ読んでいなければ読み、読めたら置き直す（それまでは正面のドット）
+    this.foeFile = foeArt(foe).file;
+    const listed = (this.cache.json.get('foe-poses') || {})[this.foeFile] || [];
+    const loaded = () => listed.filter((p) => this.textures.exists(foePoseArt(this.foeFile, p).key));
+    this.foeHave = loaded();
+    const todo = listed.filter((p) => !this.textures.exists(foePoseArt(this.foeFile, p).key));
+    if (todo.length) {
+      todo.forEach((p) => { const a = foePoseArt(this.foeFile, p); this.load.image(a.key, a.path); });
+      this.load.once('complete', () => { this.foeHave = loaded(); if (this.bodies) this.layout(); });
+      this.load.start();
+    }
     this.anims = []; // 動いている動きの tween（結果だけに替えた時に止める）
     this.words = []; // 出ている効果文字
     this.thrustN = 0; // 突っ張りの数（バチーン！とバシッ！を交互に）
@@ -177,8 +204,10 @@ export class BoutScene extends Phaser.Scene {
     // 力士（原点は左下＝足もと）。東を手前に
     this.bodies = {};
     ['west', 'east'].forEach((side) => {
-      const img = this.add.image(0, FEET_Y, `bout-${side}-shikiri`).setOrigin(0, 1);
+      const foeImg = side === 'west' && this.foeDot;
+      const img = this.add.image(0, FEET_Y, foeImg ? this.foeDot : `bout-${side}-shikiri`).setOrigin(0, 1);
       img.setScale(this.sizes[side].sx, this.sizes[side].sy);
+      if (foeImg) addAura(this, img, this.foeAura);
       this.bodies[side] = img;
       this.world.add(img);
     });
@@ -203,9 +232,21 @@ export class BoutScene extends Phaser.Scene {
     SIDES.forEach((side) => {
       const s = v[side];
       const img = this.bodies[side];
-      const key = `bout-${side}-${s.pose}`;
-      if (img.texture.key !== key && this.textures.exists(key)) img.setTexture(key);
-      const m = this.meta(side, s.pose);
+      let m;
+      if (side === 'west' && this.foeDot) {
+        // 敵は姿勢の名に合わせて横向きの絵を選んで傾ける（無ければ正面のドットを傾ける）。足もとの左端を軸に・前の端＝左端
+        const fr = foeFrame(s.pose, this.foeHave || []);
+        const tex = fr ? foePoseArt(this.foeFile, fr.img).key : this.foeDot;
+        if (img.texture.key !== tex) img.setTexture(tex);
+        const fp = fr || foePose(s.pose);
+        img.setAngle(fp.angle);
+        img.setScale(this.sizes.west.sx, this.sizes.west.sy * fp.sy);
+        m = { w: img.width, h: img.height, front: 0 };
+      } else {
+        const key = `bout-${side}-${s.pose}`;
+        if (img.texture.key !== key && this.textures.exists(key)) img.setTexture(key);
+        m = this.meta(side, s.pose);
+      }
       img.setPosition(Math.round(bodyLeft(side, v.contact, v.gap, m.front, this.sizes[side].sx)), Math.round(FEET_Y + s.dy));
     });
   }

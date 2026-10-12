@@ -1,7 +1,7 @@
 // 主人公5人（設計書 §5・10/12 夜 本人「主人公のキャラクターは5つ」「新技は1キャラ5つ・各キャラの特性にあった新技」）
 // id はタイプの id と同じ（取組の計算・ドットの絵・声はタイプの物を使う）。名前・性格・新技の名前は i18n の hero.<id>.name / .trait・newtech.<id>
 // press＝押し方（mash 連打・hold 長押し・tap 一発）・arch＝系統（tuning.js の ARCH・相性に使う）。第1段は解禁と覚えた記録だけ
-import { TYPE_IDS } from './types.js?v=28';
+import { TYPE_IDS } from './types.js?v=29';
 
 export const HERO_IDS = [...TYPE_IDS];
 export const HEROES = {

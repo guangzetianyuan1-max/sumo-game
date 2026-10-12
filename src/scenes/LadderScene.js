@@ -1,10 +1,10 @@
 // src/scenes/LadderScene.js — 勝ち抜き番付（10/12 夜）：主人公の絵と名・地位・倒した数の目盛り・次の昇進・心技体・次の相手 → 相手の情報
 // 覚える候補があれば技の画面へ・稽古の途中なら稽古へ（つづきからと同じ）
-import { t, heroName, foeLabel } from '../i18n/i18n.js?v=28';
-import { session } from '../state.js?v=28';
-import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=28';
-import { currentFoe } from '../core/run.js?v=28';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, COLORS } from '../ui/widgets.js?v=28';
+import { t, heroName, foeLabel } from '../i18n/i18n.js?v=29';
+import { session } from '../state.js?v=29';
+import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=29';
+import { currentFoe } from '../core/run.js?v=29';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=29';
 
 const BAR = { x: 60, y: 520, w: 600, h: 34 };
 
@@ -15,6 +15,7 @@ export class LadderScene extends Phaser.Scene {
 
   preload() {
     preloadTypeArt(this);
+    preloadHeroFigures(this);
   }
 
   create() {
@@ -29,7 +30,7 @@ export class LadderScene extends Phaser.Scene {
 
     // 主人公の札：左に絵・右に名と地位
     roundBox(this, width / 2, 270, 640, 250, COLORS.panel, { radius: 32, stroke: COLORS.frame });
-    const key = `type-${r.type}`;
+    const key = heroKey(this, r.type);
     if (this.textures.exists(key)) {
       const img = this.add.image(170, 270, key);
       img.setScale(210 / img.height);
