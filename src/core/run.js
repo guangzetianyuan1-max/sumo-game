@@ -1,26 +1,26 @@
 // 100体の勝ち抜き（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=29';
-import { GUIDE_IDS } from '../data/guides.js?v=29';
-import { HEROES, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=29';
-import { foeAt, FOE_COUNT } from '../data/foes.js?v=29';
-import { inGame } from '../data/kimarite.js?v=29';
-import { RANKS, CLEAR_AT, promotionAt } from './ladder.js?v=29';
-import { startStats, growthMult, diminish } from './career.js?v=29';
-import { learnChoices } from './learn.js?v=29';
-import { makeRng } from './rng.js?v=29';
-import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=29';
+import { TYPES } from '../data/types.js?v=30';
+import { GUIDE_IDS } from '../data/guides.js?v=30';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=30';
+import { foeAt, FOE_COUNT } from '../data/foes.js?v=30';
+import { inGame } from '../data/kimarite.js?v=30';
+import { RANKS, CLEAR_AT, promotionAt } from './ladder.js?v=30';
+import { startStats, growthMult, diminish } from './career.js?v=30';
+import { learnChoices } from './learn.js?v=30';
+import { makeRng } from './rng.js?v=30';
+import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=30';
 
 export const RUN_VERSION = 4;
 export const TRAIN_STEPS = 3; // 1回の稽古のコマ数
 export const STATS = ['shin', 'gi', 'tai'];
-const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const r1 = (v) => Math.round(v * 10) / 10;
 const cap = (v) => Math.min(100, r1(v));
 const total = (s) => s.shin + s.gi + s.tai;
 
-export function newRun({ guide, type, seed }) {
+// 案内役は若女将ことねに固定（呼ぶ側の guide は受け取るだけで使わない・読み込み deserializeRun と同じ）
+export function newRun({ type, seed }) {
   return {
-    version: RUN_VERSION, guide, type,
+    version: RUN_VERSION, guide: OKAMI, type,
     stats: startStats(type),
     known: [...TYPES[type].sample], pendingLearn: null, learnKind: null,
     wins: 0, losses: 0, streak: 0,
@@ -118,7 +118,7 @@ export function deserializeRun(text) {
   try {
     const c = JSON.parse(text);
     if (!c || typeof c !== 'object' || c.version !== RUN_VERSION) return null;
-    if (!hasOwn(TYPES, c.type) || !GUIDE_IDS.includes(c.guide)) return null;
+    if (c.type !== HERO_TYPE || !GUIDE_IDS.includes(c.guide)) return null;
     if (!validStats(c.stats) || !Number.isFinite(c.seed)) return null;
     if (!count(c.wins) || c.wins > CLEAR_AT || !count(c.losses) || !count(c.streak)) return null;
     if (typeof c.cleared !== 'boolean' || c.cleared !== (c.wins >= CLEAR_AT)) return null;
@@ -126,12 +126,12 @@ export function deserializeRun(text) {
     const known = Array.isArray(c.known) ? c.known.filter(inGame) : [];
     c.known = known.length ? known : [...TYPES[c.type].sample];
     const mine = newTechIds(c.type);
-    c.unlocked = Array.isArray(c.unlocked) ? c.unlocked.filter((id) => mine.includes(id)) : [];
-    if (!c.unlocked.includes(mine[0])) c.unlocked = [mine[0], ...c.unlocked];
+    c.unlocked = mine.filter((id, k) => NEW_TECH_AT[k] <= c.wins);
     c.newKnown = Array.isArray(c.newKnown) ? c.newKnown.filter((id) => c.unlocked.includes(id)) : [];
     const pending = Array.isArray(c.pendingLearn) ? c.pendingLearn.filter(inGame) : [];
     c.pendingLearn = pending.length ? pending : null;
     c.learnKind = c.pendingLearn && RANK_IDS.includes(c.learnKind) ? c.learnKind : null;
+    c.guide = OKAMI;
     return c;
   } catch {
     return null;

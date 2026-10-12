@@ -1,15 +1,16 @@
 // src/scenes/OpponentScene.js — 今日の相手の情報（しこ名・番付・タイプの絵・得意・弱み・心技体）と、案内役の女子のひとこと。作戦表の前に見せる
 // 相手は一代記の場所の今日の相手（currentOpponent）。作戦表は prepareOpponent が組む（同じ相手に戻った時は組み直さない）
-import { TYPES } from '../data/types.js?v=29';
-import { boutStats } from '../core/career.js?v=29';
-import { SCENES } from '../core/strategy.js?v=29';
-import { recommendStrategy, recommendReason } from '../core/recommend.js?v=29';
-import { adviceKeys } from '../core/advice.js?v=29';
-import { t, techLabel, getLang, foeLabel } from '../i18n/i18n.js?v=29';
-import { session, prepareOpponent } from '../state.js?v=29';
-import { currentFoe } from '../core/run.js?v=29';
-import { foeArt, stageAura, stageScale } from '../core/foeart.js?v=29';
-import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, bubbleText, preloadTypeArt, preloadGuideArt, addAura, COLORS } from '../ui/widgets.js?v=29';
+import { TYPES } from '../data/types.js?v=30';
+import { boutStats } from '../core/career.js?v=30';
+import { SCENES } from '../core/strategy.js?v=30';
+import { recommendStrategy, recommendReason } from '../core/recommend.js?v=30';
+import { adviceKeys } from '../core/advice.js?v=30';
+import { t, techLabel, getLang, foeLabel } from '../i18n/i18n.js?v=30';
+import { session, prepareOpponent } from '../state.js?v=30';
+import { currentFoe } from '../core/run.js?v=30';
+import { OKAMI } from '../data/heroes.js?v=30';
+import { foeArt, stageAura, stageScale } from '../core/foeart.js?v=30';
+import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, bubbleText, preloadTypeArt, preloadGuideArt, addAura, COLORS } from '../ui/widgets.js?v=30';
 
 const ART_H = 240;
 const ART_Y = 285; // 絵の札の中心（札は 140〜430）
@@ -82,7 +83,7 @@ export class OpponentScene extends Phaser.Scene {
 
   // 案内役の顔（左）と吹き出し（右）。お勧めの手は recommendStrategy から
   drawAdvice() {
-    const guide = session.guide ?? 'chizuru';
+    const guide = session.guide ?? OKAMI;
     const rec = recommendStrategy(session.run.known, session.you, session.opp); // 10/12 覚えた手から
     const moves = recommendReason(rec).moves.map((id) => techLabel(id)).join(t('advice.join'));
     // 2行：相手の弱み（性格ごとの言い方）と、力の比べか疲れの一言（10/11 本人「すずはイケイケ、琴音は慎重、千鶴は中間」）

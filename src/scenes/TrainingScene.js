@@ -1,12 +1,12 @@
 // src/scenes/TrainingScene.js — 稽古（10/12 夜 本人「倒せない敵が出た場合、稽古モードに移り、新技や心技体を鍛える」）
 // 1回3コマ。札＝心（ぶつかり稽古）・技（技の稽古）・体（鉄砲）・解禁した新技。押すと稽古の絵を1秒出して効果音 → 3コマ終われば同じ相手へ
-import { t } from '../i18n/i18n.js?v=29';
-import { session, trainStatNow, trainTechNow } from '../state.js?v=29';
-import { NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=29';
-import { playTraining } from '../ui/sfx.js?v=29';
+import { t } from '../i18n/i18n.js?v=30';
+import { session, trainStatNow, trainTechNow } from '../state.js?v=30';
+import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=30';
+import { playTraining } from '../ui/sfx.js?v=30';
 import {
-  topTitle, fitText, roundBox, hitZone, textStyle, statBars, preloadTrainingIndex, loadTrainingArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=29';
+  topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadTrainingIndex, loadTrainingArt, clearScene, COLORS,
+} from '../ui/widgets.js?v=30';
 
 const STAT_CARDS = [['shin', 'butsukari'], ['gi', 'waza'], ['tai', 'teppo']]; // 値と、使う稽古の絵・音
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1190 は「稽古おわり」の字）
@@ -20,6 +20,7 @@ export class TrainingScene extends Phaser.Scene {
 
   preload() {
     preloadTrainingIndex(this);
+    preloadOyakataArt(this);
   }
 
   create() {
@@ -37,13 +38,16 @@ export class TrainingScene extends Phaser.Scene {
     topTitle(this, 60, t('train2.title'), 56, COLORS.gold);
     fitText(this.add.text(width / 2, 130, t('train2.left', { n: r.training ? r.training.left : 0 }), textStyle(34, COLORS.ink)).setOrigin(0.5), width - 60);
     statBars(this, 40, 190, 640, r.stats);
+    // 琴浪親方：怒鳴る顔とひと言（心技体の棒と札の間）
+    speakerFace(this, 'kotonami', 100, 398, 112, 'shout');
+    speechBubble(this, 180, 342, 500, 112, t('train2.oyakata'), { size: 28, min: 16 });
     // 案内役のおすすめ＝一番低い値（設計書 §7。相手ごとの弱みの勧めは第3段の相性で）
     const low = STAT_CARDS.map(([s]) => s).reduce((a, b) => (r.stats[b] < r.stats[a] ? b : a));
-    const ids = newTechIds(r.type);
-    const techs = r.unlocked.filter((x) => !r.newKnown.includes(x));
-    const nextAt = NEW_TECH_AT.find((n, k) => n > r.wins && !r.unlocked.includes(ids[k]));
+    const cards = techCards(r, TECH_CARD_LIMIT);
+    const techs = cards.show;
+    const nextAt = cards.nextAt;
     // 行の数（札＋鍵の行）から行の高さを決める。札が多くても bottom の上に収まる
-    const rows = STAT_CARDS.length + techs.length + (nextAt !== undefined ? 1 : 0);
+    const rows = STAT_CARDS.length + techs.length + (cards.more ? 1 : 0) + (nextAt !== undefined ? 1 : 0);
     const step = Math.min(CARD.step, Math.floor((CARD.bottom - CARD.top) / rows));
     const h = step - 16;
     let i = 0;
@@ -53,6 +57,10 @@ export class TrainingScene extends Phaser.Scene {
     }
     for (const id of techs) {
       this.card(i++, t('train2.tech', { tech: t(`newtech.${id}`) }), () => this.doStep('waza', () => trainTechNow(id)), COLORS.gold, step, h);
+    }
+    if (cards.more) {
+      fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.more', { n: cards.more }), textStyle(24, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
+      i += 1;
     }
     if (nextAt !== undefined) {
       fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.locked', { n: nextAt - r.wins }), textStyle(26, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);

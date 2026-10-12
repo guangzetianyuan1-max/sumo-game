@@ -6,23 +6,24 @@
 // 土俵：横に広い世界（WORLD.w）を container に入れ、触れ合う所を追って横に動かす（屋根と四房は画面に止めたまま）
 // 力士：assets/bout/<east|west>/<姿勢>.png（tools/prep_bout.py）。姿勢の選びと位置の計算は src/core/boutanim.js
 // 決まり方：突き押しの「出し」＝俵の外へ押し出して土俵の下へ／「倒し」＝俵際で倒れる／ほか＝踏ん張る勝ちと倒れる負け（技ごとの動きは後の段で1つずつ）
-import { runBout } from '../core/bout.js?v=29';
-import { makeWrestler } from '../core/wrestler.js?v=29';
-import { currentFoe } from '../core/run.js?v=29';
-import { foeArt, foePose, foeFrame, foePoseArt, stageAura, stageScale } from '../core/foeart.js?v=29';
-import { boutStats } from '../core/career.js?v=29';
+import { runBout } from '../core/bout.js?v=30';
+import { makeWrestler } from '../core/wrestler.js?v=30';
+import { currentFoe } from '../core/run.js?v=30';
+import { foeArt, foePose, foeFrame, foePoseArt, stageAura, stageScale } from '../core/foeart.js?v=30';
+import { boutStats } from '../core/career.js?v=30';
+import { kumiPlan } from '../core/kumi.js?v=30';
 import {
   POSE_NAMES, WORLD, OVERLAP, stepPoses, finishKind, isThrust, contactX, clampContact, viewScroll, bodyLeft, bodyScale,
-} from '../core/boutanim.js?v=29';
-import { t, techLabel, getLang, heroName, foeLabel } from '../i18n/i18n.js?v=29';
-import { session, recordNow, boutSeed } from '../state.js?v=29';
-import { boutComment } from '../core/advice.js?v=29';
-import { WORD_COLOR, wordArt } from '../data/words.js?v=29';
-import { playBout } from '../ui/sfx.js?v=29';
+} from '../core/boutanim.js?v=30';
+import { t, techLabel, getLang, heroName, foeLabel } from '../i18n/i18n.js?v=30';
+import { session, recordNow, boutSeed } from '../state.js?v=30';
+import { boutComment } from '../core/advice.js?v=30';
+import { WORD_COLOR, wordArt } from '../data/words.js?v=30';
+import { playBout } from '../ui/sfx.js?v=30';
 import {
   button, backButton, fitText, textStyle, statBars, speakerFace, speechBubble, preloadGuideArt, preloadOyakataArt,
   preloadWordsIndex, loadWordsArt, addAura, COLORS,
-} from '../ui/widgets.js?v=29';
+} from '../ui/widgets.js?v=30';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
@@ -43,6 +44,8 @@ const WORD = { y: 275, w: 372, edge: 8 }; // 効果文字：画面の y・幅（
 const BANNER = { top: 172, h: 150, win: 221, kim: 286 };
 // 結果の後の一言：動きの記録（y852〜・最後の1行だけ＝折れても2行で y940 まで）の下・「取組の順へ」（上の端 y1145）の上
 const COMMENT = { left: 30, right: 700, top: 952, h: 180, face: 110 };
+// 組み絵のカットイン（設計書 9.6.1）：帯の中心の高さ・絵の高さの上限・出す長さ
+const KUMI = { y: 560, h: 480, ms: { normal: 1200, fast: 600 } };
 const SIDES = ['east', 'west'];
 const other = (side) => (side === 'east' ? 'west' : 'east');
 const lerp = (a, b, u) => a + (b - a) * Math.max(0, Math.min(1, u));
@@ -69,10 +72,12 @@ export class BoutScene extends Phaser.Scene {
       if (!this.textures.exists(a.dotKey)) this.load.image(a.dotKey, a.dotPath);
     }
     if (!this.cache.json.exists('foe-poses')) this.load.json('foe-poses', 'assets/figures/dot/poses.json');
+    this.load.json('kumi-index', 'assets/figures/kumi/index.json'); // 組み絵の目録（届いた物だけ）
   }
 
   create() {
     this.done = false;
+    this.kumiClose = null; // 出ている組み絵の帯を閉じる関数
     this.auto = false; // 10/12 夜 場所の自動は無くなった（自動の分岐は使わない）
     this.lastPos = 0;
     this.history = [];
@@ -95,6 +100,19 @@ export class BoutScene extends Phaser.Scene {
     };
     // 結果はここで記録して保存する（作戦は recordNow が空にする＝この画面にもう一度入っても取り直さず取組の後へ）
     recordNow(this.result.winner === 'east', this.result.kimarite);
+    // 組み絵：立ち合いの後（踏ん張り）と決まる直前（投げ／投げられ）。READY_MS の間に読み込み、間に合わなければ出さない
+    const kumiHave = this.cache.json.get('kumi-index') || [];
+    this.kumi = kumiPlan(foe, this.result.winner === 'east', kumiHave);
+    // この取組で読み込んだ組み絵は、画面を出る時に TextureManager から外す（60枚が居座って古い iPhone の Safari で重くならないように）
+    const kumiKeys = [];
+    [this.kumi.grip, this.kumi.finish].filter(Boolean).forEach((f) => {
+      const k = `kumi-${f}`;
+      if (!this.textures.exists(k)) { kumiKeys.push(k); this.load.image(k, `assets/figures/kumi/${f}.jpg`); }
+    });
+    this.events.once('shutdown', () => {
+      kumiKeys.forEach((k) => { if (this.textures.exists(k)) this.textures.remove(k); });
+    });
+    this.load.start();
 
     const { width } = this.scale;
     this.cx = width / 2;
@@ -416,7 +434,7 @@ export class BoutScene extends Phaser.Scene {
     }
     if (!this.tachiaiDone) {
       this.tachiaiDone = true;
-      this.tachiai(() => this.play());
+      this.tachiai(() => this.showKumi(this.kumi.grip, () => this.play()));
       return;
     }
     this.showEntry(log[this.i], this.i, true);
@@ -497,10 +515,37 @@ export class BoutScene extends Phaser.Scene {
     return [topple(MS.fall, out, c0, cEnd, g0, 60, true), wait];
   }
 
+  // 組み絵の帯を出して、閉じたら done（絵が無い・読み込みが間に合わない・「結果だけ」の時はすぐ done）
+  showKumi(file, done) {
+    const key = file ? `kumi-${file}` : null;
+    if (!key || !this.textures.exists(key) || this.speed() === 'result') { done(); return; }
+    const { width } = this.scale;
+    const shade = this.add.rectangle(width / 2, KUMI.y, width, KUMI.h + 40, 0x000000, 0.55).setDepth(50).setInteractive();
+    const img = this.add.image(width + 400, KUMI.y, key).setDepth(51);
+    img.setScale(Math.min((width - 40) / img.width, KUMI.h / img.height));
+    const auraTween = this.kumi.aura ? addAura(this, img, this.kumi.aura) : null;
+    playBout('kumi');
+    let closed = false;
+    const close = () => {
+      if (closed) return;
+      closed = true;
+      this.kumiClose = null;
+      this.tweens.killTweensOf(img);
+      if (auraTween) auraTween.remove(); // 虹のオーラの回る tween は絵を消す前に止める
+      shade.destroy();
+      img.destroy();
+      done();
+    };
+    this.kumiClose = close;
+    this.tweens.add({ targets: img, x: width / 2, duration: 150, ease: 'Cubic.Out' });
+    shade.once('pointerdown', close);
+    this.time.delayedCall(KUMI.ms[this.speed()] || KUMI.ms.normal, close);
+  }
+
   finish() {
     if (this.done) return;
     this.done = true;
-    this.runSteps(this.finishSteps(), () => this.showResult(), this.speed() !== 'result');
+    this.showKumi(this.kumi.finish, () => this.runSteps(this.finishSteps(), () => this.showResult(), this.speed() !== 'result'));
   }
 
   // 結果の札・一言・取組の順へ（前と同じ）
@@ -561,9 +606,13 @@ export class BoutScene extends Phaser.Scene {
     this.speedBtn.text.setText(this.speedLabel());
     this.speedBtn.text.setScale(1);
     fitText(this.speedBtn.text, 270 - 48);
-    if (session.speed === 'result' && !this.done) {
-      this.time.removeAllEvents();
-      this.play();
+    if (session.speed === 'result') {
+      // 組み絵の帯が出ていれば閉じる（立ち合いの後なら play が、決まる直前なら結果への runSteps が続く）。閉じた後は done が立つので二重には進まない
+      if (this.kumiClose) this.kumiClose();
+      if (!this.done) {
+        this.time.removeAllEvents();
+        this.play();
+      }
     }
   }
 }

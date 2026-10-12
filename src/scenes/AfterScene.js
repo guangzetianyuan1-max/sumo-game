@@ -1,8 +1,8 @@
 // src/scenes/AfterScene.js — 取組の後（10/12 夜）：勝ち＝倒した相手・心技体の伸び・昇進・新技の解禁・クリア → 技の画面か番付表
 // 負け＝心技体の伸び（少し）・「もう一度」（相手の情報へ）か「稽古へ」。同じ相手に3連敗したら案内役が稽古を勧める（選ぶのは本人）
-import { t, foeLabel } from '../i18n/i18n.js?v=29';
-import { session, suggestTraining, trainBegin } from '../state.js?v=29';
-import { button, topTitle, fitText, textStyle, speechBubble, speakerFace, preloadGuideArt, COLORS } from '../ui/widgets.js?v=29';
+import { t, foeLabel } from '../i18n/i18n.js?v=30';
+import { session, suggestTraining, trainBegin } from '../state.js?v=30';
+import { button, topTitle, fitText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=30';
 
 const STATS = ['shin', 'gi', 'tai'];
 
@@ -13,6 +13,7 @@ export class AfterScene extends Phaser.Scene {
 
   preload() {
     preloadGuideArt(this);
+    preloadOyakataArt(this);
   }
 
   create() {
@@ -32,6 +33,10 @@ export class AfterScene extends Phaser.Scene {
     if (lb.cleared) { line(y, t('after.cleared'), 48, COLORS.gold); y += 70; }
 
     if (lb.won) {
+      if (lb.promoted) {
+        speakerFace(this, 'kotonami', 110, 820, 150, 'smile');
+        speechBubble(this, 210, 730, 470, 180, t('after.promoOyakata', { rank: t(`div.${lb.promoted}`) }), { size: 28, min: 16 });
+      }
       const toLearn = !!r.pendingLearn;
       button(this, width / 2, 1190, 460, 110, t(toLearn ? 'after.learn' : 'after.next'), () => this.scene.start(toLearn ? 'learn' : 'ladder'), { size: 38 });
       return;

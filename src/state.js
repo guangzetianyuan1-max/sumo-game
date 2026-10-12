@@ -1,21 +1,22 @@
 // src/state.js — 場面をまたぐ選び。run は勝ち抜き（入門を終えるまで null）。移り変わりはここの関数で行い、そのたびに保存する
 // 10/12 夜 場所をやめて100体の勝ち抜きへ（設計書 §3）。場所の頃の関数は basho.js・career.js に残る（使わない）
-import { TYPE_IDS, TYPES } from './data/types.js?v=29';
-import { recommendStrategy } from './core/recommend.js?v=29';
-import { defaultStrategy } from './core/strategy.js?v=29';
-import { CAREER_KEY } from './core/career.js?v=29';
-import { learnMove } from './core/learn.js?v=29';
-import { rankOf } from './core/ladder.js?v=29';
+import { TYPE_IDS, TYPES } from './data/types.js?v=30';
+import { recommendStrategy } from './core/recommend.js?v=30';
+import { defaultStrategy } from './core/strategy.js?v=30';
+import { CAREER_KEY } from './core/career.js?v=30';
+import { learnMove } from './core/learn.js?v=30';
+import { rankOf } from './core/ladder.js?v=30';
+import { HERO_TYPE } from './data/heroes.js?v=30';
 import {
   newRun, currentFoe, recordResult, startTraining, trainStat, trainNewTech, serializeRun, deserializeRun,
-} from './core/run.js?v=29';
+} from './core/run.js?v=30';
 
 export const session = {
-  you: 'heavy',
+  you: HERO_TYPE,
   opp: 'tall',
   strategy: null,
   oppStrategy: null,
-  guide: null, // 案内役 'chizuru' | 'suzu' | 'kotone'（選ぶまで null）
+  guide: null, // 案内役：10/13 から kotone（若女将）に固定（入門で newRun が入れる。入門前は null）
   speed: 'normal',
   seed: Date.now() % 100000,
   run: null, // 勝ち抜き（入門を終えるまで null）

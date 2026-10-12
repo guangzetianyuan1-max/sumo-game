@@ -1,13 +1,14 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=29';
-import { heroArt } from '../core/foeart.js?v=29';
-import { GUIDE_IDS } from '../data/guides.js?v=29';
-import { HEYA_IDS } from '../data/heya.js?v=29';
-import { t, getLang } from '../i18n/i18n.js?v=29';
-import { jaWrap } from '../data/wrap.js?v=29';
-import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=29';
-import { TRAININGS } from '../core/career.js?v=29';
-import { saveNow } from '../state.js?v=29';
+import { TYPE_IDS } from '../data/types.js?v=30';
+import { HERO_IDS } from '../data/heroes.js?v=30';
+import { heroArt } from '../core/foeart.js?v=30';
+import { GUIDE_IDS } from '../data/guides.js?v=30';
+import { HEYA_IDS } from '../data/heya.js?v=30';
+import { t, getLang } from '../i18n/i18n.js?v=30';
+import { jaWrap } from '../data/wrap.js?v=30';
+import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=30';
+import { TRAININGS } from '../core/career.js?v=30';
+import { saveNow } from '../state.js?v=30';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -38,7 +39,7 @@ export function preloadTypeArt(scene) {
 
 // フィギュア風の主人公5人（10/12 夜）。届いていなければ type- のドットの絵で代える（heroKey）
 export function preloadHeroFigures(scene) {
-  TYPE_IDS.forEach((id) => {
+  HERO_IDS.forEach((id) => {
     const a = heroArt(id);
     if (!scene.textures.exists(a.key)) scene.load.image(a.key, a.path);
   });
@@ -46,12 +47,13 @@ export function preloadHeroFigures(scene) {
 export const heroKey = (scene, type) => (scene.textures.exists(heroArt(type).key) ? heroArt(type).key : `type-${type}`);
 
 // 段階の光るオーラ（WebGL の時だけ・'rainbow' は色が回る）。color が無ければ何もしない
+// 色が回る時だけ、その tween を返す（絵を消す前に止めたい呼び出し側用・それ以外は null）
 export function addAura(scene, img, color) {
-  if (!color || !img.preFX) return;
+  if (!color || !img.preFX) return null;
   const glow = img.preFX.addGlow(color === 'rainbow' ? 0xff4d4d : color, 6, 0, false, 0.1, 16);
-  if (color !== 'rainbow') return;
+  if (color !== 'rainbow') return null;
   const o = { h: 0 };
-  scene.tweens.add({
+  return scene.tweens.add({
     targets: o, h: 1, duration: 2400, repeat: -1,
     onUpdate: () => { glow.color = Phaser.Display.Color.HSVToRGB(o.h, 0.8, 1).color; },
   });

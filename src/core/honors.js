@@ -1,7 +1,7 @@
 // 本物の相撲の表示（10/11 本人「調査結果、表示すべきものがあれば、どんどんいれてください」）。番付の動きや強さは変えない＝見せるだけ
 // 星の印（勝ち越し・負け越し・全勝）・昇進の知らせ（新十両・新入幕・新三役・大関・横綱）・金星と三賞
-import { divisionOf, rankParts } from './banzuke.js?v=29';
-import { KIMARITE } from '../data/kimarite.js?v=29';
+import { divisionOf, rankParts } from './banzuke.js?v=30';
+import { KIMARITE } from '../data/kimarite.js?v=30';
 
 // 星の印：勝ちが過半数に届いたら勝ち越し（15番の8勝・7番の4勝）・負けが届いたら負け越し・全部勝ったら全勝
 export function recordNote(wins, losses, bouts) {

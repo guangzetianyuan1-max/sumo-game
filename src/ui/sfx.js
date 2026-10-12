@@ -103,6 +103,12 @@ const BOUT = {
   slap: (c, t) => noise(c, t, { dur: 0.12, peak: 0.3, filter: 'highpass', f: 1200, q: 0.7, attack: 0.002 }),
   // 俵まで押し込む すり足「ずざざ」（低く絞った雑音が少しずつ消える）
   scrape: (c, t) => noise(c, t, { dur: 0.75, peak: 0.2, filter: 'lowpass', f: 1400, fEnd: 500, q: 0.8, attack: 0.08 }),
+  // 組み絵のカットイン「シャキーン＋拍子木」（設計書 9.7 の緑の段・足して 0.35 を超えない）
+  kumi: (c, t) => {
+    tone(c, t, { freq: 1800, freqEnd: 3200, dur: 0.25, peak: 0.12 });
+    noise(c, t, { dur: 0.3, peak: 0.08, filter: 'highpass', f: 4000, q: 0.7, attack: 0.002 });
+    noise(c, t + 0.28, { dur: 0.05, peak: 0.15, filter: 'bandpass', f: 1800, q: 4, attack: 0.001 });
+  },
 };
 export const BOUT_SOUNDS = Object.keys(BOUT);
 
@@ -131,7 +137,7 @@ export function playTraining(kind, volume = 1) {
   play(SOUNDS, kind, volume);
 }
 
-// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）。volume は playTraining と同じ
+// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kumi（組み絵のカットイン）。volume は playTraining と同じ
 export function playBout(kind, volume = 1) {
   play(BOUT, kind, volume);
 }
