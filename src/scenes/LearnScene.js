@@ -1,10 +1,10 @@
-// src/scenes/LearnScene.js — 節目で技を覚える（10/12 作り直し）：候補（career.pendingLearn・3つまで）を札で縦に並べ、1つ選んで覚える → 番付
+// src/scenes/LearnScene.js — 節目で技を覚える（10/12 作り直し）：候補（run.pendingLearn・3つまで）を札で縦に並べ、1つ選んで覚える → 番付表（ladder）
 // 候補は記録に書いてある＝途中で閉じても同じ候補が出る。候補が無ければすぐ番付へ
-import { t, techLabel, getLang } from '../i18n/i18n.js?v=27';
-import { session, learnNow } from '../state.js?v=27';
-import { KIMARITE } from '../data/kimarite.js?v=27';
-import { KIMARITE_DESC_JA } from '../data/kimarite_desc.js?v=27';
-import { button, topTitle, fitText, roundBox, hitZone, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=27';
+import { t, techLabel, getLang } from '../i18n/i18n.js?v=28';
+import { session, learnNow } from '../state.js?v=28';
+import { KIMARITE } from '../data/kimarite.js?v=28';
+import { KIMARITE_DESC_JA } from '../data/kimarite_desc.js?v=28';
+import { button, topTitle, fitText, roundBox, hitZone, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=28';
 
 const CARD_W = 620;
 const CARD_H = 200;
@@ -19,9 +19,9 @@ export class LearnScene extends Phaser.Scene {
   }
 
   create() {
-    const c = session.career;
+    const c = session.run;
     if (!c || !c.pendingLearn) {
-      this.scene.start(c ? 'banzuke' : 'guide');
+      this.scene.start(c ? 'ladder' : 'guide');
       return;
     }
     this.pick = 0;
@@ -35,14 +35,14 @@ export class LearnScene extends Phaser.Scene {
   draw() {
     clearScene(this);
     const { width } = this.scale;
-    const c = session.career;
-    const note = c.learnKind || session.lastResult?.summary?.learn || 'kachikoshi';
+    const c = session.run;
+    const note = c.learnKind ? t('learn.promo', { rank: t(`div.${c.learnKind}`) }) : t('learn.kachikoshi');
     topTitle(this, 70, t('learn.title'), 56, COLORS.gold);
-    fitText(this.add.text(width / 2, 160, t(`learn.${note}`), textStyle(30, COLORS.ink)).setOrigin(0.5), width - 60);
+    fitText(this.add.text(width / 2, 160, note, textStyle(30, COLORS.ink)).setOrigin(0.5), width - 60);
     c.pendingLearn.forEach((id, i) => this.card(id, i, width / 2, CARD_Y[i]));
     button(this, width / 2, 1190, 460, 110, t('learn.go'), () => {
       learnNow(c.pendingLearn[this.pick]);
-      this.scene.start('banzuke');
+      this.scene.start('ladder');
     }, { size: 38 });
   }
 

@@ -1,27 +1,27 @@
 // src/scenes/BoutScene.js — 取組を本人のドットの力士で見せる（10/11 本人「3の動きで『動画を入れて』」・見本＝art_src/動画試作/bout_video.py）
-// 一代記：自分（東）＝career の値・相手（西）＝今日の相手の値
-// 取組を計算したらすぐ recordBout → 保存（動きは結果を見せるだけ）。ボタンは「取組の順へ」だけ
+// 勝ち抜き：自分（東）＝run の値・相手（西）＝今の相手の値
+// 取組を計算したらすぐ recordNow → 保存（動きは結果を見せるだけ）。ボタンは「結果へ」だけ（取組の後の画面 after へ）
 // 結果が出たら右下に一言（10/11 本人）：勝ち＝娘が祝う・負け＝親方が心技体の不足と技の選びを言う（boutComment）。動きの記録はその時に最後の1行だけにする
-// 場所の自動（session.autoBasho）の時：速さは結果だけ（本人の速さの設定は変えない）・速さのボタンは出さない・結果を0.8秒見せて取組の順へ戻る。どこかを押すと自動を止めて取組の順へ
+// 自動の分岐（this.auto）は残してあるが、10/12 夜に場所の自動が無くなったので常に false
 // 土俵：横に広い世界（WORLD.w）を container に入れ、触れ合う所を追って横に動かす（屋根と四房は画面に止めたまま）
 // 力士：assets/bout/<east|west>/<姿勢>.png（tools/prep_bout.py）。姿勢の選びと位置の計算は src/core/boutanim.js
 // 決まり方：突き押しの「出し」＝俵の外へ押し出して土俵の下へ／「倒し」＝俵際で倒れる／ほか＝踏ん張る勝ちと倒れる負け（技ごとの動きは後の段で1つずつ）
-import { runBout } from '../core/bout.js?v=27';
-import { makeWrestler } from '../core/wrestler.js?v=27';
-import { currentOpponent } from '../core/basho.js?v=27';
-import { boutStats } from '../core/career.js?v=27';
+import { runBout } from '../core/bout.js?v=28';
+import { makeWrestler } from '../core/wrestler.js?v=28';
+import { currentFoe } from '../core/run.js?v=28';
+import { boutStats } from '../core/career.js?v=28';
 import {
   POSE_NAMES, WORLD, OVERLAP, stepPoses, finishKind, isThrust, contactX, clampContact, viewScroll, bodyLeft, bodyScale,
-} from '../core/boutanim.js?v=27';
-import { t, techLabel, shikonaLabel, getLang } from '../i18n/i18n.js?v=27';
-import { session, recordNow, boutSeed } from '../state.js?v=27';
-import { boutComment } from '../core/advice.js?v=27';
-import { WORD_COLOR, wordArt } from '../data/words.js?v=27';
-import { playBout } from '../ui/sfx.js?v=27';
+} from '../core/boutanim.js?v=28';
+import { t, techLabel, getLang, heroName, foeLabel } from '../i18n/i18n.js?v=28';
+import { session, recordNow, boutSeed } from '../state.js?v=28';
+import { boutComment } from '../core/advice.js?v=28';
+import { WORD_COLOR, wordArt } from '../data/words.js?v=28';
+import { playBout } from '../ui/sfx.js?v=28';
 import {
   button, backButton, fitText, textStyle, statBars, speakerFace, speechBubble, preloadGuideArt, preloadOyakataArt,
   preloadWordsIndex, loadWordsArt, COLORS,
-} from '../ui/widgets.js?v=27';
+} from '../ui/widgets.js?v=28';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
@@ -65,36 +65,34 @@ export class BoutScene extends Phaser.Scene {
 
   create() {
     this.done = false;
-    this.auto = session.autoBasho === true; // この1番は自動で取る
+    this.auto = false; // 10/12 夜 場所の自動は無くなった（自動の分岐は使わない）
     this.lastPos = 0;
     this.history = [];
     this.i = 0;
-    const career = session.career;
-    const foe = career ? currentOpponent(career) : null;
+    const run = session.run;
+    const foe = run ? currentFoe(run) : null;
     if (!foe || !session.strategy || !session.oppStrategy) {
-      this.scene.start(career ? 'schedule' : 'guide');
+      this.scene.start(run ? 'ladder' : 'guide');
       return;
     }
-    const you = makeWrestler(career.type, { ...boutStats(career), known: career.known }); // 10/12 自分は覚えた手で取る（疲れは無い）
+    const you = makeWrestler(run.type, { ...boutStats(run), known: run.known }); // 自分は覚えた手で取る（疲れは無い）
     const opp = makeWrestler(foe.type, foe.stats);
-    // 種は一代記・場所・日から（読み直して取り直しても同じ取組）
-    this.result = runBout({ wrestler: you, strategy: session.strategy }, { wrestler: opp, strategy: session.oppStrategy }, boutSeed(career));
-    this.names = { east: shikonaLabel(career.name), west: shikonaLabel(foe.name) };
-    // 結果の後の一言の材料（自分の値は調子を掛けた取組の値）
+    // 種は run の勝ち数と連敗数から（読み直して取り直しても同じ取組）
+    this.result = runBout({ wrestler: you, strategy: session.strategy }, { wrestler: opp, strategy: session.oppStrategy }, boutSeed(run));
+    this.names = { east: heroName(run.type), west: foeLabel(foe) };
+    // 結果の後の一言の材料（自分の値は取組の値）
     this.commentIn = {
       my: { shin: you.shin, gi: you.gi, tai: you.tai }, opp: { shin: opp.shin, gi: opp.gi, tai: opp.tai },
-      known: you.known, myType: career.type, oppType: foe.type, guide: career.guide,
+      known: you.known, myType: run.type, oppType: foe.type, guide: run.guide,
     };
-    // 結果はここで記録して保存する（日が1つ進む）。見せている途中で読み直しても取り直せない＝動きは結果を見せるだけ
+    // 結果はここで記録して保存する（作戦は recordNow が空にする＝この画面にもう一度入っても取り直さず取組の後へ）
     recordNow(this.result.winner === 'east', this.result.kimarite);
-    // 作戦は使い終わり＝この画面にもう一度入っても次の日を勝手に取らず、取組の順へ戻る
-    session.strategy = session.oppStrategy = null;
 
     const { width } = this.scale;
     this.cx = width / 2;
     loadWordsArt(this, getLang()); // 目録にある効果文字の絵だけ（届く前に出す時は字で代える）
     this.boutIndex = this.cache.json.get('bout-index');
-    this.sizes = { east: bodyScale(career.type), west: bodyScale(foe.type) };
+    this.sizes = { east: bodyScale(run.type), west: bodyScale(foe.type) };
     this.anims = []; // 動いている動きの tween（結果だけに替えた時に止める）
     this.words = []; // 出ている効果文字
     this.thrustN = 0; // 突っ張りの数（バチーン！とバシッ！を交互に）
@@ -114,7 +112,7 @@ export class BoutScene extends Phaser.Scene {
     this.sceneLabel = this.add.text(30, 808, '', textStyle(28, COLORS.gold));
     this.lines = this.add.text(30, 852, '', textStyle(30, COLORS.ink, { lineSpacing: 12, wordWrap: { width: width - 60, useAdvancedWrap: true } }));
     // 結果はもう記録してある＝取組の順へ戻っても取り直しにはならない
-    backButton(this, () => this.scene.start('schedule'));
+    backButton(this, () => this.scene.start('after'));
     if (this.auto) {
       // 自動：画面のどこを押しても自動を止めて取組の順へ（結果は記録済み）
       const onDown = () => this.stopAuto();
@@ -133,9 +131,8 @@ export class BoutScene extends Phaser.Scene {
   stopAuto() {
     if (!this.auto) return;
     this.auto = false;
-    session.autoBasho = false;
     this.time.removeAllEvents();
-    this.scene.start('schedule');
+    this.scene.start('after');
   }
 
   // この1番の速さ（自動の時は結果だけ・本人の設定 session.speed はそのまま）
@@ -481,16 +478,16 @@ export class BoutScene extends Phaser.Scene {
     fitText(this.add.text(this.cx, BANNER.kim, t('bout.kimarite', { tech: techLabel(kimarite) }), textStyle(46, COLORS.ink)).setOrigin(0.5), width - 60);
     this.comment();
     if (this.auto) {
-      this.time.delayedCall(AUTO_SHOW_MS, () => this.scene.start('schedule')); // 自動：結果を見せて取組の順へ（そこで0.6秒おいて次の1番）
+      this.time.delayedCall(AUTO_SHOW_MS, () => this.scene.start('after')); // 自動：結果を見せて取組の後へ
       return;
     }
-    button(this, this.cx, 1200, 460, 110, t('bout.toSchedule'), () => this.scene.start('schedule'), { size: 38 });
+    button(this, this.cx, 1200, 460, 110, t('bout.toAfter'), () => this.scene.start('after'), { size: 38 });
   }
 
   // 結果の後の右下の一言：左に話す人の顔（娘か親方・親方は「親方」の札付き）、右に吹き出し。右から滑って出る
   comment() {
     const { winner, kimarite, log } = this.result;
-    const c = boutComment({ ...this.commentIn, won: winner === 'east', log, kimarite, n: session.career.basho ? session.career.basho.day : 1 });
+    const c = boutComment({ ...this.commentIn, won: winner === 'east', log, kimarite, n: 1 });
     if (!c) return;
     // 動きの記録は決めの一合（最後の1行）だけにして、吹き出しの場所を空ける
     if (this.history.length > 1) {

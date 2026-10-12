@@ -1,8 +1,8 @@
-// src/scenes/SetupScene.js — 入門：育てる自分のタイプを1つ選ぶ → しこ名へ（一代記の間、タイプは変わらない）
-import { TYPE_IDS } from '../data/types.js?v=27';
-import { t, getLang, setLang } from '../i18n/i18n.js?v=27';
-import { session } from '../state.js?v=27';
-import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=27';
+// src/scenes/SetupScene.js — 入門：主人公を5人から1人選ぶ → 番付表へ（勝ち抜きの間、主人公は変わらない）
+import { TYPE_IDS } from '../data/types.js?v=28';
+import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=28';
+import { session, startRun } from '../state.js?v=28';
+import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=28';
 
 export class SetupScene extends Phaser.Scene {
   constructor() {
@@ -22,10 +22,13 @@ export class SetupScene extends Phaser.Scene {
       document.documentElement.lang = getLang();
       this.scene.restart();
     }, { size: 28, color: COLORS.buttonSub });
-    this.add.text(40, 120, t('setup.you'), textStyle(40, COLORS.ink));
+    this.add.text(40, 120, t('setup.hero'), textStyle(40, COLORS.ink));
     TYPE_IDS.forEach((id, i) => this.card(id, 270 + i * 170));
-    // session.you は札を押した時に決まっている → しこ名を選ぶ
-    button(this, width / 2, 1190, 460, 110, t('setup.start'), () => this.scene.start('name'), { size: 38 });
+    // session.you は札を押した時に決まっている → 入門して番付表へ（しこ名の画面は無い）
+    button(this, width / 2, 1190, 460, 110, t('setup.start'), () => {
+      startRun({ guide: session.guide ?? 'chizuru', type: session.you, seed: Date.now() % 1000000 });
+      this.scene.start('ladder');
+    }, { size: 38 });
   }
 
   // 名前・得意・弱みの3行の札
@@ -46,8 +49,8 @@ export class SetupScene extends Phaser.Scene {
     const tx = left + 70 + imgW / 2 + 24;
     const room = left + 640 - 16 - tx;
     const line = (dy, str, size, color, extra) => fitText(this.add.text(tx, y + dy, str, textStyle(size, color, extra)).setOrigin(0, 0.5), room);
-    line(-44, t(`type.${id}.name`), 34, COLORS.ink);
-    line(2, t(`type.${id}.strong`), 24, COLORS.ink, { fontStyle: '500' });
+    line(-44, heroName(id), 34, COLORS.ink);
+    line(2, t('setup.heroLine', { type: t(`type.${id}.name`), trait: t(`hero.${id}.trait`) }), 24, COLORS.ink, { fontStyle: '500' });
     line(40, t(`type.${id}.weak`), 24, COLORS.sub, { fontStyle: '500' });
     const zone = hitZone(this, x, y, 640, 150);
     zone.on('pointerdown', () => gfx.setAlpha(0.8));

@@ -1,8 +1,8 @@
 // 言葉の切り替えと文の引き方。画面の文字は全部ここを通す。
-import ja from './ja.js?v=27';
-import en from './en.js?v=27';
-import { KIMARITE } from '../data/kimarite.js?v=27';
-import { rankParts } from '../core/banzuke.js?v=27';
+import ja from './ja.js?v=28';
+import en from './en.js?v=28';
+import { KIMARITE } from '../data/kimarite.js?v=28';
+import { rankParts } from '../core/banzuke.js?v=28';
 
 export const TABLES = { ja, en };
 export const LANGS = ['ja', 'en'];
@@ -64,6 +64,16 @@ export function rankLabel(pos, l = lang) {
 // しこ名：日本語は漢字・英語はローマ字（部品の表の読み）
 export function shikonaLabel(name, l = lang) {
   return l === 'ja' ? name.ja : name.en;
+}
+
+// 主人公の名前（仮・本人が決める）
+export function heroName(type, l = lang) {
+  return t(`hero.${type}.name`, {}, l);
+}
+
+// 敵の名前（例「忍者・弐号」・「Ninja II」）
+export function foeLabel(foe, l = lang) {
+  return t('foe.name', { name: t(`foe.${foe.id}`, {}, l), stage: t(`foe.stage.${foe.stage}`, {}, l) }, l);
 }
 
 // 場所の名前：日本語は通り名（例「初場所（東京）」・名古屋場所と九州場所は場所の名を重ねない）・英語は「July Basho (Nagoya)」

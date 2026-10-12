@@ -1,12 +1,14 @@
-// src/state.js — 場面をまたぐ選び。strategy は自分の作戦表（新しい相手ごとにお勧めで組む）
-// career は一代記（入門を終えるまで null）。一代記の移り変わりはここの関数で行い、そのたびに保存する
-import { TYPE_IDS, TYPES } from './data/types.js?v=27';
-import { recommendStrategy } from './core/recommend.js?v=27';
-import { defaultStrategy } from './core/strategy.js?v=27';
-import { newCareer, saveCareer, loadCareer, CAREER_KEY } from './core/career.js?v=27';
-import { learnMove } from './core/learn.js?v=27';
-import { startBasho, currentOpponent, decideOpponent, recordBout, finishBasho } from './core/basho.js?v=27';
-import { makeRng } from './core/rng.js?v=27';
+// src/state.js — 場面をまたぐ選び。run は勝ち抜き（入門を終えるまで null）。移り変わりはここの関数で行い、そのたびに保存する
+// 10/12 夜 場所をやめて100体の勝ち抜きへ（設計書 §3）。場所の頃の関数は basho.js・career.js に残る（使わない）
+import { TYPE_IDS, TYPES } from './data/types.js?v=28';
+import { recommendStrategy } from './core/recommend.js?v=28';
+import { defaultStrategy } from './core/strategy.js?v=28';
+import { CAREER_KEY } from './core/career.js?v=28';
+import { learnMove } from './core/learn.js?v=28';
+import { rankOf } from './core/ladder.js?v=28';
+import {
+  newRun, currentFoe, recordResult, startTraining, trainStat, trainNewTech, serializeRun, deserializeRun,
+} from './core/run.js?v=28';
 
 export const session = {
   you: 'heavy',
@@ -16,24 +18,20 @@ export const session = {
   guide: null, // 案内役 'chizuru' | 'suzu' | 'kotone'（選ぶまで null）
   speed: 'normal',
   seed: Date.now() % 100000,
-  career: null, // 一代記（入門を終えるまで null）
-  oppKey: null, // 作戦表を組んだ相手（場所の番号:日）。同じ相手なら組み直さない
-  lastResult: null, // 締めた場所の結果（場所の結果の画面が読む）
-  slot: 1, // 記録①〜③のどれで遊んでいるか（セーブも読み直しもここ）
-  autoBasho: false, // 場所の自動（取組の順の「自動で取る」）の最中か。記録には書かない＝読み直すと止まる
+  run: null, // 勝ち抜き（入門を終えるまで null）
+  oppKey: null, // 作戦表を組んだ相手（倒した数:連敗数）。同じなら組み直さない
+  lastBout: null, // 最後の取組の結果（取組の後の画面が読む）
+  slot: 1, // 記録①〜③のどれで遊んでいるか
 };
 
-// 次の相手を引く（5タイプから一様・自分と同じタイプもあり）。画面の層の選びなので Math.random でよい（取組の計算の乱数とは別）
-// 一代記では使わない（相手は currentOpponent(session.career)）
+// 次の相手を引く（前の遊び方の名残・試験だけが使う）
 export function nextOpponent(rand = Math.random) {
   session.opp = TYPE_IDS[Math.min(TYPE_IDS.length - 1, Math.floor(rand() * TYPE_IDS.length))];
   session.oppStrategy = null;
-  // 自分の作戦表は、新しい相手ごとにお勧めへ組み直す（もう一番では触らないので、手直しは持ち越される）
   session.strategy = recommendStrategy(TYPES[session.you].sample, session.you, session.opp);
   return session.opp;
 }
 
-// 端末の保存先（使えない端末では null）。node の試験では保存先を引数で渡す
 export function localStore() {
   try {
     return typeof window !== 'undefined' ? window.localStorage : null;
@@ -42,13 +40,11 @@ export function localStore() {
   }
 }
 
-// 記録①〜③（10/11 本人「昔話と同じように最大3つの四股名ですすめられるように」）。①は記録が1つだった頃の鍵＝今の記録はそのまま①
 export const SLOT_COUNT = 3;
 export const slotKey = (n) => (n > 1 ? `${CAREER_KEY}.${n}` : CAREER_KEY);
 const LAST_SLOT_KEY = 'sumo.slot';
 const validSlot = (n) => Number.isInteger(n) && n >= 1 && n <= SLOT_COUNT;
 
-// 前に使った記録の番号（無い・壊れた・読めない時は①）
 export function lastSlot(store = localStore()) {
   try {
     const n = Number(store ? store.getItem(LAST_SLOT_KEY) : null);
@@ -58,117 +54,97 @@ export function lastSlot(store = localStore()) {
   }
 }
 
-// この記録で遊ぶ（session.slot）と決め、前に使った記録として覚える（書けない端末でも選びは効く）
 export function rememberSlot(n, store = localStore()) {
   session.slot = n;
   try { if (store) store.setItem(LAST_SLOT_KEY, String(n)); } catch { /* 覚えられなくても遊べる */ }
 }
 
-// はじめから：その記録だけ消す
 export function clearSlot(n, store = localStore()) {
-  try { if (store) store.removeItem(slotKey(n)); } catch { /* 消せない端末では、入門を終えた時に上書きされる */ }
+  try { if (store) store.removeItem(slotKey(n)); } catch { /* 消せない端末では入門を終えた時に上書き */ }
 }
 
-// 初めの画面の札：しこ名・番付の席・タイプ（空きは null）
-export function slotSummary(career) {
-  if (!career) return null;
-  return { name: career.name, rankPos: career.pos, type: career.type };
+// 記録の札の中身：読めた勝ち抜き { run }・古い版や壊れた記録 { old: true }・空き（と読めない端末）null
+export function slotState(n, store = localStore()) {
+  let raw = null;
+  try { raw = store ? store.getItem(slotKey(n)) : null; } catch { return null; }
+  if (raw === null || raw === undefined) return null;
+  const run = deserializeRun(raw);
+  return run ? { run } : { old: true };
 }
 
-// 今の記録（session.slot）へ書く。書けたら true・一代記が無い／保存先が無い／投げる端末は false
+export function slotSummary(run) {
+  if (!run) return null;
+  return { type: run.type, wins: run.wins, rank: rankOf(run.wins), cleared: run.cleared };
+}
+
 export function saveNow(store = localStore()) {
-  if (!session.career) return false;
-  return saveCareer(store, session.career, slotKey(session.slot));
+  if (!session.run || !store) return false;
+  try {
+    store.setItem(slotKey(session.slot), serializeRun(session.run));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export function loadSaved(store = localStore(), n = session.slot) {
-  return loadCareer(store, slotKey(n));
-}
-
-// 読み直した記録を session に入れる（自分のタイプと案内役も記録から）
-export function useCareer(career) {
-  session.career = career;
-  session.you = career.type;
-  session.guide = career.guide;
+export function useRun(run) {
+  session.run = run;
+  session.you = run.type;
+  session.guide = run.guide;
   session.oppKey = null;
-  session.lastResult = null;
-  session.autoBasho = false;
+  session.lastBout = null;
+  session.strategy = session.oppStrategy = null;
 }
 
-// 入門を終えた時：新しい一代記を作って今の記録（session.slot）へ保存（その記録の前の中身はここで上書き）
-export function startCareer({ guide, type, name, seed }, store = localStore()) {
-  useCareer(newCareer({ guide, type, name, seed }));
+export function startRun({ guide, type, seed }, store = localStore()) {
+  useRun(newRun({ guide, type, seed }));
   rememberSlot(session.slot, store);
   saveNow(store);
-  return session.career;
+  return session.run;
 }
 
-// 節目で覚える技を選んだ時：覚えて保存（10/12 稽古の代わり）
-export function learnNow(id, store = localStore()) {
-  session.career = learnMove(session.career, id);
-  saveNow(store);
-  return session.career;
-}
-
-// 場所は basho が無い時だけ始める（場所の途中で読み直しても、始め直さない）
-export function beginBasho(store = localStore()) {
-  if (!session.career.basho) {
-    session.career = startBasho(session.career);
-    saveNow(store);
-  }
-  return session.career;
-}
-
-// 今日の相手が未定（幕下以下の2番目から）なら決めて、すぐ保存する（読み直しても同じ相手）
-export function decideNow(store = localStore()) {
-  const c = session.career;
-  if (!c?.basho) return c;
-  const d = decideOpponent(c);
-  if (d !== c) {
-    session.career = d;
-    saveNow(store);
-  }
-  return session.career;
-}
-
-// 相手の情報に入る時：今日の相手から相手の作戦表と自分のお勧めを組む。同じ相手にもう一度来た時は組み直さない
+// 相手の情報に入る時：今の相手から相手の作戦表と自分のお勧めを組む。同じ相手・同じ連敗数なら組み直さない
 export function prepareOpponent(store = localStore()) {
-  const c = decideNow(store);
-  const opp = c ? currentOpponent(c) : null;
-  if (!opp) return null;
-  const key = `${c.bashoIndex}:${c.basho.day}`;
-  if (session.oppKey !== key) {
+  const r = session.run;
+  const foe = r ? currentFoe(r) : null;
+  if (!foe) return null;
+  const key = `${r.wins}:${r.streak}`;
+  if (session.oppKey !== key || !session.strategy || !session.oppStrategy) {
     session.oppKey = key;
-    session.opp = opp.type;
-    session.oppStrategy = defaultStrategy(TYPES[opp.type].sample, opp.type);
-    session.strategy = recommendStrategy(c.known, c.type, opp.type); // 10/12 自分は覚えた手で組む
+    session.opp = foe.type;
+    session.oppStrategy = defaultStrategy(TYPES[foe.type].sample, foe.type);
+    session.strategy = recommendStrategy(r.known, r.type, foe.type);
   }
-  return opp;
+  return foe;
+}
+
+// 取組の種：倒した数と同じ相手への連敗数から（読み直して取り直しても同じ・負けて挑み直すと変わる）
+export function boutSeed(r = session.run) {
+  return (r.seed * 100000 + r.wins * 1000 + r.streak + 7) >>> 0;
 }
 
 export function recordNow(won, kimarite, store = localStore()) {
-  session.career = recordBout(session.career, won, kimarite);
-  saveNow(store);
-  return session.career;
-}
-
-// 取組の種：同じ一代記・同じ場所・同じ日なら同じ（読み直して取り直しても結果は変わらない）
-export function boutSeed(c = session.career) {
-  return (c.seed * 1000 + c.bashoIndex * 16 + c.basho.day + 7) >>> 0;
-}
-
-// 場所を締める（全部の取組が済んだ時だけ・1度だけ）。結果を session.lastResult に残し、保存する
-export function closeBasho(store = localStore()) {
-  const c = session.career;
-  const b = c?.basho;
-  if (!b || b.day < b.days.length) return null;
-  const { career, summary } = finishBasho(c, makeRng(c.seed * 1000 + c.bashoIndex + 500));
-  session.career = career;
+  const { run, note } = recordResult(session.run, won);
+  session.run = run;
+  session.lastBout = note ? { ...note, kimarite } : null;
+  session.strategy = session.oppStrategy = null;
   session.oppKey = null;
-  session.lastResult = { summary, basho: { month: b.month, place: b.place }, before: { ...(b.startStats || c.stats) }, after: { ...career.stats } };
   saveNow(store);
-  return session.lastResult;
+  return session.lastBout;
 }
 
-// つづきから：覚える候補があれば技を選ぶ画面・場所の途中なら取組の順・ほかは番付（10/12 稽古を無くした）
-export const resumeScene = (career) => (career.pendingLearn ? 'learn' : career.basho ? 'schedule' : 'banzuke');
+export const SUGGEST_TRAIN_AT = 3; // 同じ相手にこれだけ負けたら案内役が稽古を勧める
+export const suggestTraining = (run) => run.streak >= SUGGEST_TRAIN_AT;
+
+const keep = (store, run) => {
+  session.run = run;
+  saveNow(store);
+  return session.run;
+};
+export const trainBegin = (store = localStore()) => keep(store, startTraining(session.run));
+export const trainStatNow = (stat, store = localStore()) => keep(store, trainStat(session.run, stat));
+export const trainTechNow = (id, store = localStore()) => keep(store, trainNewTech(session.run, id));
+export const learnNow = (id, store = localStore()) => keep(store, learnMove(session.run, id));
+
+// つづきから：覚える候補があれば技の画面・稽古の途中なら稽古・ほかは番付表
+export const resumeScene = (run) => (run.pendingLearn ? 'learn' : run.training ? 'training' : 'ladder');
