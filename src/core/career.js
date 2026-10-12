@@ -1,13 +1,14 @@
-// 一代記の状態・稽古・疲れ・成長・場所の経験・記録（設計書 §3）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=26';
-import { LADDER_SIZE } from '../data/ranks.js?v=26';
-import { GROWTH, SPECIALTY_MULT } from './tuning.js?v=26';
-import { HEYA, heyaOfGuide } from '../data/heya.js?v=26';
-import { inGame } from '../data/kimarite.js?v=26';
+// 一代記の状態・勝つたびの伸び・記録（設計書 §3・10/12 作り直しで稽古と疲れを無くした）。どの関数も元を書き換えない
+import { TYPES } from '../data/types.js?v=27';
+import { LADDER_SIZE } from '../data/ranks.js?v=27';
+import { GROWTH, HEYA_GROW_MULT } from './tuning.js?v=27';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=27';
+import { inGame } from '../data/kimarite.js?v=27';
 
 // 古い iPhone の Safari（iOS 15.4 より前）には Object.hasOwn が無い＝札を押すと止まっていた（10/10）
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
+// 稽古の名前と伸びの表は、使わなくなった稽古の絵・声・言葉（words.js・widgets.js・sfx）と応援（cheer.js）のために残す（10/12 稽古は流れから外した）
 export const TRAININGS = ['shiko', 'teppo', 'chanko', 'waza', 'butsukari', 'moushiai', 'rest'];
 // 稽古1回の伸び（GROWTH.gain・伸びやすさ・伸びの鈍りを掛ける前）。体の稽古は疲れで減るぶん少し厚くしてある（10/11 試運転で合わせた）
 export const GAIN = {
@@ -28,7 +29,7 @@ const MULT = {
 };
 export const CAREER_KEY = 'sumo.career'; // 記録①の置き場（記録が1つだった頃からの鍵）
 const KEY = CAREER_KEY;
-const VERSION = 2; // 10/11 心技体の目盛りを作り直した（10以下から始まる）＝前の記録は読まない
+const VERSION = 3; // 10/12 稽古を無くした（版2は移して読む・版1は読まない）
 const r1 = (v) => Math.round(v * 10) / 10;
 const cap = (v) => Math.min(100, r1(v));
 
@@ -42,68 +43,35 @@ export const startStats = (type) => {
   return { shin: r1(b.shin * GROWTH.start), gi: r1(b.gi * GROWTH.start), tai: r1(b.tai * GROWTH.start) };
 };
 
-// 疲れは10まで。10になったら次の場所は休場（10/11 本人「10まで行くとアウト場所に出れない、それまでは高い方が調子を落とす」）
-export const FATIGUE_MAX = 10;
-// 調子：0〜3 好調 ×1・4〜6 普通 ×0.9・7〜9 不調 ×0.7・10 休場（取組に出ない）
-export function condition(fatigue) {
-  if (fatigue >= FATIGUE_MAX) return { id: 'out', mult: 0 };
-  if (fatigue >= 7) return { id: 'poor', mult: 0.7 };
-  if (fatigue >= 4) return { id: 'normal', mult: 0.9 };
-  return { id: 'good', mult: 1 };
-}
-
-// 取組で使う自分の心技体＝値×調子（相手には疲れが無い）
+// 取組の心技体＝値そのまま（10/12 疲れと調子を無くした）
 export function boutStats(career) {
-  const m = condition(career.fatigue).mult;
   const s = career.stats;
-  return { shin: r1(s.shin * m), gi: r1(s.gi * m), tai: r1(s.tai * m) };
+  return { shin: s.shin, gi: s.gi, tai: s.tai };
 }
 
 export function newCareer({ guide, type, name, seed }) {
   return {
     version: VERSION, guide, type, name,
     stats: startStats(type),
-    fatigue: 0, pos: LADDER_SIZE - 1, bashoIndex: 0, history: [], trainingLeft: 6, basho: null, seed, kinboshi: 0,
+    known: [...TYPES[type].sample], pendingLearn: null, learnKind: null,
+    pos: LADDER_SIZE - 1, bashoIndex: 0, history: [], basho: null, seed, kinboshi: 0,
   };
 }
 
-export function train(career, kind) {
-  if (career.trainingLeft <= 0) return career;
-  if (!hasOwn(GAIN, kind)) return career;
-  if (kind === 'rest') {
-    return { ...career, fatigue: Math.max(0, career.fatigue - 2), trainingLeft: career.trainingLeft - 1 };
-  }
-  const stats = { ...career.stats };
+// 格上に勝った時の倍率：席の差（相手が上＝小さい番号）が upsetSpan で upsetMax に届く・格下や同じ席は1
+const upset = (myPos, oppPos) => 1 + (GROWTH.upsetMax - 1) * Math.min(1, Math.max(0, myPos - oppPos) / GROWTH.upsetSpan);
+
+// 1番ごとの伸び（10/12 本人「相手に勝ったら、心技体が少しづつ加算され強くなる」）。負けは勝ちの lossMult 倍
+export function winGrowth(career, oppPos, won) {
   const heya = heyaOfGuide(career.guide);
-  const special = heya !== null && HEYA[heya].specialty === kind; // 部屋の得意の稽古は伸びが1割多い（鈍りの後・100で止める前）
-  for (const [stat, g] of Object.entries(GAIN[kind])) {
-    let add = g * GROWTH.gain * growthMult(career.type, stat) * diminish(stats[stat]);
-    if (special) add *= SPECIALTY_MULT;
-    if (stat === 'tai') add *= Math.max(0, 1 - 0.25 * career.fatigue);
-    stats[stat] = cap(stats[stat] + add);
-  }
-  return { ...career, stats, fatigue: Math.min(FATIGUE_MAX, career.fatigue + 1), trainingLeft: career.trainingLeft - 1 };
-}
-
-// 稽古の前後から、札の絵の下に出す効き目の行を作る（変わった物だけ）：
-// 心・技・体の伸び（この順）→ 疲れの増減 → 調子の帯が変わった時だけ調子の行
-export function trainingEffects(before, after) {
-  const out = [];
-  for (const key of ['shin', 'gi', 'tai']) {
-    const delta = r1(after.stats[key] - before.stats[key]);
-    if (delta !== 0) out.push({ key, delta });
-  }
-  const df = after.fatigue - before.fatigue;
-  if (df !== 0) out.push({ key: 'fatigue', delta: df });
-  const from = condition(before.fatigue).id;
-  const to = condition(after.fatigue).id;
-  if (from !== to) out.push({ key: 'condition', from, to });
-  return out;
-}
-
-export function addExperience(career, wins) {
+  const grows = heya !== null ? HEYA[heya].grows : null;
+  const k = won ? upset(career.pos, oppPos) : GROWTH.lossMult;
   const stats = { ...career.stats };
-  for (const s of ['shin', 'gi', 'tai']) stats[s] = cap(stats[s] + wins * GROWTH.exp * growthMult(career.type, s) * diminish(stats[s]));
+  for (const s of ['shin', 'gi', 'tai']) {
+    let add = GROWTH.win * k * growthMult(career.type, s) * diminish(stats[s]);
+    if (s === grows) add *= HEYA_GROW_MULT;
+    stats[s] = cap(stats[s] + add);
+  }
   return { ...career, stats };
 }
 
@@ -132,6 +100,7 @@ function validBasho(b) {
   if (!b || typeof b !== 'object') return false;
   if (!MONTHS.includes(b.month) || !nonEmpty(b.place)) return false;
   if (b.kyujo !== undefined && typeof b.kyujo !== 'boolean') return false;
+  if (b.startStats !== undefined && !validStats(b.startStats)) return false; // 10/12 場所の始めの心技体（無い古い記録も読む）
   const arrs = [b.days, b.opponents, b.results, b.kimarite];
   if (!arrs.every(Array.isArray)) return false;
   const len = b.days.length;
@@ -144,37 +113,45 @@ function validBasho(b) {
   return Number.isInteger(b.day) && b.day >= 0 && b.day <= len;
 }
 
-// 覚えた手（known）と作戦表（strategy）を書いた記録は、ゲームの手（IN_GAME・10/11 21手に絞った）だけ残す。
-// 記録は捨てない＝その手だけ落とす。覚えた手が空になったらタイプの始めの手を入れ直す（今の記録はどちらも書かない＝何もしない）
-const SCENE_KEYS = ['tachiai', 'mid', 'edge'];
-function keepInGameMoves(c) {
-  if (c.known !== undefined) {
-    const kept = Array.isArray(c.known) ? c.known.filter(inGame) : [];
-    c.known = kept.length ? kept : [...TYPES[c.type].start];
-  }
-  if (c.strategy !== undefined) {
-    const s = c.strategy && typeof c.strategy === 'object' ? c.strategy : {};
-    c.strategy = {};
-    for (const sc of SCENE_KEYS) c.strategy[sc] = Array.isArray(s[sc]) ? s[sc].filter(inGame) : [];
-  }
+const LEARN_KINDS = ['kachikoshi', 'juryo', 'makuuchi']; // 節目の種類（learn.js の milestone）
+// 覚える候補：ゲームの手だけ・空なら null
+const keepPending = (p) => {
+  const kept = Array.isArray(p) ? p.filter(inGame) : [];
+  return kept.length ? kept : null;
+};
+
+// 版2（稽古があった頃）の記録を版3へ：稽古の回数と疲れは捨てる・休場の場所は捨てる（番付から始め直す）・覚えた手はタイプの見本の手
+function fromV2(c) {
+  const { fatigue, trainingLeft, ...rest } = c;
+  // 場所の途中なら、移した時の心技体を場所の始めの値にする（結果の画面の伸びが0にならない）
+  const basho = !c.basho || c.basho.kyujo === true ? null : { ...c.basho, startStats: { ...c.stats } };
+  return { ...rest, version: VERSION, basho, known: [...TYPES[c.type].sample], pendingLearn: null };
 }
 
 export function deserialize(text) {
   try {
-    const c = JSON.parse(text);
-    if (!c || typeof c !== 'object' || c.version !== VERSION) return null;
+    let c = JSON.parse(text);
+    if (!c || typeof c !== 'object') return null;
+    if (c.version === 2) {
+      if (!hasOwn(TYPES, c.type)) return null;
+      c = fromV2(c);
+    }
+    if (c.version !== VERSION) return null;
     if (!hasOwn(TYPES, c.type)) return null;
     if (!validStats(c.stats)) return null;
-    if (![c.pos, c.fatigue, c.trainingLeft, c.bashoIndex].every(Number.isFinite)) return null;
-    if (!validPos(c.pos) || c.fatigue < 0 || !Number.isInteger(c.trainingLeft) || c.trainingLeft < 0 || c.trainingLeft > 6) return null;
+    if (![c.pos, c.bashoIndex].every(Number.isFinite)) return null;
+    if (!validPos(c.pos)) return null;
     if (!Array.isArray(c.history) || !c.history.every(validHistory)) return null;
     if (!validName(c.name)) return null;
     if (c.basho !== null && !validBasho(c.basho)) return null;
-    // 金星の数（10/11 足した）：無い記録は0（版は2のまま）・数でなければ読まない
+    // 金星の数（10/11 足した）：無い記録は0・数でなければ読まない
     if (c.kinboshi === undefined) c.kinboshi = 0;
     else if (!count(c.kinboshi)) return null;
-    c.fatigue = Math.min(FATIGUE_MAX, c.fatigue); // 疲れに上が無かった頃の記録は10で止める
-    keepInGameMoves(c);
+    const kept = Array.isArray(c.known) ? c.known.filter(inGame) : [];
+    c.known = kept.length ? kept : [...TYPES[c.type].sample];
+    delete c.strategy; // 作戦表は記録に書かない（古い記録にあれば捨てる）
+    c.pendingLearn = keepPending(c.pendingLearn);
+    c.learnKind = c.pendingLearn && LEARN_KINDS.includes(c.learnKind) ? c.learnKind : null;
     return c;
   } catch {
     return null;

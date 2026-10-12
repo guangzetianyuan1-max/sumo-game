@@ -2,12 +2,12 @@
 // 10/11 本人「はじめの画面で相撲部屋が3つあり、入門部屋を選べる・女子はその各々の入門部屋に在籍・各入門部屋に親方が存在する」。
 // 部屋の札を押す＝その部屋の娘を session.guide にする（一代記は今までどおり guide を持ち、部屋はそこから引く）。
 // 初めの画面で空きの記録（またははじめから）を押すとここへ来る。保存先の記録は session.slot（初めの画面で決めてある）
-import { HEYA_IDS, HEYA, heyaOfGuide } from '../data/heya.js?v=26';
-import { t } from '../i18n/i18n.js?v=26';
-import { session } from '../state.js?v=26';
+import { HEYA_IDS, HEYA, heyaOfGuide } from '../data/heya.js?v=27';
+import { t } from '../i18n/i18n.js?v=27';
+import { session } from '../state.js?v=27';
 import {
   button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, preloadGuideArt, preloadOyakataArt, speakerFace, clearScene, COLORS,
-} from '../ui/widgets.js?v=26';
+} from '../ui/widgets.js?v=27';
 
 const CARD = { w: 660, h: 300, top: 115, gap: 20 }; // 札3枚：115〜1055（下に理由の1行と「次へ」）
 const PAD = 26;

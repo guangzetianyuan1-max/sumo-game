@@ -1,9 +1,9 @@
-// src/scenes/NameScene.js — しこ名を選ぶ：候補3つを大きな札で縦に並べる・引き直せる・決めると一代記が始まる（保存）→ 稽古
-import { shikonaCandidates } from '../core/shikona.js?v=26';
-import { makeRng } from '../core/rng.js?v=26';
-import { t, getLang, shikonaLabel } from '../i18n/i18n.js?v=26';
-import { session, startCareer } from '../state.js?v=26';
-import { button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=26';
+// src/scenes/NameScene.js — しこ名を選ぶ：候補3つを大きな札で縦に並べる・引き直せる・決めると一代記が始まる（保存）→ 番付（10/12 稽古を無くした）
+import { shikonaCandidates } from '../core/shikona.js?v=27';
+import { makeRng } from '../core/rng.js?v=27';
+import { t, getLang, shikonaLabel } from '../i18n/i18n.js?v=27';
+import { session, startCareer } from '../state.js?v=27';
+import { button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=27';
 
 const CARD_W = 600;
 const CARD_H = 170;
@@ -41,7 +41,7 @@ export class NameScene extends Phaser.Scene {
     }, { color: COLORS.buttonSub, size: 30 });
     button(this, width / 2, 1190, 460, 110, t('name.go'), () => {
       startCareer({ guide: session.guide ?? 'chizuru', type: session.you, name: this.cands[this.pick], seed: Date.now() % 1000000 });
-      this.scene.start('training');
+      this.scene.start('banzuke');
     }, { size: 38 });
   }
 

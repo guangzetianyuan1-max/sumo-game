@@ -4,11 +4,11 @@
 // 休場の場所（疲れ10で入った）は全部の行が「休」で、始めから済んでいる＝すぐ「場所の結果へ」
 // 取組が残っている間は下の段の左に「自動で取る」（10/11 本人「場所において自動モード」）：今日の相手のお勧めの作戦表で、結果だけの速さで1番取って
 // ここへ戻り、0.6秒おいて次へ（session.autoBasho）。最中は左のボタンが「止める」・取組で画面を押しても止まる。全部済んだら止まる
-import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=26';
-import { recordNote } from '../core/honors.js?v=26';
-import { session, prepareOpponent, closeBasho, decideNow } from '../state.js?v=26';
-import { nextAutoStep } from '../core/auto.js?v=26';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=26';
+import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=27';
+import { recordNote } from '../core/honors.js?v=27';
+import { session, prepareOpponent, closeBasho, decideNow } from '../state.js?v=27';
+import { nextAutoStep } from '../core/auto.js?v=27';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=27';
 
 const LIST = { top: 146, bottom: 1126, w: 664 }; // 15日でも1行65（番付の字22を入れる）
 const COL = { day: 46, who: 152, type: 404, mark: 650, right: 618 }; // 左から：日／しこ名・番付／タイプ・決まり手／○●
@@ -25,7 +25,7 @@ export class ScheduleScene extends Phaser.Scene {
     decideNow(); // 今日の相手が未定のまま読み直した記録でも、ここで決めて保存（ふだんは前の取組の後に決まっている）
     const c = session.career;
     if (!c?.basho) {
-      this.scene.start(c ? 'training' : 'guide');
+      this.scene.start(c ? 'banzuke' : 'guide');
       return;
     }
     const b = c.basho;
@@ -48,12 +48,7 @@ export class ScheduleScene extends Phaser.Scene {
     }
     fitText(this.add.text(30, 116, bashoLabel(b), textStyle(30, COLORS.ink)).setOrigin(0, 0.5), room - 16 - 30);
 
-    // 休場は見出しの下に理由の1行を足し、そのぶん行を下げる
-    let listTop = LIST.top;
-    if (b.kyujo) {
-      fitText(this.add.text(width / 2, LIST.top + 8, t('sched.kyujo'), textStyle(28, COLORS.gold)).setOrigin(0.5), width - 60);
-      listTop += 40;
-    }
+    const listTop = LIST.top; // 10/12 休場は無くした
     const n = b.days.length;
     const rowH = Math.min(110, (LIST.bottom - listTop) / n);
     b.days.forEach((d, i) => this.row(b, i, Math.round(listTop + rowH * (i + 0.5)), Math.floor(rowH - 6)));

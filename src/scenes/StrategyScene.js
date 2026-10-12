@@ -1,17 +1,17 @@
 // src/scenes/StrategyScene.js — 作戦表（設計書 §2）。
 // 10/11 本人「技の一押しでどのような技かの図解が出る。長押しで移動ができる。移動先がいっぱいの場合、押されたほうが覚えた手に戻る」
 // 押す＝図解の札が開く（段の手も覚えた手も）／長押し＝持ち上げて指（マウス）について来る・離した枠へ置く（規則は core/strategy.js の moveTech）
-import { SCENES, ROW, canPlace, scenesOf, moveTech, defaultStrategy } from '../core/strategy.js?v=26';
-import { recommendStrategy, effectiveAgainst } from '../core/recommend.js?v=26';
-import { TYPES } from '../data/types.js?v=26';
-import { KIMARITE } from '../data/kimarite.js?v=26';
-import { KIMARITE_DESC_JA } from '../data/kimarite_desc.js?v=26';
-import { classifyPress, movedTooFar, LONG_PRESS_MS } from '../ui/press.js?v=26';
-import { t, techLabel, getLang } from '../i18n/i18n.js?v=26';
-import { session } from '../state.js?v=26';
+import { SCENES, ROW, canPlace, scenesOf, moveTech, defaultStrategy } from '../core/strategy.js?v=27';
+import { recommendStrategy, effectiveAgainst } from '../core/recommend.js?v=27';
+import { TYPES } from '../data/types.js?v=27';
+import { KIMARITE } from '../data/kimarite.js?v=27';
+import { KIMARITE_DESC_JA } from '../data/kimarite_desc.js?v=27';
+import { classifyPress, movedTooFar, LONG_PRESS_MS } from '../ui/press.js?v=27';
+import { t, techLabel, getLang } from '../i18n/i18n.js?v=27';
+import { session } from '../state.js?v=27';
 import {
   button, backButton, fitText, roundBox, hitZone, textStyle, preloadKimariteIndex, loadKimariteArt, COLORS, GROUP_COLOR, clearScene, TOP_LEFT_FREE,
-} from '../ui/widgets.js?v=26';
+} from '../ui/widgets.js?v=27';
 
 const ICON = 120;
 const STEP = 130; // 段の枠の間隔
@@ -66,7 +66,7 @@ export class StrategyScene extends Phaser.Scene {
   }
 
   create() {
-    session.strategy = session.strategy ?? recommendStrategy(TYPES[session.you].sample, session.you, session.opp);
+    session.strategy = session.strategy ?? recommendStrategy(this.known(), session.you, session.opp);
     session.oppStrategy = session.oppStrategy ?? defaultStrategy(TYPES[session.opp].sample, session.opp);
     this.msg = '';
     this.msgToken = 0;
@@ -119,7 +119,7 @@ export class StrategyScene extends Phaser.Scene {
     fitText(this.add.text(TOP_LEFT_FREE, 26, t('strat.title'), textStyle(48, COLORS.gold)), 390 - 12 - TOP_LEFT_FREE);
     // 相手に合わせたお勧めへ作戦表を戻す（手直しは消える）
     button(this, width - 180, 48, 300, 52, t('strat.recommend'), () => {
-      session.strategy = recommendStrategy(TYPES[session.you].sample, session.you, session.opp);
+      session.strategy = recommendStrategy(this.known(), session.you, session.opp);
       this.msg = '';
       this.redraw();
     }, { color: COLORS.buttonSub, size: 24 });
@@ -139,12 +139,16 @@ export class StrategyScene extends Phaser.Scene {
     });
 
     fitText(this.add.text(30, 760, t('strat.known'), textStyle(30, COLORS.ink)), width - 60);
-    TYPES[session.you].sample.forEach((id, k) => {
-      const x = 100 + (k % 5) * STEP;
-      const y = 870 + Math.floor(k / 5) * 135;
-      if (effectiveAgainst(id, session.opp)) this.glow(x, y); // 今日の相手に効く手は周りが光る（四角と押し当たりより下に描く）
-      const parts = this.tile(x, y, id);
-      this.pressable(x, y, id, null, parts);
+    // 10/12 覚えた手（一代記の known）。10手までは5列・11手から（節目で覚えて増える・最大21手）は小さい札で7列×3段
+    const known = this.known();
+    const big = known.length <= 10;
+    const L = big ? { cols: 5, size: ICON, step: STEP, x0: 100, y0: 870, dy: 135 } : { cols: 7, size: 84, step: 92, x0: 84, y0: 842, dy: 92 };
+    known.forEach((id, k) => {
+      const x = L.x0 + (k % L.cols) * L.step;
+      const y = L.y0 + Math.floor(k / L.cols) * L.dy;
+      if (effectiveAgainst(id, session.opp)) this.glow(x, y, L.size); // 今日の相手に効く手は周りが光る（四角と押し当たりより下に描く）
+      const parts = this.tile(x, y, id, L.size);
+      this.pressable(x, y, id, null, parts, L.size);
     });
 
     if (this.msg) fitText(this.add.text(width / 2, 1115, this.msg, textStyle(30, COLORS.gold)).setOrigin(0.5), width - 60);
@@ -152,10 +156,15 @@ export class StrategyScene extends Phaser.Scene {
     button(this, width / 2, 1205, 460, 110, t('strat.go'), () => this.scene.start('bout'), { size: 38 });
   }
 
+  // 覚えた手：一代記の known（10/12）。一代記が無い時はタイプの見本の手
+  known() {
+    return session.career?.known ?? TYPES[session.you].sample;
+  }
+
   // 金の縁を四角の少し外側に描き、ゆっくり明滅させる（押し当たりは持たない）
-  glow(x, y) {
+  glow(x, y, size = ICON) {
     const g = this.add.graphics();
-    const w = ICON + 14;
+    const w = size + 14;
     g.lineStyle(6, COLORS.frame, 1);
     g.strokeRoundedRect(x - w / 2, y - w / 2, w, w, 26);
     g.setAlpha(0.4);
@@ -163,10 +172,10 @@ export class StrategyScene extends Phaser.Scene {
   }
 
   // 手の四角を描く（x, y を中心に）。描いた部品の並びを返す（持ち上げた写しにも使う）
-  tile(x, y, id) {
+  tile(x, y, id, size = ICON) {
     const filled = Boolean(id);
     const parts = [];
-    parts.push(roundBox(this, x, y, ICON, ICON, filled ? GROUP_COLOR[KIMARITE[id].group] : COLORS.empty, {
+    parts.push(roundBox(this, x, y, size, size, filled ? GROUP_COLOR[KIMARITE[id].group] : COLORS.empty, {
       radius: 20, stroke: COLORS.frame, strokeAlpha: filled ? 1 : 0.25, shadow: filled,
     }));
     if (filled) {
@@ -178,8 +187,8 @@ export class StrategyScene extends Phaser.Scene {
         name = `${chars.slice(0, k).join('')}
 ${chars.slice(k).join('')}`;
       }
-      const label = this.add.text(x, y, name, textStyle(26, COLORS.ink, { align: 'center' })).setOrigin(0.5);
-      fitText(label, ICON - 10);
+      const label = this.add.text(x, y, name, textStyle(Math.round(26 * size / ICON), COLORS.ink, { align: 'center' })).setOrigin(0.5);
+      fitText(label, size - 10);
       parts.push(label);
     }
     return parts;
@@ -187,8 +196,8 @@ ${chars.slice(k).join('')}`;
 
   // 押し当たり。押しはこの四角の上で始まったものだけ数える。離し・動きは画面全体で受ける（onPointerMove / onPointerUp）
   // from＝段の中なら { scene, index }・覚えた手なら null
-  pressable(x, y, id, from, parts) {
-    const zone = hitZone(this, x, y, ICON, ICON);
+  pressable(x, y, id, from, parts, size = ICON) {
+    const zone = hitZone(this, x, y, size, size);
     zone.on('pointerdown', (p) => {
       if (this.press || this.drag || this.popup) return;
       const setAlpha = (a) => parts.forEach((o) => o.setAlpha(a));

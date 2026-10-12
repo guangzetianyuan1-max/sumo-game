@@ -1,9 +1,9 @@
 // src/scenes/ResultScene.js — 場所の結果：場所の名前・星の数・勝ち越し／負け越し・優勝・番付の動き・伸びた心技体（経験）
 // 締めは取組の順の画面で1度だけ済ませてある（ここは session.lastResult を読むだけ＝読み直しで2度締めない）
-import { t, rankLabel, bashoLabel } from '../i18n/i18n.js?v=26';
-import { session } from '../state.js?v=26';
-import { recordNote } from '../core/honors.js?v=26';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=26';
+import { t, rankLabel, bashoLabel } from '../i18n/i18n.js?v=27';
+import { session } from '../state.js?v=27';
+import { recordNote } from '../core/honors.js?v=27';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, COLORS } from '../ui/widgets.js?v=27';
 
 const STATS = ['shin', 'gi', 'tai'];
 const BARS = { x: 80, w: 540 };
@@ -17,13 +17,13 @@ export class ResultScene extends Phaser.Scene {
   create() {
     const r = session.lastResult;
     if (!r || !session.career) {
-      this.scene.start(session.career ? 'training' : 'guide');
+      this.scene.start(session.career ? 'banzuke' : 'guide');
       return;
     }
     const { summary, basho, before, after } = r;
     const { width } = this.scale;
     const cx = width / 2;
-    // 場所はもう締めてある＝初めの画面へ戻っても2度は締めない（つづきからは稽古へ）
+    // 場所はもう締めてある＝初めの画面へ戻っても2度は締めない（つづきからは技を覚える画面か番付へ）
     backButton(this, () => this.scene.start('guide'));
     saveButton(this);
     topTitle(this, 52, t('result.title'), 56, COLORS.gold, { save: true });
@@ -73,7 +73,8 @@ export class ResultScene extends Phaser.Scene {
       this.add.text(BARS.x + BARS.w + 12, barsY + i * 44 + 22, t('train.gain', { n: d }), textStyle(24, COLORS.gold, { fontStyle: '500' })).setOrigin(0, 0.5);
     });
 
-    button(this, cx, 1190, 460, 110, t('result.go'), () => this.scene.start('training'), { size: 38 });
+    // 10/12 節目で覚える候補があれば技を覚える画面へ・無ければ次の場所の番付へ
+    button(this, cx, 1190, 460, 110, t('result.go'), () => this.scene.start(session.career.pendingLearn ? 'learn' : 'banzuke'), { size: 38 });
   }
 
   // 金星・三賞の小さな金の札を、幅 maxW の中に左から詰めて並べる（入らなければ次の段）。段は真ん中にそろえる。下の端を返す

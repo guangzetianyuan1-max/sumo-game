@@ -6,22 +6,22 @@
 // 土俵：横に広い世界（WORLD.w）を container に入れ、触れ合う所を追って横に動かす（屋根と四房は画面に止めたまま）
 // 力士：assets/bout/<east|west>/<姿勢>.png（tools/prep_bout.py）。姿勢の選びと位置の計算は src/core/boutanim.js
 // 決まり方：突き押しの「出し」＝俵の外へ押し出して土俵の下へ／「倒し」＝俵際で倒れる／ほか＝踏ん張る勝ちと倒れる負け（技ごとの動きは後の段で1つずつ）
-import { runBout } from '../core/bout.js?v=26';
-import { makeWrestler } from '../core/wrestler.js?v=26';
-import { currentOpponent } from '../core/basho.js?v=26';
-import { boutStats } from '../core/career.js?v=26';
+import { runBout } from '../core/bout.js?v=27';
+import { makeWrestler } from '../core/wrestler.js?v=27';
+import { currentOpponent } from '../core/basho.js?v=27';
+import { boutStats } from '../core/career.js?v=27';
 import {
   POSE_NAMES, WORLD, OVERLAP, stepPoses, finishKind, isThrust, contactX, clampContact, viewScroll, bodyLeft, bodyScale,
-} from '../core/boutanim.js?v=26';
-import { t, techLabel, shikonaLabel, getLang } from '../i18n/i18n.js?v=26';
-import { session, recordNow, boutSeed } from '../state.js?v=26';
-import { boutComment } from '../core/advice.js?v=26';
-import { WORD_COLOR, wordArt } from '../data/words.js?v=26';
-import { playBout } from '../ui/sfx.js?v=26';
+} from '../core/boutanim.js?v=27';
+import { t, techLabel, shikonaLabel, getLang } from '../i18n/i18n.js?v=27';
+import { session, recordNow, boutSeed } from '../state.js?v=27';
+import { boutComment } from '../core/advice.js?v=27';
+import { WORD_COLOR, wordArt } from '../data/words.js?v=27';
+import { playBout } from '../ui/sfx.js?v=27';
 import {
   button, backButton, fitText, textStyle, statBars, speakerFace, speechBubble, preloadGuideArt, preloadOyakataArt,
   preloadWordsIndex, loadWordsArt, COLORS,
-} from '../ui/widgets.js?v=26';
+} from '../ui/widgets.js?v=27';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
@@ -75,7 +75,7 @@ export class BoutScene extends Phaser.Scene {
       this.scene.start(career ? 'schedule' : 'guide');
       return;
     }
-    const you = makeWrestler(career.type, boutStats(career)); // 自分は疲れの調子を掛けた値（相手に疲れは無い）
+    const you = makeWrestler(career.type, { ...boutStats(career), known: career.known }); // 10/12 自分は覚えた手で取る（疲れは無い）
     const opp = makeWrestler(foe.type, foe.stats);
     // 種は一代記・場所・日から（読み直して取り直しても同じ取組）
     this.result = runBout({ wrestler: you, strategy: session.strategy }, { wrestler: opp, strategy: session.oppStrategy }, boutSeed(career));

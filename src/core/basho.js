@@ -1,16 +1,17 @@
 // 場所：相手と取組の順・結果の記録・締め（優勝・番付・経験）。乱数は career.seed と場所の番号から
-import { LADDER_SIZE, DIVISIONS } from '../data/ranks.js?v=26';
-import { TYPES, TYPE_IDS } from '../data/types.js?v=26';
-import { divisionOf, nextPos } from './banzuke.js?v=26';
-import { makeShikona } from './shikona.js?v=26';
-import { addExperience, train, condition, boutStats, newCareer } from './career.js?v=26';
-import { makeRng } from './rng.js?v=26';
-import { makeWrestler } from './wrestler.js?v=26';
-import { defaultStrategy } from './strategy.js?v=26';
-import { recommendStrategy } from './recommend.js?v=26';
-import { runBout } from './bout.js?v=26';
-import { OPP_TOTAL } from './tuning.js?v=26';
-import { bashoAwards, promotionNote } from './honors.js?v=26';
+import { LADDER_SIZE, DIVISIONS } from '../data/ranks.js?v=27';
+import { TYPES, TYPE_IDS } from '../data/types.js?v=27';
+import { divisionOf, nextPos } from './banzuke.js?v=27';
+import { makeShikona } from './shikona.js?v=27';
+import { winGrowth, boutStats, newCareer } from './career.js?v=27';
+import { milestone, learnChoices, learnMove } from './learn.js?v=27';
+import { makeRng } from './rng.js?v=27';
+import { makeWrestler } from './wrestler.js?v=27';
+import { defaultStrategy } from './strategy.js?v=27';
+import { recommendStrategy } from './recommend.js?v=27';
+import { runBout } from './bout.js?v=27';
+import { OPP_TOTAL } from './tuning.js?v=27';
+import { bashoAwards, promotionNote } from './honors.js?v=27';
 
 export const BASHO_MONTHS = [1, 3, 5, 7, 9, 11];
 export const BASHO_PLACES = ['tokyo', 'osaka', 'tokyo', 'nagoya', 'tokyo', 'fukuoka'];
@@ -67,9 +68,8 @@ export function startBasho(career) {
     opponents = days.map(() => drawOpponent(rng, clampPos(career.pos - 20), clampPos(career.pos + 20), seats, taken));
   }
   const m = career.bashoIndex % 6;
-  const basho = { month: BASHO_MONTHS[m], place: BASHO_PLACES[m], days, opponents, results: days.map(() => null), kimarite: days.map(() => null), day: 0 };
-  // 疲れ10で場所に入ったら休場：相手は同じに引いておき、全部「休み」で始めから済ませる（幕下以下の2番目からは未定のまま）
-  if (condition(career.fatigue).id === 'out') return { ...career, basho: { ...basho, kyujo: true, results: days.map(() => 'absent'), day: days.length } };
+  // startStats＝場所の始めの心技体（10/12 取組ごとに伸びるので、結果の画面の「この場所の伸び」はここから測る）
+  const basho = { month: BASHO_MONTHS[m], place: BASHO_PLACES[m], days, opponents, results: days.map(() => null), kimarite: days.map(() => null), day: 0, startStats: { ...career.stats } };
   return { ...career, basho };
 }
 
@@ -99,11 +99,13 @@ export function currentOpponent(career) {
 export function recordBout(career, won, kimarite) {
   const c = decideOpponent(career);
   const b = c.basho;
+  const opp = b.opponents[b.day];
+  const grown = winGrowth(c, opp ? opp.pos : c.pos, won); // 10/12 勝つたびに伸びる（1番に1回だけ）
   const results = [...b.results];
   const kim = [...b.kimarite];
   results[b.day] = won ? 'win' : 'loss';
   kim[b.day] = kimarite;
-  return decideOpponent({ ...c, basho: { ...b, results, kimarite: kim, day: b.day + 1 } });
+  return decideOpponent({ ...grown, basho: { ...b, results, kimarite: kim, day: b.day + 1 } });
 }
 
 export function finishBasho(career, rng) {
@@ -117,31 +119,32 @@ export function finishBasho(career, rng) {
   }
   const fromPos = career.pos;
   const toPos = nextPos(fromPos, wins, losses, career.history, yusho);
-  const kyujo = b.kyujo === true;
   // 金星・三賞は見せるだけ（番付も心技体も動かさない）。金星は一代の数にも足す
   const { kinboshi, sansho } = bashoAwards(career);
   const promotion = promotionNote(fromPos, toPos, career.history);
-  let next = addExperience(career, wins);
-  next = {
-    ...next,
-    fatigue: kyujo ? 0 : career.fatigue, // 休場で疲れは抜ける
+  // 10/12 心技体は取組ごとに伸びる（recordBout）＝締めのまとめ足しは無い。節目（勝ち越し・十両・幕内）なら覚える候補を出す
+  const learn = milestone(fromPos, toPos, wins, losses, career.history);
+  const next = {
+    ...career,
     pos: toPos,
     history: [...career.history, { pos: fromPos, wins, losses, yusho }],
     bashoIndex: career.bashoIndex + 1,
-    trainingLeft: 6,
     basho: null,
     kinboshi: (career.kinboshi || 0) + kinboshi,
   };
-  return { career: next, summary: { wins, losses, yusho, fromPos, toPos, kyujo, kinboshi, sansho, promotion } };
+  const choices = learn ? learnChoices(next, rng) : [];
+  next.pendingLearn = choices.length ? choices : null;
+  next.learnKind = choices.length ? learn : null; // 節目の種類も記録に（閉じて開いても技の画面の見出しが正しい）
+  return { career: next, summary: { wins, losses, yusho, fromPos, toPos, kyujo: false, kinboshi, sansho, promotion, learn } };
 }
 
-// 一代の試運転（試験と強さ合わせ用）：稽古は policy・取組は自動。横綱になるか maxBasho で止める
+// 一代の試運転（試験と強さ合わせ用）：取組は自動・覚える候補は最初の手。横綱になるか maxBasho で止める
 // at＝初めてその地位（より上）に着いた場所の番号（1から）・statAt＝その時の一番高い値・maxBeforeYokozuna＝横綱になる前の一番高い値
 const MILESTONES = ['juryo', 'maegashira', 'ozeki', 'yokozuna'];
 const LEVEL = { juryo: 5, maegashira: 4, ozeki: 1, yokozuna: 0 }; // 番付の段の番号（0＝横綱）
 const top = (s) => Math.max(s.shin, s.gi, s.tai);
 
-export function autoplayCareer(seed, maxBasho, policy, type = 'balance') {
+export function autoplayCareer(seed, maxBasho, type = 'balance') {
   let c = newCareer({ guide: 'chizuru', type, name: { ja: 'Test', en: 'Test' }, seed });
   let maxStat = 0;
   let maxBeforeYokozuna = 0;
@@ -149,17 +152,17 @@ export function autoplayCareer(seed, maxBasho, policy, type = 'balance') {
   const statAt = {};
   const rng = makeRng(seed);
   for (let n = 1; n <= maxBasho; n++) {
-    while (c.trainingLeft > 0) c = train(c, policy(c));
     maxBeforeYokozuna = Math.max(maxBeforeYokozuna, top(c.stats));
     c = startBasho(c);
     let opp;
     while ((opp = currentOpponent(c))) {
-      const me = makeWrestler(c.type, boutStats(c)); // 取組は調子を掛けた値（画面の取組と同じ）
+      const me = makeWrestler(c.type, { ...boutStats(c), known: c.known }); // 覚えた手で取る（画面の取組と同じ）
       const them = makeWrestler(opp.type, opp.stats);
       const r = runBout({ wrestler: me, strategy: recommendStrategy(me.known, c.type, opp.type) }, { wrestler: them, strategy: defaultStrategy(them.known, opp.type) }, Math.floor(rng() * 1e9));
       c = recordBout(c, r.winner === 'east', r.kimarite);
     }
     c = finishBasho(c, rng).career;
+    if (c.pendingLearn) c = learnMove(c, c.pendingLearn[0]);
     maxStat = Math.max(maxStat, top(c.stats));
     const level = divisionOf(c.pos).index;
     for (const m of MILESTONES) {

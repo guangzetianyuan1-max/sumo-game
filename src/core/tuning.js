@@ -8,14 +8,14 @@ export const TURN_LIMIT = 14; // これだけ手を重ねたら、位置で勝�
 export const RECOVER = 6; // 1手ごとに戻る体勢
 export const OKURI_BELOW = 35; // 送り技は、相手の体勢がこれより下で使える
 export const NON_TECH_P = 0.004; // 技でない決まり方が起きる割合（1手あたり）
-// 心技体の伸び（10/11 本人「心、技、体は横綱でようやく100にいくように。はじめは10以下のスタートで」）
-// start＝入門の値＝タイプの base（和150の形）×start。gain＝稽古の伸びの表（career.js の GAIN）に掛ける数。
-// exp＝場所の経験（勝ち1つあたり×伸びやすさ）。伸びは値が上がるほど鈍る：×max(dimFloor, 1 − 値/dimDen)
-// 10/11 試運転で合わせた値。本物の番付の決まり（大関＝三役で3場所33勝・7番の段から上がる時は真ん中まで）を入れた後の測り
-// （5タイプ×30の種・70場所）：十両 11〜13・入幕 19〜21・大関 28.5〜32・横綱 34〜41 場所目が真ん中・全員が横綱に届く（tests/basho.test.js の方針）
-export const GROWTH = { start: 1 / 6, gain: 0.55, exp: 0.3, dimDen: 101, dimFloor: 0.02 };
-// 入門した部屋の得意の稽古（data/heya.js の specialty）は、伸びがこれだけ多い（10/11 本人「部屋ごとに得意の稽古があり伸びが1割多い」）
-export const SPECIALTY_MULT = 1.1;
+// 心技体の伸び（10/12 作り直し：稽古を無くし、勝つたびに伸びる。本人「相手に勝ったら、心技体が少しづつ加算され強くなる」）
+// start＝入門の値＝タイプの base（和150の形）×start（どれも10以下）。win＝勝ち1つの伸び（×タイプの伸びやすさ×部屋×格上×鈍り）
+// lossMult＝負けの伸び（勝ちに対する比）。upsetMax＝格上に勝った時の上限の倍率（席の差 upsetSpan で上限に届く）
+// 伸びは値が上がるほど鈍る：×max(dimFloor, 1 − 値/dimDen)。win の値は tests/basho.test.js の「一代の伸び」の帯に合わせる
+// 10/12 測った（8つの種）win 0.66＝十両 11〜13・入幕 17.5〜19・大関 26.5〜29・横綱 31.5〜35 場所目（0.9 は早すぎ・0.62 は小兵の横綱が41でタイプの差7.5）
+export const GROWTH = { start: 1 / 6, win: 0.66, lossMult: 0.2, upsetMax: 1.5, upsetSpan: 40, dimDen: 101, dimFloor: 0.02 };
+// 部屋の伸びやすい心技体（data/heya.js の grows）は伸びがこれだけ多い
+export const HEYA_GROW_MULT = 1.1;
 // 場所の相手の心技体の和：席 → 和 の折れ線（間はまっすぐつなぐ・各値は100まで）。
 // 下の段（7番）は勝ち越し1つで12席動くので緩く、十両から上は2席ずつなので細かく、横綱の2席だけ跳ね上げる
 export const OPP_TOTAL = {

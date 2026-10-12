@@ -1,13 +1,13 @@
 // src/scenes/OpponentScene.js — 今日の相手の情報（しこ名・番付・タイプの絵・得意・弱み・心技体）と、案内役の女子のひとこと。作戦表の前に見せる
 // 相手は一代記の場所の今日の相手（currentOpponent）。作戦表は prepareOpponent が組む（同じ相手に戻った時は組み直さない）
-import { TYPES } from '../data/types.js?v=26';
-import { boutStats, condition } from '../core/career.js?v=26';
-import { SCENES } from '../core/strategy.js?v=26';
-import { recommendStrategy, recommendReason } from '../core/recommend.js?v=26';
-import { adviceKeys } from '../core/advice.js?v=26';
-import { t, techLabel, rankLabel, shikonaLabel, getLang } from '../i18n/i18n.js?v=26';
-import { session, prepareOpponent } from '../state.js?v=26';
-import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, bubbleText, preloadTypeArt, preloadGuideArt, COLORS, CONDITION_COLOR, cssColor } from '../ui/widgets.js?v=26';
+import { TYPES } from '../data/types.js?v=27';
+import { boutStats } from '../core/career.js?v=27';
+import { SCENES } from '../core/strategy.js?v=27';
+import { recommendStrategy, recommendReason } from '../core/recommend.js?v=27';
+import { adviceKeys } from '../core/advice.js?v=27';
+import { t, techLabel, rankLabel, shikonaLabel, getLang } from '../i18n/i18n.js?v=27';
+import { session, prepareOpponent } from '../state.js?v=27';
+import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, bubbleText, preloadTypeArt, preloadGuideArt, COLORS } from '../ui/widgets.js?v=27';
 
 const ART_H = 240;
 const ART_Y = 285; // 絵の札の中心（札は 140〜430）
@@ -58,25 +58,13 @@ export class OpponentScene extends Phaser.Scene {
     button(this, width / 2, 1190, 460, 110, t('opp.go'), () => this.scene.start('strategy'), { size: 38 });
   }
 
-  // 心・技・体：左があなた（疲れの調子を掛けた取組での値）・右が相手（今日の相手の値・疲れは無い）
+  // 心・技・体：左があなた・右が相手（今日の相手の値）。10/12 疲れと調子を無くした
   drawStats(width) {
     const colW = 300;
     const xs = [width / 2 - colW - 20, width / 2 + 20];
     [[xs[0], 'stat.you', boutStats(session.career)], [xs[1], 'stat.opp', this.foe.stats]].forEach(([x, head, stats]) => {
       const title = this.add.text(x + colW / 2, 640, t(head), textStyle(28, COLORS.gold)).setOrigin(0.5);
-      if (head === 'stat.you') {
-        // 見出しの右に調子の字を調子の色で（2つ並べて列の真ん中にそろえる）
-        const cond = condition(session.career.fatigue);
-        const word = this.add.text(0, 640, t('cond.label', { c: t(`cond.${cond.id}`) }), textStyle(22, cssColor(CONDITION_COLOR[cond.id]))).setOrigin(0, 0.5);
-        fitText(title, colW * 0.4);
-        fitText(word, colW - 20 - title.displayWidth - 14);
-        const total = title.displayWidth + 14 + word.displayWidth;
-        const left = x + (colW - total) / 2;
-        title.setOrigin(0, 0.5).setX(left);
-        word.setX(left + title.displayWidth + 14);
-      } else {
-        fitText(title, colW - 20);
-      }
+      fitText(title, colW - 20);
       statBars(this, x, 664, colW, stats);
     });
   }
@@ -84,7 +72,7 @@ export class OpponentScene extends Phaser.Scene {
   // 案内役の顔（左）と吹き出し（右）。お勧めの手は recommendStrategy から
   drawAdvice() {
     const guide = session.guide ?? 'chizuru';
-    const rec = recommendStrategy(TYPES[session.you].sample, session.you, session.opp);
+    const rec = recommendStrategy(session.career.known, session.you, session.opp); // 10/12 覚えた手から
     const moves = recommendReason(rec).moves.map((id) => techLabel(id)).join(t('advice.join'));
     // 2行：相手の弱み（性格ごとの言い方）と、力の比べか疲れの一言（10/11 本人「すずはイケイケ、琴音は慎重、千鶴は中間」）
     // 琴音の英語は文の途中に弱み・強みが入る＝頭の大文字を小文字にする
@@ -94,7 +82,7 @@ export class OpponentScene extends Phaser.Scene {
     };
     const sum = (s) => s.shin + s.gi + s.tai;
     const lines = adviceKeys(guide, {
-      oppType: session.opp, mySum: sum(boutStats(session.career)), oppSum: sum(this.foe.stats), condition: condition(session.career.fatigue).id, text,
+      oppType: session.opp, mySum: sum(boutStats(session.career)), oppSum: sum(this.foe.stats), condition: 'good', text,
     });
     const str = lines.map((l) => t(l.key, l.params)).join('\n');
 

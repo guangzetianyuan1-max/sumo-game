@@ -1,19 +1,19 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { GuideScene } from './scenes/GuideScene.js?v=26';
-import { GuidePickScene } from './scenes/GuidePickScene.js?v=26';
-import { SetupScene } from './scenes/SetupScene.js?v=26';
-import { OpponentScene } from './scenes/OpponentScene.js?v=26';
-import { StrategyScene } from './scenes/StrategyScene.js?v=26';
-import { BoutScene } from './scenes/BoutScene.js?v=26';
-import { NameScene } from './scenes/NameScene.js?v=26';
-import { TrainingScene } from './scenes/TrainingScene.js?v=26';
-import { BanzukeScene } from './scenes/BanzukeScene.js?v=26';
-import { ScheduleScene } from './scenes/ScheduleScene.js?v=26';
-import { ResultScene } from './scenes/ResultScene.js?v=26';
-import { initLang } from './i18n/i18n.js?v=26';
-import { storage } from './ui/widgets.js?v=26';
-import { session, lastSlot } from './state.js?v=26';
-import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=26';
+import { GuideScene } from './scenes/GuideScene.js?v=27';
+import { GuidePickScene } from './scenes/GuidePickScene.js?v=27';
+import { SetupScene } from './scenes/SetupScene.js?v=27';
+import { OpponentScene } from './scenes/OpponentScene.js?v=27';
+import { StrategyScene } from './scenes/StrategyScene.js?v=27';
+import { BoutScene } from './scenes/BoutScene.js?v=27';
+import { NameScene } from './scenes/NameScene.js?v=27';
+import { LearnScene } from './scenes/LearnScene.js?v=27';
+import { BanzukeScene } from './scenes/BanzukeScene.js?v=27';
+import { ScheduleScene } from './scenes/ScheduleScene.js?v=27';
+import { ResultScene } from './scenes/ResultScene.js?v=27';
+import { initLang } from './i18n/i18n.js?v=27';
+import { storage } from './ui/widgets.js?v=27';
+import { session, lastSlot } from './state.js?v=27';
+import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=27';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;
@@ -59,7 +59,7 @@ function start() {
     parent: 'game',
     backgroundColor: '#141a2e',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 720, height: 1280 },
-    scene: [GuideScene, GuidePickScene, SetupScene, NameScene, TrainingScene, BanzukeScene, ScheduleScene, OpponentScene, StrategyScene, BoutScene, ResultScene],
+    scene: [GuideScene, GuidePickScene, SetupScene, NameScene, LearnScene, BanzukeScene, ScheduleScene, OpponentScene, StrategyScene, BoutScene, ResultScene],
   });
   hookMusic(game);
 }

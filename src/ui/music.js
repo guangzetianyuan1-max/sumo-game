@@ -388,7 +388,7 @@ export function renderSong(id, seconds) {
 export const SCENE_SONG = {
   guide: 'yagura', guidePick: 'yagura', setup: 'yagura', name: 'yagura',
   banzuke: 'yagura', schedule: 'yagura', result: 'yagura',
-  training: 'tsugaru',
+  learn: 'tsugaru', // 10/12 稽古の画面の代わりに、節目で技を覚える画面
   opponent: 'torikumi', strategy: 'torikumi', bout: 'torikumi',
 };
 const MUTE_KEY = 'sumo.music';

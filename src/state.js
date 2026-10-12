@@ -1,11 +1,12 @@
 // src/state.js — 場面をまたぐ選び。strategy は自分の作戦表（新しい相手ごとにお勧めで組む）
 // career は一代記（入門を終えるまで null）。一代記の移り変わりはここの関数で行い、そのたびに保存する
-import { TYPE_IDS, TYPES } from './data/types.js?v=26';
-import { recommendStrategy } from './core/recommend.js?v=26';
-import { defaultStrategy } from './core/strategy.js?v=26';
-import { newCareer, train, saveCareer, loadCareer, CAREER_KEY } from './core/career.js?v=26';
-import { startBasho, currentOpponent, decideOpponent, recordBout, finishBasho } from './core/basho.js?v=26';
-import { makeRng } from './core/rng.js?v=26';
+import { TYPE_IDS, TYPES } from './data/types.js?v=27';
+import { recommendStrategy } from './core/recommend.js?v=27';
+import { defaultStrategy } from './core/strategy.js?v=27';
+import { newCareer, saveCareer, loadCareer, CAREER_KEY } from './core/career.js?v=27';
+import { learnMove } from './core/learn.js?v=27';
+import { startBasho, currentOpponent, decideOpponent, recordBout, finishBasho } from './core/basho.js?v=27';
+import { makeRng } from './core/rng.js?v=27';
 
 export const session = {
   you: 'heavy',
@@ -102,8 +103,9 @@ export function startCareer({ guide, type, name, seed }, store = localStore()) {
   return session.career;
 }
 
-export function trainNow(kind, store = localStore()) {
-  session.career = train(session.career, kind);
+// 節目で覚える技を選んだ時：覚えて保存（10/12 稽古の代わり）
+export function learnNow(id, store = localStore()) {
+  session.career = learnMove(session.career, id);
   saveNow(store);
   return session.career;
 }
@@ -139,7 +141,7 @@ export function prepareOpponent(store = localStore()) {
     session.oppKey = key;
     session.opp = opp.type;
     session.oppStrategy = defaultStrategy(TYPES[opp.type].sample, opp.type);
-    session.strategy = recommendStrategy(TYPES[c.type].sample, c.type, opp.type);
+    session.strategy = recommendStrategy(c.known, c.type, opp.type); // 10/12 自分は覚えた手で組む
   }
   return opp;
 }
@@ -163,10 +165,10 @@ export function closeBasho(store = localStore()) {
   const { career, summary } = finishBasho(c, makeRng(c.seed * 1000 + c.bashoIndex + 500));
   session.career = career;
   session.oppKey = null;
-  session.lastResult = { summary, basho: { month: b.month, place: b.place }, before: { ...c.stats }, after: { ...career.stats } };
+  session.lastResult = { summary, basho: { month: b.month, place: b.place }, before: { ...(b.startStats || c.stats) }, after: { ...career.stats } };
   saveNow(store);
   return session.lastResult;
 }
 
-// つづきから：場所の途中なら取組の順・そうでなければ稽古
-export const resumeScene = (career) => (career.basho ? 'schedule' : 'training');
+// つづきから：覚える候補があれば技を選ぶ画面・場所の途中なら取組の順・ほかは番付（10/12 稽古を無くした）
+export const resumeScene = (career) => (career.pendingLearn ? 'learn' : career.basho ? 'schedule' : 'banzuke');

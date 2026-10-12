@@ -1,9 +1,9 @@
 // src/scenes/BanzukeScene.js — 番付：場所の名前と、自分の席の上下5人ずつ（東を左・西を右）。相手は場所の相手から席が近い順
 // 番付表の絵（art_in の番付枠）は第4段で入れる。いまは角丸の和紙色の札
-import { neighbourRows } from '../core/banzuke.js?v=26';
-import { t, rankLabel, shikonaLabel, bashoLabel } from '../i18n/i18n.js?v=26';
-import { session } from '../state.js?v=26';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=26';
+import { neighbourRows } from '../core/banzuke.js?v=27';
+import { t, rankLabel, shikonaLabel, bashoLabel } from '../i18n/i18n.js?v=27';
+import { session, beginBasho } from '../state.js?v=27';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=27';
 
 const PAPER = 0xf3e6c8; // 和紙色
 const INK_DARK = '#3a2a20'; // 和紙の上の墨
@@ -20,14 +20,15 @@ export class BanzukeScene extends Phaser.Scene {
   }
 
   create() {
-    const c = session.career;
-    if (!c?.basho) {
-      this.scene.start(c ? 'training' : 'guide');
+    if (!session.career) {
+      this.scene.start('guide');
       return;
     }
+    // 10/12 稽古を無くした＝場所は番付の画面で始める（始まっていれば始め直さない）
+    const c = beginBasho();
     const { width } = this.scale;
-    // 稽古へ戻っても場所は消えない（「番付を見る」は場所がある時は始め直さずにここへ来る）
-    backButton(this, () => this.scene.start('training'));
+    // 初めの画面へ戻っても場所は消えない（つづきからで取組の順へ戻る）
+    backButton(this, () => this.scene.start('guide'));
     saveButton(this);
     topTitle(this, 52, t('banzuke.title'), 56, COLORS.gold, { save: true });
     fitText(this.add.text(width / 2, 118, bashoLabel(c.basho), textStyle(32, COLORS.ink)).setOrigin(0.5), width - 80);
