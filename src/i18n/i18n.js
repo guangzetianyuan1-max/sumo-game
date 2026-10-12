@@ -1,8 +1,8 @@
 // 言葉の切り替えと文の引き方。画面の文字は全部ここを通す。
-import ja from './ja.js?v=25';
-import en from './en.js?v=25';
-import { KIMARITE } from '../data/kimarite.js?v=25';
-import { rankParts } from '../core/banzuke.js?v=25';
+import ja from './ja.js?v=26';
+import en from './en.js?v=26';
+import { KIMARITE } from '../data/kimarite.js?v=26';
+import { rankParts } from '../core/banzuke.js?v=26';
 
 export const TABLES = { ja, en };
 export const LANGS = ['ja', 'en'];

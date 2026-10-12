@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-title" content="SUMO">
 <meta name="theme-color" content="#141a2e">
 <script>
-(function(){var mine="25";
+(function(){var mine="26";
 fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){
   if(j&&j.v&&String(j.v)!==mine){var u=new URL(location.href);if(u.searchParams.get("v")!==String(j.v)){u.searchParams.set("v",j.v);location.replace(u.toString());}}
 }).catch(function(){});})();
@@ -27,6 +27,7 @@ fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r
 </head>
 <body>
 <div id="game"></div>
+<button id="music" aria-label="music" style="display:none;position:fixed;z-index:8;border:0;border-radius:50%;background:#20285a;color:#e8c46a;font-family:sans-serif;padding:0;cursor:pointer;line-height:1"></button>
 <div id="err" style="display:none;position:fixed;left:0;right:0;bottom:0;padding:8px 12px;background:#b3261e;color:#fff;font:13px/1.4 sans-serif;z-index:9;white-space:pre-wrap"></div>
 <script>
 // テスト中だけ：スマホで起きたエラーを画面の下に赤で出す（写真で送ってもらえるように）
@@ -45,6 +46,6 @@ fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.90.0/phaser.min.js"></script>
-<script type="module" src="src/main.js?v=25"></script>
+<script type="module" src="src/main.js?v=26"></script>
 </body>
 </html>
