@@ -109,6 +109,32 @@ const BOUT = {
     noise(c, t, { dur: 0.3, peak: 0.08, filter: 'highpass', f: 4000, q: 0.7, attack: 0.002 });
     noise(c, t + 0.28, { dur: 0.05, peak: 0.15, filter: 'bandpass', f: 1800, q: 4, attack: 0.001 });
   },
+  // 決め技のゲージの段（20体版 Task 5）：段が上がるほど重なりと長さが増える。どれも足して 0.35 以下
+  // 1＝青：短い風切り「ひゅっ」
+  gauge1: (c, t) => noise(c, t, { dur: 0.18, peak: 0.22, f: 600, fEnd: 2600, q: 1.5, attack: 0.04 }),
+  // 2＝赤：シャキーン＋拍子木
+  gauge2: (c, t) => {
+    tone(c, t, { freq: 1800, freqEnd: 3200, dur: 0.25, peak: 0.12 });
+    noise(c, t, { dur: 0.3, peak: 0.08, filter: 'highpass', f: 4000, q: 0.7, attack: 0.002 });
+    noise(c, t + 0.28, { dur: 0.05, peak: 0.15, filter: 'bandpass', f: 1800, q: 4, attack: 0.001 });
+  },
+  // 3＝金：シャキーン2重＋太鼓「どん」
+  gauge3: (c, t) => {
+    tone(c, t, { freq: 1800, freqEnd: 3200, dur: 0.25, peak: 0.08 });
+    tone(c, t + 0.1, { freq: 2200, freqEnd: 3800, dur: 0.25, peak: 0.08 });
+    noise(c, t, { dur: 0.3, peak: 0.05, filter: 'highpass', f: 4000, q: 0.7, attack: 0.002 });
+    tone(c, t + 0.25, { freq: 110, freqEnd: 60, dur: 0.2, peak: 0.2 });
+  },
+  // 4＝虹：太鼓の連打（5つ）＋金属の「キィーン」。0.3秒から先は静かにして、続けて鳴らす確定音（gaugeMax）の場所を空ける
+  gauge4: (c, t) => {
+    [0, 0.06, 0.12, 0.18, 0.24].forEach((dt, i) => tone(c, t + dt, { freq: 120 + i * 6, freqEnd: 60, dur: 0.1, peak: 0.12 }));
+    tone(c, t, { freq: 3000, freqEnd: 3150, dur: 0.5, peak: 0.05, type: 'triangle', attack: 0.01 });
+  },
+  // 確定：0.3秒の無音のあと、太鼓と笛（虹の時に gauge4 と一緒に鳴らす）
+  gaugeMax: (c, t) => {
+    tone(c, t + 0.3, { freq: 100, freqEnd: 55, dur: 0.45, peak: 0.16 });
+    tone(c, t + 0.34, { freq: 1047, freqEnd: 1175, dur: 0.4, peak: 0.08, type: 'triangle', attack: 0.03 });
+  },
 };
 export const BOUT_SOUNDS = Object.keys(BOUT);
 
@@ -137,7 +163,7 @@ export function playTraining(kind, volume = 1) {
   play(SOUNDS, kind, volume);
 }
 
-// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kumi（組み絵のカットイン）。volume は playTraining と同じ
+// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kumi（組み絵のカットイン）・gauge1〜4（ゲージの段）・gaugeMax（虹の確定）。volume は playTraining と同じ
 export function playBout(kind, volume = 1) {
   play(BOUT, kind, volume);
 }

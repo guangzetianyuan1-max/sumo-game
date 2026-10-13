@@ -2,12 +2,12 @@
 // 1枚目＝光ったら一押し（立ち合い）・2枚目＝連打で前へ・拍に合うと強い（押し合い）・3枚目＝倒れたら長押しで起きる
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン）を、KamiScene と同じ描き方で小さく描く
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=32';
-import { kamiArt } from '../core/foeart.js?v=32';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=32';
-import { t } from '../i18n/i18n.js?v=32';
-import { session, markHelpSeen } from '../state.js?v=32';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=32';
+import { KAMI } from '../core/kami.js?v=33';
+import { kamiArt } from '../core/foeart.js?v=33';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=33';
+import { t } from '../i18n/i18n.js?v=33';
+import { session, markHelpSeen } from '../state.js?v=33';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=33';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）

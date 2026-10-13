@@ -1,5 +1,5 @@
 // 決め技5つ（20体版・10/13 本人「A」）。系統（arch）で紙相撲の動きと相性が決まる。名前は i18n の newtech.<id>
-import { TYPES } from './types.js?v=32';
+import { TYPES } from './types.js?v=33';
 
 export const KIMETE = [
   { id: 'samidare', arch: 'tsuki', at: 0 },

@@ -1,8 +1,9 @@
 // 言葉の切り替えと文の引き方。画面の文字は全部ここを通す。
-import ja from './ja.js?v=32';
-import en from './en.js?v=32';
-import { KIMARITE } from '../data/kimarite.js?v=32';
-import { rankParts } from '../core/banzuke.js?v=32';
+import ja from './ja.js?v=33';
+import en from './en.js?v=33';
+import { KIMARITE } from '../data/kimarite.js?v=33';
+import { KIMETE_IDS } from '../data/kimete.js?v=33';
+import { rankParts } from '../core/banzuke.js?v=33';
 
 export const TABLES = { ja, en };
 export const LANGS = ['ja', 'en'];
@@ -49,6 +50,11 @@ export function techLabel(id, l = lang) {
   const k = KIMARITE[id];
   if (k) return l === 'ja' ? k.ja : k.id;
   return t(`tech.${id}`, {}, l);
+}
+
+// 取組の決まり手の名前：紙相撲の決め技（KIMETE の id）は newtech の名前・ほかは決まり手の名前（techLabel）
+export function kimariteLabel(id, l = lang) {
+  return KIMETE_IDS.indexOf(id) >= 0 ? t(`newtech.${id}`, {}, l) : techLabel(id, l);
 }
 
 // 番付の名前（例「前頭3枚目（西）」・「Maegashira 3 West」）。横綱・大関・関脇・小結は枚目を付けない

@@ -1,17 +1,17 @@
 // src/scenes/OpponentScene.js — 今日の相手（20体版 Task 4・10/13）：相手の絵と型・得意と苦手（系統）・心技体・決め技を選ぶ札5枚・ことねの勧め → 取組へ
 // 作戦表の頃の名残（よく使う手・技の勧めの吹き出し）は外した。シニアにも読める大きな札と、下の真ん中の「取組へ」1つだけ
 // 決め技の札：覚えた物だけ押して選べる（選んだ札が朱に光る）。最初は勧め（recommendKimete）を選んでおく。覚えていない物は灰色
-import { TYPES } from '../data/types.js?v=32';
-import { OKAMI } from '../data/heroes.js?v=32';
-import { t, foeLabel } from '../i18n/i18n.js?v=32';
-import { session, prepareOpponent } from '../state.js?v=32';
-import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=32';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=32';
+import { TYPES } from '../data/types.js?v=33';
+import { OKAMI } from '../data/heroes.js?v=33';
+import { t, foeLabel } from '../i18n/i18n.js?v=33';
+import { session, prepareOpponent } from '../state.js?v=33';
+import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=33';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=33';
 import {
   button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
   preloadTypeArt, preloadGuideArt, addAura, clearScene, COLORS,
-} from '../ui/widgets.js?v=32';
-import { currentFoe } from '../core/run.js?v=32';
+} from '../ui/widgets.js?v=33';
+import { currentFoe } from '../core/run.js?v=33';
 
 const INFO = { y: 270, h: 240 }; // 相手の札（150〜390）：左に絵・右に型と得意・苦手
 const ART = { x: 175, r: 100, h: 200 };
@@ -123,18 +123,18 @@ export class OpponentScene extends Phaser.Scene {
     const name = fitText(this.add.text(x, y - 24, t(`newtech.${c.id}`), textStyle(28, nameColor)).setOrigin(0.5), CARD.w - 20);
     if (c.state === 'locked') {
       name.setAlpha(0.6);
-      this.lock(x - 58, y + 28);
-      fitText(this.add.text(x + 12, y + 28, t('opp.locked', { n: c.at }), textStyle(22, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5).setAlpha(0.8), CARD.w - 76);
+      this.lock(x - 74, y + 28);
+      fitText(this.add.text(x + 14, y + 28, t('opp.locked', { n: c.at }), textStyle(26, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5).setAlpha(0.8), CARD.w - 64);
     } else if (c.state === 'learnable') {
-      fitText(this.add.text(x, y + 28, t('opp.canLearn'), textStyle(22, COLORS.gold, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 20);
+      fitText(this.add.text(x, y + 28, t('opp.canLearn'), textStyle(26, COLORS.gold, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 20);
     } else {
       const k = AFF_KEY(c.aff);
-      fitText(this.add.text(x, y + 28, t(`opp.aff.${k}`), textStyle(24, on ? COLORS.ink : AFF_COLOR[k])).setOrigin(0.5), CARD.w - 20);
+      fitText(this.add.text(x, y + 28, t(`opp.aff.${k}`), textStyle(26, on ? COLORS.ink : AFF_COLOR[k])).setOrigin(0.5), CARD.w - 20);
     }
     if (c.id === this.rec) {
       // 勧めの札の上の縁に小さな金の札
-      roundBox(this, x, y - CARD.h / 2, 120, 32, 0xe3c27a, { radius: 16, shadow: false });
-      fitText(this.add.text(x, y - CARD.h / 2, t('opp.recTag'), textStyle(20, '#3b2810')).setOrigin(0.5), 110);
+      roundBox(this, x, y - CARD.h / 2, 140, 38, 0xe3c27a, { radius: 19, shadow: false });
+      fitText(this.add.text(x, y - CARD.h / 2, t('opp.recTag'), textStyle(26, '#3b2810')).setOrigin(0.5), 128);
     }
     if (c.state !== 'learned') return;
     const zone = hitZone(this, x, y, CARD.w, CARD.h);
@@ -157,6 +157,6 @@ export class OpponentScene extends Phaser.Scene {
 
   go() {
     session.kimete = chosenKimete(session.run, this.pick); // 覚えた物だけ（無い＝決め技無しで取る）
-    this.scene.start('kami'); // Task 5 で懸賞（'kensho'）を通るようになる
+    this.scene.start('kensho'); // 懸賞旗（約3秒・たたくと飛ばせる）→ 取組（kami）
   }
 }

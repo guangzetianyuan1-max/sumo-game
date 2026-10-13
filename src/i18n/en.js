@@ -488,8 +488,21 @@ export default {
   'arch.none': 'nothing special',
   'arch.join': ', ',
   // Coach bubbles in the first bout
-  'kami.coach.ready': 'When the button lights up at "Hakkeyoi", tap once, quick!',
+  'kami.coach.ready': 'When the button lights up, tap once, quick!',
   'kami.coach.push': 'Tap fast to push! On the beat (glowing rim) is stronger.',
   'kami.coach.down': 'You are down! Hold the button to get up!',
-  'kami.coach.finish': 'It glows gold! Tap once now for your finisher!',
+  'kami.coach.finish': 'It glows! Tap once now for your finisher!',
+  // 20-edition Task 5: prize banners, cut-ins, clear screen (banner names are fictional)
+  'kensho.title': 'Prize banners are up!',
+  'kensho.flag1': 'Himanabuta',
+  'kensho.flag2': 'Kotonami Stable',
+  'kensho.skip': 'Tap to skip',
+  'cutin.kiai': 'Fired up!',
+  'clear.title': 'Yokozuna {name} is born!',
+  'clear.stats': 'Beaten {wins}   Losses {losses}   Training {trainings}',
+  'clear.next': 'More coming soon',
+  'clear.share': 'Send on LINE',
+  'clear.top': 'Back to start',
+  'after.toClear': 'Yokozuna ceremony',
+  'ladder.seeClear': 'Watch the ceremony',
 };
