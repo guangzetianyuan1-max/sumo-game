@@ -12,7 +12,10 @@
 "push"
 ],
 "foe_astronaut_normal": [
-"push"
+"push",
+"shikiri",
+"sori",
+"fall"
 ],
 "foe_boss": [
 "push"
@@ -21,7 +24,28 @@
 "push"
 ],
 "foe_daiku_normal": [
-"push"
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_dino_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_farmer_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_fisher_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
 ],
 "foe_itamae_normal": [
 "push",
@@ -33,15 +57,27 @@
 "push"
 ],
 "foe_kappa_normal": [
-"push"
+"push",
+"shikiri",
+"sori",
+"fall"
 ],
 "foe_manekineko_honki": [
 "push"
 ],
 "foe_manekineko_normal": [
-"push"
+"push",
+"shikiri",
+"sori",
+"fall"
 ],
 "foe_ninja_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_pirate_normal": [
 "push",
 "shikiri",
 "sori",
@@ -51,7 +87,10 @@
 "push"
 ],
 "foe_prowrestler_normal": [
-"push"
+"push",
+"shikiri",
+"sori",
+"fall"
 ],
 "foe_robot_honki": [
 "push"
@@ -66,12 +105,48 @@
 "push"
 ],
 "foe_samurai_normal": [
-"push"
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_shobo_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
 ],
 "foe_shogi_honki": [
 "push"
 ],
 "foe_shogi_normal": [
-"push"
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_snowman_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_vending_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_wizard_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
+],
+"foe_yubin_normal": [
+"push",
+"shikiri",
+"sori",
+"fall"
 ]
 }

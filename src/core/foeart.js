@@ -1,6 +1,6 @@
 // フィギュア風の立ち絵の選び方（10/12 夜 設計書 §8・§10）：主人公・敵の絵の鍵と置き場・段階の見せ方・取組での敵の傾け方
 // 絵は tools/prep_figures.py が assets/figures/ に置く（画面用）・assets/figures/dot/（取組用のドット）
-import { FOE_COUNT } from '../data/foes.js?v=30';
+import { FOE_COUNT } from '../data/foes.js?v=31';
 
 // 壱号・弐号＝ふだんの姿／参号〜伍号＝本気の姿／100体目＝大ボス
 export function foeForm(foe) {
@@ -69,3 +69,6 @@ export function foeFrame(pose, have) {
   const fb = Object.prototype.hasOwnProperty.call(FALLBACK, pose) ? FALLBACK[pose] : [f[1], f[2]];
   return { img: 'push', angle: fb[0], sy: fb[1] };
 }
+
+// 紙相撲の型紙（白いふち・足もとの折り返し＝tools/prep_kami.py が作る）
+export const kamiArt = (file) => ({ key: `kami-${file}`, path: `assets/figures/kami/${file}.png` });

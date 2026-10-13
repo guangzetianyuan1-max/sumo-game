@@ -1,14 +1,14 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=30';
-import { HERO_IDS } from '../data/heroes.js?v=30';
-import { heroArt } from '../core/foeart.js?v=30';
-import { GUIDE_IDS } from '../data/guides.js?v=30';
-import { HEYA_IDS } from '../data/heya.js?v=30';
-import { t, getLang } from '../i18n/i18n.js?v=30';
-import { jaWrap } from '../data/wrap.js?v=30';
-import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=30';
-import { TRAININGS } from '../core/career.js?v=30';
-import { saveNow } from '../state.js?v=30';
+import { TYPE_IDS } from '../data/types.js?v=31';
+import { HERO_IDS } from '../data/heroes.js?v=31';
+import { heroArt } from '../core/foeart.js?v=31';
+import { GUIDE_IDS } from '../data/guides.js?v=31';
+import { HEYA_IDS } from '../data/heya.js?v=31';
+import { t, getLang } from '../i18n/i18n.js?v=31';
+import { jaWrap } from '../data/wrap.js?v=31';
+import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=31';
+import { TRAININGS } from '../core/career.js?v=31';
+import { saveNow } from '../state.js?v=31';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）

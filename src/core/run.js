@@ -1,14 +1,12 @@
 // 100体の勝ち抜き（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=30';
-import { GUIDE_IDS } from '../data/guides.js?v=30';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=30';
-import { foeAt, FOE_COUNT } from '../data/foes.js?v=30';
-import { inGame } from '../data/kimarite.js?v=30';
-import { RANKS, CLEAR_AT, promotionAt } from './ladder.js?v=30';
-import { startStats, growthMult, diminish } from './career.js?v=30';
-import { learnChoices } from './learn.js?v=30';
-import { makeRng } from './rng.js?v=30';
-import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=30';
+import { TYPES } from '../data/types.js?v=31';
+import { GUIDE_IDS } from '../data/guides.js?v=31';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=31';
+import { foeAt, FOE_COUNT } from '../data/foes.js?v=31';
+import { inGame } from '../data/kimarite.js?v=31';
+import { RANKS, CLEAR_AT, promotionAt } from './ladder.js?v=31';
+import { startStats, growthMult, diminish } from './career.js?v=31';
+import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=31';
 
 export const RUN_VERSION = 4;
 export const TRAIN_STEPS = 3; // 1回の稽古のコマ数
@@ -74,11 +72,6 @@ export function recordResult(run, won) {
   const wins = run.wins + 1;
   const next = { ...run, stats, wins, streak: 0 };
   const promoted = promotionAt(wins);
-  if (promoted) {
-    const choices = learnChoices(next, makeRng(run.seed * 1000 + wins));
-    next.pendingLearn = choices.length ? choices : null;
-    next.learnKind = choices.length ? promoted : null;
-  }
   const k = NEW_TECH_AT.indexOf(wins);
   const unlocked = k > 0 ? newTechIds(run.type)[k] : null;
   if (unlocked) next.unlocked = [...run.unlocked, unlocked];

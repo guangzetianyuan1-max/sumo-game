@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-title" content="SUMO">
 <meta name="theme-color" content="#141a2e">
 <script>
-(function(){var mine="30";
+(function(){var mine="31";
 fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){
   if(j&&j.v&&String(j.v)!==mine){var u=new URL(location.href);if(u.searchParams.get("v")!==String(j.v)){u.searchParams.set("v",j.v);location.replace(u.toString());}}
 }).catch(function(){});})();
@@ -46,6 +46,6 @@ fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.90.0/phaser.min.js"></script>
-<script type="module" src="src/main.js?v=30"></script>
+<script type="module" src="src/main.js?v=31"></script>
 </body>
 </html>

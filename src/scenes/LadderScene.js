@@ -1,10 +1,10 @@
 // src/scenes/LadderScene.js — 勝ち抜き番付（10/12 夜）：主人公の絵と名・地位・倒した数の目盛り・次の昇進・心技体・次の相手 → 相手の情報
 // 覚える候補があれば技の画面へ・稽古の途中なら稽古へ（つづきからと同じ）
-import { t, heroName, foeLabel } from '../i18n/i18n.js?v=30';
-import { session } from '../state.js?v=30';
-import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=30';
-import { currentFoe } from '../core/run.js?v=30';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=30';
+import { t, heroName, foeLabel } from '../i18n/i18n.js?v=31';
+import { session } from '../state.js?v=31';
+import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=31';
+import { currentFoe } from '../core/run.js?v=31';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=31';
 
 const BAR = { x: 60, y: 520, w: 600, h: 34 };
 
@@ -21,7 +21,6 @@ export class LadderScene extends Phaser.Scene {
   create() {
     const r = session.run;
     if (!r) { this.scene.start('guide'); return; }
-    if (r.pendingLearn) { this.scene.start('learn'); return; }
     if (r.training) { this.scene.start('training'); return; }
     const { width } = this.scale;
     backButton(this, () => this.scene.start('guide'));

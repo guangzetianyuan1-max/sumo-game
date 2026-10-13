@@ -388,7 +388,7 @@ export function renderSong(id, seconds) {
 export const SCENE_SONG = {
   guide: 'yagura', guidePick: 'yagura', setup: 'yagura', ladder: 'yagura', after: 'yagura',
   learn: 'tsugaru', training: 'tsugaru', // 10/12 夜 稽古が戻った＝津軽三味線
-  opponent: 'torikumi', strategy: 'torikumi', bout: 'torikumi',
+  opponent: 'torikumi', strategy: 'torikumi', bout: 'torikumi', kami: 'torikumi',
 };
 const MUTE_KEY = 'sumo.music';
 

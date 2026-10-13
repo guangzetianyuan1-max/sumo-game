@@ -1,16 +1,16 @@
 // src/scenes/OpponentScene.js — 今日の相手の情報（しこ名・番付・タイプの絵・得意・弱み・心技体）と、案内役の女子のひとこと。作戦表の前に見せる
 // 相手は一代記の場所の今日の相手（currentOpponent）。作戦表は prepareOpponent が組む（同じ相手に戻った時は組み直さない）
-import { TYPES } from '../data/types.js?v=30';
-import { boutStats } from '../core/career.js?v=30';
-import { SCENES } from '../core/strategy.js?v=30';
-import { recommendStrategy, recommendReason } from '../core/recommend.js?v=30';
-import { adviceKeys } from '../core/advice.js?v=30';
-import { t, techLabel, getLang, foeLabel } from '../i18n/i18n.js?v=30';
-import { session, prepareOpponent } from '../state.js?v=30';
-import { currentFoe } from '../core/run.js?v=30';
-import { OKAMI } from '../data/heroes.js?v=30';
-import { foeArt, stageAura, stageScale } from '../core/foeart.js?v=30';
-import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, bubbleText, preloadTypeArt, preloadGuideArt, addAura, COLORS } from '../ui/widgets.js?v=30';
+import { TYPES } from '../data/types.js?v=31';
+import { boutStats } from '../core/career.js?v=31';
+import { SCENES } from '../core/strategy.js?v=31';
+import { recommendStrategy, recommendReason } from '../core/recommend.js?v=31';
+import { adviceKeys } from '../core/advice.js?v=31';
+import { t, techLabel, getLang, foeLabel } from '../i18n/i18n.js?v=31';
+import { session, prepareOpponent } from '../state.js?v=31';
+import { currentFoe } from '../core/run.js?v=31';
+import { OKAMI } from '../data/heroes.js?v=31';
+import { foeArt, stageAura, stageScale } from '../core/foeart.js?v=31';
+import { button, backButton, topTitle, fitText, roundBox, textStyle, statBars, bubbleText, preloadTypeArt, preloadGuideArt, addAura, COLORS } from '../ui/widgets.js?v=31';
 
 const ART_H = 240;
 const ART_Y = 285; // 絵の札の中心（札は 140〜430）
@@ -67,7 +67,7 @@ export class OpponentScene extends Phaser.Scene {
     this.drawStats(width);
     this.drawAdvice();
 
-    button(this, width / 2, 1190, 460, 110, t('opp.go'), () => this.scene.start('strategy'), { size: 38 });
+    button(this, width / 2, 1190, 460, 110, t('opp.go'), () => this.scene.start('kami'), { size: 38 });
   }
 
   // 心・技・体：左があなた・右が相手（今日の相手の値）。10/12 疲れと調子を無くした
