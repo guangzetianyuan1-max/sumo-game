@@ -1,15 +1,15 @@
 // src/state.js — 場面をまたぐ選び。run は勝ち抜き（入門を終えるまで null）。移り変わりはここの関数で行い、そのたびに保存する
 // 10/12 夜 場所をやめて100体の勝ち抜きへ（設計書 §3）。場所の頃の関数は basho.js・career.js に残る（使わない）
-import { TYPE_IDS, TYPES } from './data/types.js?v=31';
-import { recommendStrategy } from './core/recommend.js?v=31';
-import { defaultStrategy } from './core/strategy.js?v=31';
-import { CAREER_KEY } from './core/career.js?v=31';
-import { learnMove } from './core/learn.js?v=31';
-import { rankOf } from './core/ladder.js?v=31';
-import { HERO_TYPE } from './data/heroes.js?v=31';
+import { TYPE_IDS, TYPES } from './data/types.js?v=32';
+import { recommendStrategy } from './core/recommend.js?v=32';
+import { defaultStrategy } from './core/strategy.js?v=32';
+import { CAREER_KEY } from './core/career.js?v=32';
+import { learnMove } from './core/learn.js?v=32';
+import { rankOf } from './core/ladder.js?v=32';
+import { HERO_TYPE } from './data/heroes.js?v=32';
 import {
   newRun, currentFoe, recordResult, startTraining, trainStat, trainNewTech, serializeRun, deserializeRun,
-} from './core/run.js?v=31';
+} from './core/run.js?v=32';
 
 export const session = {
   you: HERO_TYPE,
@@ -23,6 +23,7 @@ export const session = {
   oppKey: null, // 作戦表を組んだ相手（倒した数:連敗数）。同じなら組み直さない
   lastBout: null, // 最後の取組の結果（取組の後の画面が読む）
   slot: 1, // 記録①〜③のどれで遊んでいるか
+  kimete: null, // 相手の情報で選んだ決め技の id（覚えた物だけ・無い＝決め技無しで取る）
 };
 
 // 次の相手を引く（前の遊び方の名残・試験だけが使う）
@@ -95,6 +96,7 @@ export function useRun(run) {
   session.oppKey = null;
   session.lastBout = null;
   session.strategy = session.oppStrategy = null;
+  session.kimete = null;
 }
 
 export function startRun({ guide, type, seed }, store = localStore()) {
@@ -117,6 +119,14 @@ export function prepareOpponent(store = localStore()) {
     session.strategy = recommendStrategy(r.known, r.type, foe.type);
   }
   return foe;
+}
+
+// 説明（遊び方の3枚）を見た・飛ばした：記録に seenHelp を書いて保存する
+export function markHelpSeen(store = localStore()) {
+  if (!session.run) return null;
+  if (session.run.seenHelp !== true) session.run = { ...session.run, seenHelp: true };
+  saveNow(store);
+  return session.run;
 }
 
 // 取組の種：倒した数と同じ相手への連敗数から（読み直して取り直しても同じ・負けて挑み直すと変わる）

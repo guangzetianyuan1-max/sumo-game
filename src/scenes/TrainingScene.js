@@ -1,12 +1,12 @@
 // src/scenes/TrainingScene.js — 稽古（10/12 夜 本人「倒せない敵が出た場合、稽古モードに移り、新技や心技体を鍛える」）
 // 1回3コマ。札＝心（ぶつかり稽古）・技（技の稽古）・体（鉄砲）・解禁した新技。押すと稽古の絵を1秒出して効果音 → 3コマ終われば同じ相手へ
-import { t } from '../i18n/i18n.js?v=31';
-import { session, trainStatNow, trainTechNow } from '../state.js?v=31';
-import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=31';
-import { playTraining } from '../ui/sfx.js?v=31';
+import { t } from '../i18n/i18n.js?v=32';
+import { session, trainStatNow, trainTechNow } from '../state.js?v=32';
+import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=32';
+import { playTraining } from '../ui/sfx.js?v=32';
 import {
   topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadTrainingIndex, loadTrainingArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=31';
+} from '../ui/widgets.js?v=32';
 
 const STAT_CARDS = [['shin', 'butsukari'], ['gi', 'waza'], ['tai', 'teppo']]; // 値と、使う稽古の絵・音
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1190 は「稽古おわり」の字）

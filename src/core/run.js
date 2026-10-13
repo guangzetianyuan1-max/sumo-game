@@ -1,12 +1,12 @@
-// 100体の勝ち抜き（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=31';
-import { GUIDE_IDS } from '../data/guides.js?v=31';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=31';
-import { foeAt, FOE_COUNT } from '../data/foes.js?v=31';
-import { inGame } from '../data/kimarite.js?v=31';
-import { RANKS, CLEAR_AT, promotionAt } from './ladder.js?v=31';
-import { startStats, growthMult, diminish } from './career.js?v=31';
-import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=31';
+// 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
+import { TYPES } from '../data/types.js?v=32';
+import { GUIDE_IDS } from '../data/guides.js?v=32';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=32';
+import { foeAt } from '../data/foes.js?v=32';
+import { inGame } from '../data/kimarite.js?v=32';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=32';
+import { startStats, growthMult, diminish } from './career.js?v=32';
+import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=32';
 
 export const RUN_VERSION = 4;
 export const TRAIN_STEPS = 3; // 1回の稽古のコマ数
@@ -23,7 +23,7 @@ export function newRun({ type, seed }) {
     known: [...TYPES[type].sample], pendingLearn: null, learnKind: null,
     wins: 0, losses: 0, streak: 0,
     unlocked: [newTechIds(type)[0]], newKnown: [],
-    training: null, seed, cleared: false,
+    training: null, seed, cleared: false, seenHelp: false,
   };
 }
 
@@ -49,7 +49,7 @@ export function foeStats(type, index) {
 }
 
 export function currentFoe(run) {
-  if (run.cleared || run.wins >= FOE_COUNT) return null;
+  if (run.cleared || run.wins >= PLAY_COUNT) return null;
   const f = foeAt(run.wins);
   return { ...f, stats: foeStats(f.type, f.index) };
 }
@@ -113,8 +113,10 @@ export function deserializeRun(text) {
     if (!c || typeof c !== 'object' || c.version !== RUN_VERSION) return null;
     if (c.type !== HERO_TYPE || !GUIDE_IDS.includes(c.guide)) return null;
     if (!validStats(c.stats) || !Number.isFinite(c.seed)) return null;
-    if (!count(c.wins) || c.wins > CLEAR_AT || !count(c.losses) || !count(c.streak)) return null;
-    if (typeof c.cleared !== 'boolean' || c.cleared !== (c.wins >= CLEAR_AT)) return null;
+    if (count(c.wins) && c.wins > CLEAR_AT) c.wins = CLEAR_AT; // 20体版より先まで進んだ古い記録はクリア済みに
+    if (!count(c.wins) || !count(c.losses) || !count(c.streak)) return null;
+    c.cleared = c.wins >= CLEAR_AT;
+    c.seenHelp = c.seenHelp === true;
     if (c.training !== null && !(c.training && Number.isInteger(c.training.left) && c.training.left >= 1 && c.training.left <= TRAIN_STEPS)) return null;
     const known = Array.isArray(c.known) ? c.known.filter(inGame) : [];
     c.known = known.length ? known : [...TYPES[c.type].sample];

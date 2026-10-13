@@ -1,10 +1,11 @@
-// 昇進表（設計書 §4・10/12 夜 本人「途中昇進を設ける。90で横綱」）。倒した数で上がり、下がらない
+// 昇進表（20体版・10/13 本人「まずは20体までを完成させたい」「2体ごと・18で横綱」）。倒した数で上がり、下がらない
+export const PLAY_COUNT = 20; // この版で戦う敵の数（21体目からは続きとして後で足す）
 export const RANKS = [
-  { id: 'jonokuchi', at: 0 }, { id: 'jonidan', at: 5 }, { id: 'sandanme', at: 15 }, { id: 'makushita', at: 25 },
-  { id: 'juryo', at: 35 }, { id: 'maegashira', at: 45 }, { id: 'komusubi', at: 60 }, { id: 'sekiwake', at: 70 },
-  { id: 'ozeki', at: 80 }, { id: 'yokozuna', at: 90 },
+  { id: 'jonokuchi', at: 0 }, { id: 'jonidan', at: 2 }, { id: 'sandanme', at: 4 }, { id: 'makushita', at: 6 },
+  { id: 'juryo', at: 8 }, { id: 'maegashira', at: 10 }, { id: 'komusubi', at: 12 }, { id: 'sekiwake', at: 14 },
+  { id: 'ozeki', at: 16 }, { id: 'yokozuna', at: 18 },
 ];
-export const CLEAR_AT = 100; // 100体倒してクリア
+export const CLEAR_AT = PLAY_COUNT;
 
 export function rankOf(wins) {
   let id = RANKS[0].id;

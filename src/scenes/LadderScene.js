@@ -1,12 +1,13 @@
 // src/scenes/LadderScene.js — 勝ち抜き番付（10/12 夜）：主人公の絵と名・地位・倒した数の目盛り・次の昇進・心技体・次の相手 → 相手の情報
 // 覚える候補があれば技の画面へ・稽古の途中なら稽古へ（つづきからと同じ）
-import { t, heroName, foeLabel } from '../i18n/i18n.js?v=31';
-import { session } from '../state.js?v=31';
-import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=31';
-import { currentFoe } from '../core/run.js?v=31';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=31';
+import { t, heroName, foeLabel } from '../i18n/i18n.js?v=32';
+import { session } from '../state.js?v=32';
+import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=32';
+import { currentFoe } from '../core/run.js?v=32';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=32';
 
 const BAR = { x: 60, y: 520, w: 600, h: 34 };
+const HELP_Y = 1062; // 「遊び方」（次の相手の行 960 と、大きなボタン 1135〜 の間）
 
 export class LadderScene extends Phaser.Scene {
   constructor() {
@@ -47,6 +48,9 @@ export class LadderScene extends Phaser.Scene {
     if (nextLine) fitText(this.add.text(width / 2, 578, nextLine, textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
 
     statBars(this, 40, 640, 640, r.stats);
+
+    // 左下に小さく「遊び方」（説明を飛ばした人も、いつでも同じ3枚に入れる）
+    button(this, 140, HELP_Y, 220, 64, t('ladder.help'), () => this.scene.start('help'), { size: 26, color: COLORS.buttonSub });
 
     if (r.cleared) {
       fitText(this.add.text(width / 2, 960, t('ladder.clear'), textStyle(40, COLORS.gold)).setOrigin(0.5), width - 60);

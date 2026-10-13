@@ -1,0 +1,43 @@
+// 一生の通し（20体版の強さ合わせと試験用・設計書 §5）。取組は紙相撲の自動（kamiai.autoBout）
+// 勝てば次の敵へ・負けたら稽古（3コマ）：解禁していて覚えていない決め技があれば1コマで覚え、残りは一番低い心技体を伸ばす。
+// 取組ごとに、覚えた決め技の中から敵の型との相性（affinity）が一番良い物を持っていく（同じなら解禁の早い物）。
+// 最初は五月雨突きが解禁済みでも、まだ覚えていない＝最初の稽古までは決め技無しで取る
+import { newRun, currentFoe, recordResult, startTraining, trainStat, trainNewTech, STATS } from './run.js?v=32';
+import { autoBout } from './kamiai.js?v=32';
+import { recommendKimete } from './kimetepick.js?v=32';
+import { PLAY_COUNT } from './ladder.js?v=32';
+
+export const MAX_BOUTS = 300;
+
+// 覚えた決め技から、相性が一番良い物（無ければ null）。相手の情報の画面の勧め（kimetepick.recommendKimete）と同じ
+export const bestKimete = (newKnown, foeType) => recommendKimete({ newKnown }, foeType);
+
+// 負けた後の稽古（3コマ）：解禁していて覚えていない決め技を先に1コマずつ覚え、残りは一番低い心技体
+export function trainAfterLoss(run) {
+  let r = startTraining(run);
+  while (r.training) {
+    const learn = r.unlocked.find((id) => r.newKnown.indexOf(id) < 0);
+    if (learn) { r = trainNewTech(r, learn); continue; }
+    const low = STATS.reduce((a, b) => (r.stats[b] < r.stats[a] ? b : a), STATS[0]);
+    r = trainStat(r, low);
+  }
+  return r;
+}
+
+export function careerSim(seed, hero) {
+  let run = newRun({ type: 'balance', seed });
+  let bouts = 0, trainings = 0, long = 0; // long＝40秒を超えた番の数
+  const firstTry = [], firstStats = []; // index ごとの初挑戦の勝ち負けと、その時の心技体
+  for (let i = 0; i < PLAY_COUNT; i++) { firstTry.push(null); firstStats.push(null); }
+  let foe;
+  while ((foe = currentFoe(run)) && bouts < MAX_BOUTS) {
+    const r = autoBout({ heroStats: run.stats, foeIndex: foe.index, hero, seed: seed + bouts, heroKimete: bestKimete(run.newKnown, foe.type) });
+    bouts++;
+    if (r.t > 40) long++;
+    const won = r.winner === 'east';
+    if (firstTry[foe.index] === null) { firstTry[foe.index] = won; firstStats[foe.index] = run.stats; }
+    run = recordResult(run, won).run;
+    if (!won) { run = trainAfterLoss(run); trainings++; }
+  }
+  return { bouts, trainings, long, firstTry, firstStats, cleared: run.cleared, stats: run.stats };
+}

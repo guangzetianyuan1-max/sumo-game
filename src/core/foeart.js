@@ -1,10 +1,10 @@
 // フィギュア風の立ち絵の選び方（10/12 夜 設計書 §8・§10）：主人公・敵の絵の鍵と置き場・段階の見せ方・取組での敵の傾け方
 // 絵は tools/prep_figures.py が assets/figures/ に置く（画面用）・assets/figures/dot/（取組用のドット）
-import { FOE_COUNT } from '../data/foes.js?v=31';
+import { PLAY_COUNT } from './ladder.js?v=32';
 
-// 壱号・弐号＝ふだんの姿／参号〜伍号＝本気の姿／100体目＝大ボス
+// 壱号・弐号＝ふだんの姿／参号〜伍号＝本気の姿／20体版は20体目（PLAY_COUNT - 1）が大ボス
 export function foeForm(foe) {
-  if (foe.index === FOE_COUNT - 1) return 'boss';
+  if (foe.index === PLAY_COUNT - 1) return 'boss';
   return foe.stage >= 2 ? 'honki' : 'normal';
 }
 
@@ -23,6 +23,8 @@ export function heroArt(type) {
 // 段階ごとの光るオーラ（無し→青→赤→金→虹）と体の大きさ（最大1.15倍）
 export const STAGE_AURA = [null, 0x4da3ff, 0xff4d4d, 0xffc83d, 'rainbow'];
 export const stageAura = (stage) => STAGE_AURA[Math.max(0, Math.min(STAGE_AURA.length - 1, stage))];
+// 敵の光：大ボスは虹・ほかは段階の光
+export const foeAura = (foe) => (foeForm(foe) === 'boss' ? 'rainbow' : stageAura(foe.stage));
 export const stageScale = (stage) => 1 + 0.0375 * Math.max(0, Math.min(4, stage));
 
 // 取組の敵（正面向きのドット1枚）を、西の力士の姿勢の名に合わせて傾ける。angle＝度（−で東＝主人公のほうへ倒れる・＋で後ろへ）・sy＝縦の縮み

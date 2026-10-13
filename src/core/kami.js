@@ -1,7 +1,7 @@
 // 紙相撲の計算（10/13 本人「紙相撲に切り替える」・設計書 2026-10-13-sumo-kamizumo-design.md）
 // 画面から切り離した、型紙2枚の動き。単位＝画面の px と秒。x＝足もとの真ん中・y＝箱の面からの高さ（上が＋）
 // a＝傾き（＋＝自分の後ろへ反る）。東＝主人公＝左から右へ（dir +1）・西＝敵＝右から左へ（dir -1）
-import { makeRng } from './rng.js?v=31';
+import { makeRng } from './rng.js?v=32';
 
 export const KAMI = {
   BOX: { l: 40, r: 680 },
@@ -19,12 +19,28 @@ export const KAMI = {
   DAMP: 0.9,
   FALL_A: 1.0,        // これより傾いたら倒れる（ラジアン）
   EDGE: 225,          // 相手の足が箱の端からこの内側に入ったらゲージ（10/13 Task 2 で 110→225）
-  NEAR: 190,          // 相手との間がこの内なら近い
+  EDGE_SELF: 90,      // うっちゃり：自分の足が、自分の背中側の箱の端からこの内側にいたらゲージ（20体版）
+  NEAR: 190,          // 相手との間がこの内なら近い（20体版からゲージには使わない＝決め技ごとの届く距離 KIMETE_REACH）
   MOMENTUM: 0.18,
   LATE: 30, LATE_UP: 0.08,
   FALL_Y: -40,
   MAX_DT: 1 / 30,
 };
+
+// 20体版：決め技の系統ごとの届く距離（相手との足もとの間・px）。型紙の幅が 90 なので、くっついた時の間は 90
+export const KIMETE_REACH = { tsuki: 130, yori: 110, nage: 100, hiki: 120, utchari: 120 };
+
+// 20体版：決め技の系統ごとの動き。強さ s＝KAMI.FINISH×決め技の強さ×相性×（光ってすぐ 1・遅い 0.4）÷相手の重さ
+// vx＝相手へ足す横の速さ（s に掛ける）・vy＝上向きの速さ・time/push＝寄り続ける秒と、1コマごとに足す速さ（s に掛ける）
+// va＝倒す回り・down＝倒す。うっちゃりは相手を相手自身の後ろへ
+export const KIMETE_FX = {
+  tsuki: { vx: 1, vy: 260 },                       // 突き：前へ突き飛ばし、少し浮かせる（今までの決め技）
+  yori: { vx: 0.5, vy: 0, time: 0.6, push: 0.11 }, // 寄り：浮かせず、0.6秒 押し続ける（その間 相手は跳ねられない）
+  nage: { vx: 0.7, vy: 520, va: 0.25 },            // 投げ：高く放り上げ、大きく回す（倒れやすい）
+  hiki: { vx: 0.9, down: true },                   // 引き：前へつんのめらせて倒す。倒れた型紙は滑る（相手の後ろ＝箱の端へ）
+  utchari: { vx: 2.8, vy: 300, down: true },       // うっちゃり：自分が端の時、相手を相手自身の後ろへ大きく飛ばす
+};
+const ARCHS = Object.keys(KIMETE_FX);
 
 const SIDES = ['east', 'west'];
 const other = (s) => (s === 'east' ? 'west' : 'east');
@@ -32,10 +48,11 @@ const other = (s) => (s === 'east' ? 'west' : 'east');
 function fighter(p, x, dir) {
   return {
     mass: p.mass, right: p.right, standTime: p.standTime, gaugeTime: p.gaugeTime, finisher: p.finisher, w: p.w,
-    canFinish: p.canFinish !== false, // 決め技を持つか（無い時は持つ＝主人公は変わらない・機械の相手は参号から）
+    canFinish: p.canFinish !== false, // false なら決め技を出さない（古い呼び方。20体版は kimete の有る無しで決める）
+    kimete: p.kimete && ARCHS.indexOf(p.kimete.arch) >= 0 ? { arch: p.kimete.arch, power: p.kimete.power > 0 ? p.kimete.power : 1 } : null, // 決め技の系統と相性の倍率（無い＝光らない）
     x, y: 0, vx: 0, vy: 0, a: 0, va: 0, dir,
     down: false, held: false, standHeld: 0, stun: 0, fell: false, taps: [], charged: false,
-    litUntil: 0, litFrom: 0, cool: 0,
+    litUntil: 0, litFrom: 0, cool: 0, pushT: 0, pushV: 0,
   };
 }
 
@@ -44,7 +61,8 @@ export function newBout({ east, west, seed }) {
   const st = {
     t: 0, phase: 'ready', signalAt: 1 + rng() * 0.8, rng,
     f: { east: fighter(east, 290, 1), west: fighter(west, 430, -1) },
-    winner: null, how: null, finisherBy: null, finisherAt: -Infinity,
+    winner: null, how: null, finisherBy: null, finisherAt: -Infinity, finisherArch: null,
+    lastKimete: null, // 最後に出た決め技 { side, arch }（画面の演出用）
   };
   return st;
 }
@@ -63,16 +81,44 @@ export function gaugeLit(st, side) {
   return st.phase === 'push' && st.t < me.litUntil;
 }
 
-// 決め技の場所：相手が奥の端の近くで、自分の近くにいる
+// 決め技の場所：決め技を持っていて、相手が届く距離にいる。
+// うっちゃりは自分が背中側の端の近く、ほかは相手が奥の端の近く
 function inZone(me, op) {
+  if (!me.kimete || !me.canFinish || op.fell || me.fell) return false;
+  const arch = me.kimete.arch;
+  if (Math.abs(op.x - me.x) > KIMETE_REACH[arch]) return false;
+  if (arch === 'utchari') {
+    const back = me.dir > 0 ? me.x - KAMI.BOX.l : KAMI.BOX.r - me.x; // 自分の、背中側の端までの近さ
+    return back <= KAMI.EDGE_SELF;
+  }
   const edge = me.dir > 0 ? KAMI.BOX.r - op.x : op.x - KAMI.BOX.l; // 相手の、自分から見て奥の端までの近さ
-  return !op.fell && edge < KAMI.EDGE && Math.abs(op.x - me.x) < KAMI.NEAR;
+  return edge < KAMI.EDGE;
+}
+
+// 決め技の動き（系統ごと）
+function fireKimete(st, side, k) {
+  const me = st.f[side], op = st.f[other(side)];
+  const arch = me.kimete.arch, fx = KIMETE_FX[arch];
+  const s = KAMI.FINISH * me.finisher * me.kimete.power * k / op.mass;
+  if (arch === 'utchari') {
+    op.vx = -op.dir * s * fx.vx; // 相手の進む向きと逆＝相手自身の後ろへ
+  } else if (arch === 'hiki') {
+    op.vx = me.dir * s * fx.vx; // 前へつんのめって倒れ、足もとは後ろ（箱の端の方）へ滑る
+  } else {
+    op.vx += me.dir * s * fx.vx;
+  }
+  if (fx.vy) op.vy = Math.max(op.vy, fx.vy);
+  if (fx.va) op.va += fx.va * k; // 投げ：大きく回す（後ろへ反って倒れる）
+  if (fx.time) { op.pushT = fx.time; op.pushV = me.dir * s * fx.push; op.stun = Math.max(op.stun, fx.time); }
+  if (fx.down) { op.down = true; op.standHeld = 0; op.va = 0; op.a = arch === 'hiki' ? -1.5 : 1.5; } // 引き＝前へ・うっちゃり＝後ろへ倒れる
+  st.lastKimete = { side, arch };
+  st.finisherArch = arch;
 }
 
 // 決め技のゲージを点ける・消す（1コマごと）
 function updateGauge(st, side) {
   const me = st.f[side], op = st.f[other(side)];
-  const ok = me.canFinish && !me.down && inZone(me, op); // 光ってよい形か（間の時間 cool とは分けて見る）
+  const ok = !me.down && inZone(me, op); // 光ってよい形か（間の時間 cool とは分けて見る）
   if (ok && st.t >= me.cool && st.t >= me.litUntil) { me.litFrom = st.t; me.litUntil = st.t + me.gaugeTime; me.cool = me.litUntil + 1.5; }
   if (!ok && st.t < me.litUntil) me.litUntil = st.t; // 倒れた・相手が場所を外れた＝消す（次に光るのは cool の後）
 }
@@ -94,8 +140,7 @@ export function tap(st, side) {
   if (gaugeLit(st, side)) {
     const late = (st.t - me.litFrom) / me.gaugeTime; // 0＝光ってすぐ・1＝消える寸前
     const k = late < 0.7 ? 1 : 0.4;
-    op.vx += me.dir * KAMI.FINISH * me.finisher * k / op.mass;
-    op.vy = Math.max(op.vy, 260);
+    fireKimete(st, side, k);
     me.litUntil = st.t;
     if (late >= 0.7) me.stun = 0.3; // 外し気味＝一瞬すき
     st.finisherBy = side;
@@ -122,6 +167,7 @@ export function hold(st, side, on) {
 function moveOne(st, f, dt) {
   if (f.fell) return;
   const n = dt * 60; // コマの数
+  if (f.pushT > 0) { f.vx += f.pushV * n; f.pushT = Math.max(0, f.pushT - dt); } // 寄られている間は押され続ける
   if (!grounded(f) || f.vy > 0) f.vy -= KAMI.G * dt;
   f.x += f.vx * dt;
   f.y += f.vy * dt;
@@ -176,7 +222,8 @@ export function step(st, dt) {
     const loser = e.fell && w.fell ? (e.y <= w.y ? 'east' : 'west') : e.fell ? 'east' : 'west'; // 同じ高さなら主人公の負け（主人公を有利にしない）
     st.winner = other(loser);
     const lf = st.f[loser];
-    st.how = st.finisherBy === st.winner && st.t - st.finisherAt <= 2 ? 'finisher' : lf.down ? 'down' : 'push';
+    const win = st.finisherArch === 'hiki' ? 3 : 2; // 引きは倒してから落ちるまで時間がかかる
+    st.how = st.finisherBy === st.winner && st.t - st.finisherAt <= win ? 'finisher' : lf.down ? 'down' : 'push';
     st.phase = 'done';
   }
 }
