@@ -386,8 +386,8 @@ export function renderSong(id, seconds) {
 
 // ---- ゲームの画面ごとの曲（10/13 本人「両方OK」「三味線も採用で」）。同じ曲の画面が続く間は止めずに流し続ける
 export const SCENE_SONG = {
-  guide: 'yagura', guidePick: 'yagura', setup: 'yagura', ladder: 'yagura', after: 'yagura', clear: 'yagura',
-  learn: 'tsugaru', training: 'tsugaru', // 10/12 夜 稽古が戻った＝津軽三味線
+  guide: 'yagura', guidePick: 'yagura', setup: 'yagura', help: 'yagura', ladder: 'yagura', after: 'yagura', clear: 'yagura',
+  learn: 'tsugaru', training: 'tsugaru', drill: 'tsugaru', // 10/12 夜 稽古が戻った＝津軽三味線（稽古の遊びも同じ曲を流し続ける）
   opponent: 'torikumi', strategy: 'torikumi', bout: 'torikumi', kensho: 'torikumi', kami: 'torikumi',
 };
 const MUTE_KEY = 'sumo.music';

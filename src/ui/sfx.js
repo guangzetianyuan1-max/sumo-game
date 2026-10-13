@@ -1,5 +1,7 @@
 // src/ui/sfx.js — 効果音（10/11 本人「効果音付きで」）。音のファイルは使わず、Web Audio でその場で作る
 // どの音も 0.8 秒以内・重なった時も含めて音量の山は 0.35 以下。鳴らせない端末（AudioContext が無い・作ると例外）では何もしない
+import { isMuted } from './music.js?v=34'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
+
 let ctx = null;
 let broken = false; // 作ろうとして例外が出た端末では、2度目からは試さない
 let level = 1; // 今鳴らす音の音量の倍率（声が付く稽古では下げる・playTraining が音ごとに決める）
@@ -130,6 +132,96 @@ const BOUT = {
     [0, 0.06, 0.12, 0.18, 0.24].forEach((dt, i) => tone(c, t + dt, { freq: 120 + i * 6, freqEnd: 60, dur: 0.1, peak: 0.12 }));
     tone(c, t, { freq: 3000, freqEnd: 3150, dur: 0.5, peak: 0.05, type: 'triangle', attack: 0.01 });
   },
+  // 大きなボタンを押した「カチッ」（立体のボタン・20体版 Task 5b）：短い雑音のクリック＋小さな高い音。足して 0.15 以下・0.05秒で消える（同じ瞬間に鳴る dosu / hopBeat と足して 0.4 / 0.35 以下：試験が数える）
+  press: (c, t) => {
+    noise(c, t, { dur: 0.035, peak: 0.1, f: 2600, q: 3, attack: 0.001 });
+    tone(c, t, { freq: 1500, freqEnd: 700, dur: 0.04, peak: 0.05, attack: 0.001 });
+  },
+  // ---- 20体版 Task 6b（10/13 本人「効果音もいろいろ付けてください」）。どれも足して 0.35 以下・0.8秒以内（試験が数える）----
+  // 立ち合いのぶつかり：低い「ドン」＋紙のはじける音
+  tachiai: (c, t) => {
+    tone(c, t, { freq: 100, freqEnd: 45, dur: 0.4, peak: 0.22 });
+    noise(c, t, { dur: 0.1, peak: 0.08, filter: 'highpass', f: 2500, q: 0.7, attack: 0.002 });
+    noise(c, t, { dur: 0.06, peak: 0.04, filter: 'bandpass', f: 1500, q: 2, attack: 0.002 });
+  },
+  // 跳ねるたび：軽い「トン」／拍にぴったりの時は高めの「カン」
+  hop: (c, t) => tone(c, t, { freq: 520, freqEnd: 330, dur: 0.07, peak: 0.12 }),
+  hopBeat: (c, t) => {
+    tone(c, t, { freq: 1320, freqEnd: 1000, dur: 0.1, peak: 0.12, type: 'triangle', attack: 0.002 });
+    tone(c, t, { freq: 1980, freqEnd: 1980, dur: 0.06, peak: 0.04, attack: 0.002 });
+  },
+  // 着地：小さな「ぱた」
+  land: (c, t) => {
+    noise(c, t, { dur: 0.05, peak: 0.14, f: 900, q: 2, attack: 0.002 });
+    tone(c, t, { freq: 220, freqEnd: 140, dur: 0.05, peak: 0.06, attack: 0.002 });
+  },
+  // ぶつかり合い：「ばしっ」
+  clash: (c, t) => {
+    noise(c, t, { dur: 0.1, peak: 0.22, filter: 'highpass', f: 1500, q: 0.7, attack: 0.001 });
+    tone(c, t, { freq: 160, freqEnd: 90, dur: 0.12, peak: 0.1, attack: 0.002 });
+  },
+  // 倒れる：紙が倒れる「ぱたん」（こもった雑音が下へ＋軽い低音）
+  topple: (c, t) => {
+    noise(c, t, { dur: 0.22, peak: 0.16, filter: 'lowpass', f: 1800, fEnd: 400, q: 0.8, attack: 0.01 });
+    tone(c, t + 0.05, { freq: 180, freqEnd: 80, dur: 0.2, peak: 0.1, attack: 0.004 });
+  },
+  // 箱から落ちる：「ひゅー」（下がる風切り）の後に「ことん」（木の底に当たる）
+  drop: (c, t) => {
+    noise(c, t, { dur: 0.45, peak: 0.18, f: 1800, fEnd: 300, q: 1.2, attack: 0.12 });
+    tone(c, t + 0.46, { freq: 260, freqEnd: 140, dur: 0.1, peak: 0.22, type: 'triangle', attack: 0.002 });
+    noise(c, t + 0.46, { dur: 0.05, peak: 0.1, f: 700, q: 2, attack: 0.001 });
+  },
+  // 起き上がる：上がっていく「しゅっ」
+  rise: (c, t) => noise(c, t, { dur: 0.22, peak: 0.2, f: 500, fEnd: 3500, q: 1.5, attack: 0.06 }),
+  // 勝ち：太鼓「ドドン」＋歓声のような雑音のふくらみ
+  win: (c, t) => {
+    tone(c, t, { freq: 110, freqEnd: 60, dur: 0.22, peak: 0.2 });
+    tone(c, t + 0.26, { freq: 100, freqEnd: 55, dur: 0.3, peak: 0.2 });
+    noise(c, t + 0.05, { dur: 0.7, peak: 0.1, f: 1400, q: 0.6, attack: 0.3 });
+  },
+  // 負け：低く下がる「ぼーん」
+  lose: (c, t) => {
+    tone(c, t, { freq: 260, freqEnd: 80, dur: 0.75, peak: 0.22, attack: 0.01 });
+    tone(c, t, { freq: 130, freqEnd: 65, dur: 0.7, peak: 0.1, attack: 0.01 });
+  },
+  // 昇進：拍子木2つ＋太鼓の短いファンファーレ（ソ・シ・ドの笛を太鼓に重ねる）
+  promo: (c, t) => {
+    [0, 0.13].forEach((dt) => noise(c, t + dt, { dur: 0.05, peak: 0.2, f: 1800, q: 4, attack: 0.001 }));
+    tone(c, t + 0.3, { freq: 110, freqEnd: 60, dur: 0.11, peak: 0.2 });
+    tone(c, t + 0.3, { freq: 659, dur: 0.11, peak: 0.08, type: 'triangle', attack: 0.01 });
+    tone(c, t + 0.425, { freq: 110, freqEnd: 60, dur: 0.11, peak: 0.2 });
+    tone(c, t + 0.425, { freq: 784, dur: 0.11, peak: 0.08, type: 'triangle', attack: 0.01 });
+    tone(c, t + 0.55, { freq: 100, freqEnd: 55, dur: 0.25, peak: 0.22 });
+    tone(c, t + 0.55, { freq: 1047, dur: 0.25, peak: 0.08, type: 'triangle', attack: 0.01 });
+  },
+  // 懸賞旗：旗のはためき「ばさばさ」（短い帯雑音を、間をばらつかせて5つ）
+  flags: (c, t) => {
+    [[0, 700], [0.09, 1100], [0.21, 800], [0.3, 1300], [0.43, 900]].forEach(([dt, f]) => noise(c, t + dt, { dur: 0.08, peak: 0.13, f, fEnd: f * 1.5, q: 0.8, attack: 0.01 }));
+  },
+  // ボタン（画面を選ぶ所）：小さな「ぽん」
+  pon: (c, t) => {
+    tone(c, t, { freq: 660, freqEnd: 880, dur: 0.08, peak: 0.1, attack: 0.004 });
+    tone(c, t, { freq: 1320, dur: 0.05, peak: 0.03, attack: 0.004 });
+  },
+  // 稽古：一押しぴったり「カーン」（金属の高い響き）／外れ「ぼすっ」
+  kan: (c, t) => {
+    tone(c, t, { freq: 1568, dur: 0.6, peak: 0.15, type: 'triangle', attack: 0.002 });
+    tone(c, t, { freq: 2349, dur: 0.35, peak: 0.08, attack: 0.002 });
+    noise(c, t, { dur: 0.03, peak: 0.1, filter: 'highpass', f: 3000, q: 0.7, attack: 0.001 });
+  },
+  bosu: (c, t) => {
+    tone(c, t, { freq: 140, freqEnd: 70, dur: 0.18, peak: 0.18 });
+    noise(c, t, { dur: 0.12, peak: 0.12, filter: 'lowpass', f: 500, q: 0.7, attack: 0.002 });
+  },
+  // 稽古：鉄砲（連打）柱を突く「どすっ」（連打で鳴るので 0.12秒で消える）／四股（長押しを離す）足を下ろす「ずしん」
+  dosu: (c, t) => {
+    tone(c, t, { freq: 100, freqEnd: 55, dur: 0.12, peak: 0.16 });
+    noise(c, t, { dur: 0.05, peak: 0.08, filter: 'lowpass', f: 700, q: 0.7, attack: 0.002 });
+  },
+  zushin: (c, t) => {
+    tone(c, t, { freq: 70, freqEnd: 35, dur: 0.55, peak: 0.27 });
+    noise(c, t, { dur: 0.12, peak: 0.07, filter: 'lowpass', f: 400, q: 0.7, attack: 0.002 });
+  },
   // 確定：0.3秒の無音のあと、太鼓と笛（虹の時に gauge4 と一緒に鳴らす）
   gaugeMax: (c, t) => {
     tone(c, t + 0.3, { freq: 100, freqEnd: 55, dur: 0.45, peak: 0.16 });
@@ -142,6 +234,7 @@ export const BOUT_SOUNDS = Object.keys(BOUT);
 function play(table, kind, volume) {
   if (!Object.prototype.hasOwnProperty.call(table, kind)) return;
   const make = table[kind];
+  if (isMuted()) return;
   const c = audio();
   if (!c) return;
   try {
@@ -163,7 +256,7 @@ export function playTraining(kind, volume = 1) {
   play(SOUNDS, kind, volume);
 }
 
-// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kumi（組み絵のカットイン）・gauge1〜4（ゲージの段）・gaugeMax（虹の確定）。volume は playTraining と同じ
+// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kumi（組み絵のカットイン）・gauge1〜4（ゲージの段）・gaugeMax（虹の確定）・press（大きなボタンの「カチッ」）・20体版 Task 6b の音（tachiai hop hopBeat land clash topple drop rise win lose promo flags pon kan bosu dosu zushin）。volume は playTraining と同じ
 export function playBout(kind, volume = 1) {
   play(BOUT, kind, volume);
 }

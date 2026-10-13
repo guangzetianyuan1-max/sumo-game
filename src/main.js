@@ -1,17 +1,18 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { GuideScene } from './scenes/GuideScene.js?v=33';
-import { LadderScene } from './scenes/LadderScene.js?v=33';
-import { OpponentScene } from './scenes/OpponentScene.js?v=33';
-import { AfterScene } from './scenes/AfterScene.js?v=33';
-import { TrainingScene } from './scenes/TrainingScene.js?v=33';
-import { KamiScene } from './scenes/KamiScene.js?v=33';
-import { HelpScene } from './scenes/HelpScene.js?v=33';
-import { KenshoScene } from './scenes/KenshoScene.js?v=33';
-import { ClearScene } from './scenes/ClearScene.js?v=33';
-import { initLang } from './i18n/i18n.js?v=33';
-import { storage } from './ui/widgets.js?v=33';
-import { session, lastSlot } from './state.js?v=33';
-import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=33';
+import { GuideScene } from './scenes/GuideScene.js?v=34';
+import { LadderScene } from './scenes/LadderScene.js?v=34';
+import { OpponentScene } from './scenes/OpponentScene.js?v=34';
+import { AfterScene } from './scenes/AfterScene.js?v=34';
+import { TrainingScene } from './scenes/TrainingScene.js?v=34';
+import { DrillScene } from './scenes/DrillScene.js?v=34';
+import { KamiScene } from './scenes/KamiScene.js?v=34';
+import { HelpScene } from './scenes/HelpScene.js?v=34';
+import { KenshoScene } from './scenes/KenshoScene.js?v=34';
+import { ClearScene } from './scenes/ClearScene.js?v=34';
+import { initLang } from './i18n/i18n.js?v=34';
+import { storage } from './ui/widgets.js?v=34';
+import { session, lastSlot } from './state.js?v=34';
+import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=34';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;
@@ -57,7 +58,7 @@ function start() {
     parent: 'game',
     backgroundColor: '#141a2e',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 720, height: 1280 },
-    scene: [GuideScene, HelpScene, LadderScene, OpponentScene, KenshoScene, KamiScene, AfterScene, ClearScene, TrainingScene],
+    scene: [GuideScene, HelpScene, LadderScene, OpponentScene, KenshoScene, KamiScene, AfterScene, ClearScene, TrainingScene, DrillScene],
   });
   hookMusic(game);
 }

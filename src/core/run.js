@@ -1,12 +1,12 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=33';
-import { GUIDE_IDS } from '../data/guides.js?v=33';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=33';
-import { foeAt } from '../data/foes.js?v=33';
-import { inGame } from '../data/kimarite.js?v=33';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=33';
-import { startStats, growthMult, diminish } from './career.js?v=33';
-import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=33';
+import { TYPES } from '../data/types.js?v=34';
+import { GUIDE_IDS } from '../data/guides.js?v=34';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=34';
+import { foeAt } from '../data/foes.js?v=34';
+import { inGame } from '../data/kimarite.js?v=34';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=34';
+import { startStats, growthMult, diminish } from './career.js?v=34';
+import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=34';
 
 export const RUN_VERSION = 4;
 export const TRAIN_STEPS = 3; // 1回の稽古のコマ数
@@ -79,20 +79,38 @@ export function recordResult(run, won) {
   return { run: next, note: { ...base, promoted, unlocked, cleared: next.cleared } };
 }
 
-// 稽古（負けた後だけ・3コマ）。始まっていれば始め直さない。入った回数 trainings を数える（クリアの画面の成績）
-export function startTraining(run) {
-  return run.training ? run : { ...run, training: { left: TRAIN_STEPS }, trainings: (run.trainings || 0) + 1 };
+// 稽古（3コマ）。負けた後の稽古と、番付からいつでも入る稽古（voluntary・10/13 本人「好きなときに稽古が出来るように」）。
+// 始まっていれば始め直さない。入った回数 trainings を数える（クリアの画面の成績）：
+//   負けた後の稽古＝入った時に数える／自分から入る稽古＝最初の1コマを終えた時に数える（入って何もせず戻っても数えない）
+// 自分から入る稽古の最中に負けの稽古を頼まれたら、負けた後の稽古（抜けられない側）に切り替える（フラグを捨て、3コマ数え直し）
+export function startTraining(run, { voluntary = false } = {}) {
+  if (run.training) {
+    if (voluntary || !run.training.voluntary) return run;
+    const fresh = run.training.left === TRAIN_STEPS; // 自分から入って1コマも終えていない＝まだ数えていない
+    return { ...run, training: { left: TRAIN_STEPS }, trainings: (run.trainings || 0) + (fresh ? 1 : 0) };
+  }
+  if (voluntary) return { ...run, training: { left: TRAIN_STEPS, voluntary: true } };
+  return { ...run, training: { left: TRAIN_STEPS }, trainings: (run.trainings || 0) + 1 };
+}
+
+// 番付から入った稽古は、どのコマでも番付へ戻れる（残りのコマは捨てる）。負けた後の稽古は終えるまで抜けない（同じ物を返す）
+export const canLeaveTraining = (run) => !!(run.training && run.training.voluntary);
+export function leaveTraining(run) {
+  return canLeaveTraining(run) ? { ...run, training: null } : run;
 }
 
 const step = (run, changes) => {
   const left = run.training.left - 1;
-  return { ...run, ...changes, training: left > 0 ? { left } : null };
+  const first = run.training.voluntary === true && run.training.left === TRAIN_STEPS; // 自分から入る稽古の最初の1コマ＝ここで1回と数える
+  return { ...run, ...changes, trainings: (run.trainings || 0) + (first ? 1 : 0), training: left > 0 ? { ...run.training, left } : null };
 };
 
-export function trainStat(run, stat) {
+// mult＝遊びの出来の倍率（src/core/drills.js の drillMult・0.5〜1.5）。既定 1＝今までと同じ伸び
+export function trainStat(run, stat, mult = 1) {
   if (!run.training || !STATS.includes(stat)) return run;
+  const m = Number.isFinite(mult) && mult >= 0 ? mult : 1;
   const stats = { ...run.stats };
-  stats[stat] = cap(stats[stat] + TRAIN.gain * growthMult(run.type, stat) * diminish(stats[stat]));
+  stats[stat] = cap(stats[stat] + TRAIN.gain * m * growthMult(run.type, stat) * diminish(stats[stat]));
   return step(run, { stats });
 }
 
@@ -119,6 +137,7 @@ export function deserializeRun(text) {
     if (!count(c.trainings)) c.trainings = 0; // 稽古の回数を数える前の記録は 0 から
     c.seenHelp = c.seenHelp === true;
     if (c.training !== null && !(c.training && Number.isInteger(c.training.left) && c.training.left >= 1 && c.training.left <= TRAIN_STEPS)) return null;
+    if (c.training) c.training = c.training.voluntary === true ? { left: c.training.left, voluntary: true } : { left: c.training.left }; // voluntary の無い古い記録は負けた後の稽古
     const known = Array.isArray(c.known) ? c.known.filter(inGame) : [];
     c.known = known.length ? known : [...TYPES[c.type].sample];
     const mine = newTechIds(c.type);

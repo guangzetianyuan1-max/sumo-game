@@ -1,13 +1,14 @@
 // src/scenes/LadderScene.js — 勝ち抜き番付（10/12 夜）：主人公の絵と名・地位・倒した数の目盛り・次の昇進・心技体・次の相手 → 相手の情報
-// 覚える候補があれば技の画面へ・稽古の途中なら稽古へ（つづきからと同じ）
-import { t, heroName, foeLabel } from '../i18n/i18n.js?v=33';
-import { session } from '../state.js?v=33';
-import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=33';
-import { currentFoe } from '../core/run.js?v=33';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=33';
+// 負けた後の稽古の途中なら稽古へ（つづきからと同じ）。下に「稽古する」：いつでも何度でも自分から稽古に入れる（10/13 本人「好きなときに稽古が出来るように」）
+import { t, heroName, foeLabel } from '../i18n/i18n.js?v=34';
+import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=34';
+import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=34';
+import { currentFoe, canLeaveTraining } from '../core/run.js?v=34';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=34';
 
 const BAR = { x: 60, y: 520, w: 600, h: 34 };
 const HELP_Y = 1062; // 「遊び方」（次の相手の行 960 と、大きなボタン 1135〜 の間）
+const TRAIN_COLOR = 0x4f8a68; // 「稽古する」のボタン（緑・次の相手へ の朱と並べて見分ける）
 
 export class LadderScene extends Phaser.Scene {
   constructor() {
@@ -22,7 +23,8 @@ export class LadderScene extends Phaser.Scene {
   create() {
     const r = session.run;
     if (!r) { this.scene.start('guide'); return; }
-    if (r.training) { this.scene.start('training'); return; }
+    // 負けた後の稽古は終えるまで抜けない。自分から入った稽古（voluntary）の途中は番付に居てよい（稽古するで続き・次の相手へで捨てる）
+    if (r.training && !canLeaveTraining(r)) { this.scene.start('training'); return; }
     const { width } = this.scale;
     backButton(this, () => this.scene.start('guide'));
     saveButton(this);
@@ -61,6 +63,14 @@ export class LadderScene extends Phaser.Scene {
     }
     const foe = currentFoe(r);
     fitText(this.add.text(width / 2, 960, t('ladder.nextFoe', { name: foeLabel(foe), n: foe.index + 1 }), textStyle(32, COLORS.ink)).setOrigin(0.5), width - 60);
-    button(this, width / 2, 1190, 460, 110, t('ladder.go'), () => this.scene.start('opponent'), { size: 38 });
+    // 左に「稽古する」（いつでも・何度でも）・右に「次の相手へ」。自分から入った稽古の途中で相手へ行くなら、残りのコマは捨てる
+    button(this, width / 2 - 170, 1190, 320, 110, t('ladder.train'), () => {
+      trainFreeBegin();
+      this.scene.start('training');
+    }, { size: 38, color: TRAIN_COLOR });
+    button(this, width / 2 + 170, 1190, 320, 110, t('ladder.go'), () => {
+      trainLeaveNow();
+      this.scene.start('opponent');
+    }, { size: 36 });
   }
 }

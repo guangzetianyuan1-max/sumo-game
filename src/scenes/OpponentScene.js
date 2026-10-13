@@ -1,17 +1,18 @@
 // src/scenes/OpponentScene.js — 今日の相手（20体版 Task 4・10/13）：相手の絵と型・得意と苦手（系統）・心技体・決め技を選ぶ札5枚・ことねの勧め → 取組へ
 // 作戦表の頃の名残（よく使う手・技の勧めの吹き出し）は外した。シニアにも読める大きな札と、下の真ん中の「取組へ」1つだけ
 // 決め技の札：覚えた物だけ押して選べる（選んだ札が朱に光る）。最初は勧め（recommendKimete）を選んでおく。覚えていない物は灰色
-import { TYPES } from '../data/types.js?v=33';
-import { OKAMI } from '../data/heroes.js?v=33';
-import { t, foeLabel } from '../i18n/i18n.js?v=33';
-import { session, prepareOpponent } from '../state.js?v=33';
-import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=33';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=33';
+import { TYPES } from '../data/types.js?v=34';
+import { OKAMI } from '../data/heroes.js?v=34';
+import { t, foeLabel } from '../i18n/i18n.js?v=34';
+import { session, prepareOpponent } from '../state.js?v=34';
+import { playBout } from '../ui/sfx.js?v=34';
+import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=34';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=34';
 import {
   button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
   preloadTypeArt, preloadGuideArt, addAura, clearScene, COLORS,
-} from '../ui/widgets.js?v=33';
-import { currentFoe } from '../core/run.js?v=33';
+} from '../ui/widgets.js?v=34';
+import { currentFoe } from '../core/run.js?v=34';
 
 const INFO = { y: 270, h: 240 }; // 相手の札（150〜390）：左に絵・右に型と得意・苦手
 const ART = { x: 175, r: 100, h: 200 };
@@ -41,6 +42,7 @@ export class OpponentScene extends Phaser.Scene {
   }
 
   create() {
+    this.auraTween = null; // 前の入場の光は Phaser が片付け済み（消えた物に remove を呼ばない）
     this.foe = prepareOpponent();
     if (!this.foe) {
       this.scene.start(session.run ? 'ladder' : 'guide');
@@ -56,6 +58,8 @@ export class OpponentScene extends Phaser.Scene {
   }
 
   draw() {
+    // 虹のオーラの回る tween は描き直しのたびに増やさない（絵を消す前に止める）
+    if (this.auraTween) { this.auraTween.remove(); this.auraTween = null; }
     clearScene(this);
     const { width } = this.scale;
     const foe = this.foe;
@@ -73,7 +77,7 @@ export class OpponentScene extends Phaser.Scene {
       const img = this.add.image(ART.x, INFO.y, key);
       img.setScale(Math.min((ART.h * stageScale(foe.stage)) / img.height, (ART.r * 2.2) / img.width));
       if (key !== fig) img.setFlipX(true);
-      addAura(this, img, foeAura(foe));
+      this.auraTween = addAura(this, img, foeAura(foe));
     }
     const room = width - 40 - TEXT_X - 20;
     const right = (y, str, size, color) => fitText(this.add.text(TEXT_X, y, str, textStyle(size, color)).setOrigin(0, 0.5), room);
@@ -138,11 +142,15 @@ export class OpponentScene extends Phaser.Scene {
     }
     if (c.state !== 'learned') return;
     const zone = hitZone(this, x, y, CARD.w, CARD.h);
-    zone.on('pointerdown', () => g.setAlpha(0.8));
-    zone.on('pointerout', () => g.setAlpha(1));
+    let down = false; // 押しはこの札の上で始まったものだけ数える（widgets.button と同じ）
+    zone.on('pointerdown', () => { down = true; g.setAlpha(0.8); });
+    zone.on('pointerout', () => { down = false; g.setAlpha(1); });
     zone.on('pointerup', () => {
       g.setAlpha(1);
+      if (!down) return;
+      down = false;
       if (this.pick === c.id) return;
+      playBout('pon');
       this.pick = c.id;
       this.redraw();
     });

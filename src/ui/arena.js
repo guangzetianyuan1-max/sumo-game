@@ -1,10 +1,10 @@
 // src/ui/arena.js — 紙相撲の舞台（土俵の絵の背景・段ボールの箱・紙の土俵）。取組（kami）・懸賞旗（kensho）・クリア（clear）で同じ形を描く
-import { KAMI } from '../core/kami.js?v=33';
-import { t } from '../i18n/i18n.js?v=33';
-import { textStyle, fitText } from './widgets.js?v=33';
+import { KAMI } from '../core/kami.js?v=34';
+import { t } from '../i18n/i18n.js?v=34';
+import { textStyle, fitText } from './widgets.js?v=34';
 
 export const GROUND = 800; // 箱の上の面（画面の y）
-export const BOX_H = 140; // 箱の前の面の高さ（下の端 940 ＝ ボタンの上端 1020 より80上・間に案内の1行）
+export const BOX_H = 100; // 箱の前の面の高さ（下の端 900 ＝ 立体のボタンの弧の上端 947 より上・間に案内の1行。ボタンが直径300になったので140から詰めた）
 const BACKDROP_EDGE = 'linear-gradient(#271e26 50%, #141a2e 50%)'; // 画面の外の余白：上半分は土俵の絵の一番上の色に夜の藍を重ねた色・下半分は今の藍（絵は上から始まり、下は箱の下の藍へ続く）
 
 export function preloadArena(scene) {

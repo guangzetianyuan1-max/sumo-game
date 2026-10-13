@@ -2,15 +2,19 @@
 // 勝てば次の敵へ・負けたら稽古（3コマ）：解禁していて覚えていない決め技があれば1コマで覚え、残りは一番低い心技体を伸ばす。
 // 取組ごとに、覚えた決め技の中から敵の型との相性（affinity）が一番良い物を持っていく（同じなら解禁の早い物）。
 // 最初は五月雨突きが解禁済みでも、まだ覚えていない＝最初の稽古までは決め技無しで取る
-import { newRun, currentFoe, recordResult, startTraining, trainStat, trainNewTech, STATS } from './run.js?v=33';
-import { autoBout } from './kamiai.js?v=33';
-import { recommendKimete } from './kimetepick.js?v=33';
-import { PLAY_COUNT } from './ladder.js?v=33';
+import { newRun, currentFoe, recordResult, startTraining, trainStat, trainNewTech, STATS } from './run.js?v=34';
+import { autoBout } from './kamiai.js?v=34';
+import { recommendKimete } from './kimetepick.js?v=34';
+import { PLAY_COUNT } from './ladder.js?v=34';
+import { drillMult, NORMAL_SCORE } from './drills.js?v=34';
 
 export const MAX_BOUTS = 300;
 
 // 覚えた決め技から、相性が一番良い物（無ければ null）。相手の情報の画面の勧め（kimetepick.recommendKimete）と同じ
 export const bestKimete = (newKnown, foeType) => recommendKimete({ newKnown }, foeType);
+
+// 稽古の遊び（20体版 Task 6）の出来は「ふつう」＝倍率 1.0 で回す（強さの目標は遊ばない人の床）。番付からの自分から入る稽古は回さない
+export const SIM_DRILL_MULT = drillMult(NORMAL_SCORE);
 
 // 負けた後の稽古（3コマ）：解禁していて覚えていない決め技を先に1コマずつ覚え、残りは一番低い心技体
 export function trainAfterLoss(run) {
@@ -19,7 +23,7 @@ export function trainAfterLoss(run) {
     const learn = r.unlocked.find((id) => r.newKnown.indexOf(id) < 0);
     if (learn) { r = trainNewTech(r, learn); continue; }
     const low = STATS.reduce((a, b) => (r.stats[b] < r.stats[a] ? b : a), STATS[0]);
-    r = trainStat(r, low);
+    r = trainStat(r, low, SIM_DRILL_MULT);
   }
   return r;
 }

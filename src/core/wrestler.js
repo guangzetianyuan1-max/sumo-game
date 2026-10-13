@@ -1,6 +1,6 @@
 // 力士を作る・得意と弱みの上乗せ（取組の計算から使う）
-import { TYPES } from '../data/types.js?v=33';
-import { STRONG_BONUS, WEAK_MAX } from './tuning.js?v=33';
+import { TYPES } from '../data/types.js?v=34';
+import { STRONG_BONUS, WEAK_MAX } from './tuning.js?v=34';
 
 export function makeWrestler(type, { shin, gi, tai, known, mastery = {} } = {}) {
   const T = TYPES[type];

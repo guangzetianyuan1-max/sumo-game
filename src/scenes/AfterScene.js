@@ -1,8 +1,9 @@
 // src/scenes/AfterScene.js — 取組の後（10/12 夜）：勝ち＝倒した相手・心技体の伸び・昇進・新技の解禁・クリア → 番付表
 // 負け＝心技体の伸び（少し）・「もう一度」（相手の情報へ）か「稽古へ」。同じ相手に3連敗したら案内役が稽古を勧める（選ぶのは本人）
-import { t, foeLabel } from '../i18n/i18n.js?v=33';
-import { session, suggestTraining, trainBegin } from '../state.js?v=33';
-import { button, topTitle, fitText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=33';
+import { t, foeLabel } from '../i18n/i18n.js?v=34';
+import { session, suggestTraining, trainBegin } from '../state.js?v=34';
+import { playBout } from '../ui/sfx.js?v=34';
+import { button, topTitle, fitText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=34';
 
 const STATS = ['shin', 'gi', 'tai'];
 
@@ -28,7 +29,7 @@ export class AfterScene extends Phaser.Scene {
     // 心技体の伸び（1行ずつ）
     STATS.forEach((s, i) => line(280 + i * 52, t('after.growth', { stat: t(`stat.${s}`), from: lb.before[s].toFixed(1), to: lb.after[s].toFixed(1) }), 30, COLORS.ink, { fontStyle: '500' }));
     let y = 470;
-    if (lb.promoted) { line(y, t('after.promoted', { rank: t(`div.${lb.promoted}`) }), 44, COLORS.gold); y += 70; }
+    if (lb.promoted) { playBout('promo'); line(y, t('after.promoted', { rank: t(`div.${lb.promoted}`) }), 44, COLORS.gold); y += 70; }
     if (lb.unlocked) { line(y, t('after.unlocked', { tech: t(`newtech.${lb.unlocked}`) }), 30, COLORS.gold); y += 60; }
     if (lb.cleared) { line(y, t('after.cleared'), 48, COLORS.gold); y += 70; }
 
