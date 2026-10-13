@@ -4,23 +4,24 @@
 // 指：下の真ん中の大きなボタンだけ（外は何も起きない）。立っている時＝触れた瞬間を1回のたたき（押したままでは連打にならない）／倒れている時＝押している間を長押し
 // 終わったら 0.8秒そのまま見せ、勝ち負け（喜び・悔しいのカットイン）を出して recordNow を1回だけ・1.8秒後に取組の後（after）へ
 // 演出（20体版 Task 5）：カットイン（気合・決め・喜び・悔しい）は上に重ねるだけ・たたくと閉じる／決め技のゲージはボタンと帯を段の色（青・赤・金・虹）で塗り、段が上がると音
-import { KAMI, newBout, step, tap, hold, gaugeLit, beatOffset } from '../core/kami.js?v=34';
-import { buttonLook, coachKey, gaugeTierOf } from '../core/kamibutton.js?v=34';
-import { TIER_COLOR } from '../core/gaugetier.js?v=34';
-import { cutinArt, KIAI_WINDOW } from '../core/cutin.js?v=34';
-import { boutParams, cpuParams, driver } from '../core/kamiai.js?v=34';
-import { chosenKimete } from '../core/kimetepick.js?v=34';
-import { kimariteOf } from '../core/kamiresult.js?v=34';
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=34';
-import { currentFoe } from '../core/run.js?v=34';
-import { makeRng } from '../core/rng.js?v=34';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=34';
-import { t, foeLabel, kimariteLabel } from '../i18n/i18n.js?v=34';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=34';
-import { session, prepareOpponent, boutSeed, recordNow } from '../state.js?v=34';
-import { playBout } from '../ui/sfx.js?v=34';
-import { createBigButton } from '../ui/bigbutton.js?v=34';
-import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=34';
+import { KAMI, newBout, step, tap, hold, gaugeLit, beatOffset } from '../core/kami.js?v=35';
+import { buttonLook, coachKey, gaugeTierOf } from '../core/kamibutton.js?v=35';
+import { TIER_COLOR } from '../core/gaugetier.js?v=35';
+import { cutinArt, KIAI_WINDOW } from '../core/cutin.js?v=35';
+import { boutParams, cpuParams, driver } from '../core/kamiai.js?v=35';
+import { chosenKimete } from '../core/kimetepick.js?v=35';
+import { kimariteOf } from '../core/kamiresult.js?v=35';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=35';
+import { currentFoe } from '../core/run.js?v=35';
+import { makeRng } from '../core/rng.js?v=35';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=35';
+import { t, foeLabel, kimariteLabel } from '../i18n/i18n.js?v=35';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=35';
+import { session, prepareOpponent, boutSeed, recordNow } from '../state.js?v=35';
+import { playBout } from '../ui/sfx.js?v=35';
+import { createBigButton } from '../ui/bigbutton.js?v=35';
+import { drawCutinBand } from '../ui/cutinband.js?v=35';
+import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=35';
 
 const FIG_H = 330; // 型紙の高さ（敵は段階の倍率を掛ける）
 const VIS = FIG_H / 230; // 見た目の大きさの倍率（計算の座標は変えない・縦方向の跳ね・落ちは同じ比で描く）
@@ -193,26 +194,7 @@ export class KamiScene extends Phaser.Scene {
   // カットインの帯：左に主人公の顔・右に大きな字（と小さな2行目）。約1秒で消える・たたくと閉じる。取組は止めない（上に重ねるだけ）
   showCutin(name, line1, line2 = '', onClose = null) {
     this.closeCutin(true);
-    const { width } = this.scale;
-    const c = this.add.container(0, 0).setDepth(20);
-    const top = CUT.y - CUT.h / 2;
-    c.add(this.add.rectangle(width / 2, CUT.y, width, CUT.h, 0x141a2e, 0.9));
-    const g = this.add.graphics();
-    g.fillStyle(0xffffff, 0.06); // 斜めの流れ線
-    for (let x = -CUT.h; x < width; x += 70) g.fillTriangle(x, top + CUT.h, x + 26, top + CUT.h, x + CUT.h + 26, top);
-    g.fillStyle(0xe3c27a, 1).fillRect(0, top - 3, width, 6).fillRect(0, top + CUT.h - 3, width, 6);
-    c.add(g);
-    const art = cutinArt(name);
-    if (this.textures.exists(art.key)) {
-      const img = this.add.image(CUT.faceX, top + CUT.h, art.key).setOrigin(0.5, 1);
-      img.setScale(CUT.faceH / img.height);
-      c.add(img);
-    }
-    const big = this.add.text(CUT.textX, line2 ? CUT.y - 30 : CUT.y, line1, textStyle(line2 ? 76 : 84, COLORS.gold, { stroke: '#141a2e', strokeThickness: 10 })).setOrigin(0.5);
-    c.add(fitText(big, CUT.textW));
-    if (line2) c.add(fitText(this.add.text(CUT.textX, CUT.y + 58, line2, textStyle(40, COLORS.ink, { stroke: '#141a2e', strokeThickness: 6 })).setOrigin(0.5), CUT.textW));
-    c.x = -width;
-    this.tweens.add({ targets: c, x: 0, duration: 140, ease: 'Cubic.easeOut' });
+    const c = drawCutinBand(this, CUT, name, line1, line2);
     this.cutin = { c, onClose, timer: this.time.delayedCall(CUT.ms, () => this.closeCutin()) };
   }
 

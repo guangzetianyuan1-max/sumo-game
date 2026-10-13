@@ -30,6 +30,13 @@ export function drillGrade(score) {
 }
 export const gradeMood = (grade) => (grade === 'bad' ? 'shout' : 'smile');
 
+// ---- 決め技の習得ゲージ（10/14 本人「稽古の出来で決め技を習得できるようにしてください」→ A 習得ゲージ） ----
+// 決め技の稽古1回でたまる量＝max(0.35, 出来/0.6)。合計が1以上で習得＝6割の出来で1回・どんなに下手でも3回で必ず覚える。1回で満タンを超える分は捨てる（上限1）
+export const KIMETE_MIN_GAIN = 0.35;
+export const kimeteGain = (score) => Math.min(1, Math.max(KIMETE_MIN_GAIN, clamp01(score) / NORMAL_SCORE));
+// ゲージ（0〜1）→ 画面の％。切り捨て（満タン前に100%と出さない・0.58 が 57 にならないよう少しだけ足す）
+export const kimetePct = (v) => (Number.isFinite(v) ? Math.min(100, Math.max(0, Math.floor(v * 100 + 1e-6))) : 0);
+
 // ---- 一押し ----
 // 輪は startR から縮み、hitMs で的の輪 targetR にぴったり重なる（その後も縮み続ける）。
 // 押した時刻と hitMs の差が perfectMs 以内＝2点・nearMs 以内＝1点・それより外＝0点。hitMs + nearMs を過ぎても押さなければ外れ

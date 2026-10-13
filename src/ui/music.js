@@ -385,7 +385,9 @@ export function renderSong(id, seconds) {
 }
 
 // ---- ゲームの画面ごとの曲（10/13 本人「両方OK」「三味線も採用で」）。同じ曲の画面が続く間は止めずに流し続ける
+// caution＝null は「わざと無音」（注意書きの札はまだ画面に触れていないので鳴らせない）。cover は記録を選ぶ画面と同じ曲で、そのまま記録を選ぶ画面へ流れる
 export const SCENE_SONG = {
+  caution: null, cover: 'yagura',
   guide: 'yagura', guidePick: 'yagura', setup: 'yagura', help: 'yagura', ladder: 'yagura', after: 'yagura', clear: 'yagura',
   learn: 'tsugaru', training: 'tsugaru', drill: 'tsugaru', // 10/12 夜 稽古が戻った＝津軽三味線（稽古の遊びも同じ曲を流し続ける）
   opponent: 'torikumi', strategy: 'torikumi', bout: 'torikumi', kensho: 'torikumi', kami: 'torikumi',

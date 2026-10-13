@@ -1,12 +1,13 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=34';
-import { GUIDE_IDS } from '../data/guides.js?v=34';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=34';
-import { foeAt } from '../data/foes.js?v=34';
-import { inGame } from '../data/kimarite.js?v=34';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=34';
-import { startStats, growthMult, diminish } from './career.js?v=34';
-import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=34';
+import { TYPES } from '../data/types.js?v=35';
+import { GUIDE_IDS } from '../data/guides.js?v=35';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=35';
+import { foeAt } from '../data/foes.js?v=35';
+import { inGame } from '../data/kimarite.js?v=35';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=35';
+import { startStats, growthMult, diminish } from './career.js?v=35';
+import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=35';
+import { kimeteGain } from './drills.js?v=35';
 
 export const RUN_VERSION = 4;
 export const TRAIN_STEPS = 3; // 1回の稽古のコマ数
@@ -22,7 +23,7 @@ export function newRun({ type, seed }) {
     stats: startStats(type),
     known: [...TYPES[type].sample], pendingLearn: null, learnKind: null,
     wins: 0, losses: 0, streak: 0, trainings: 0,
-    unlocked: [newTechIds(type)[0]], newKnown: [],
+    unlocked: [newTechIds(type)[0]], newKnown: [], kimeteProgress: {},
     training: null, seed, cleared: false, seenHelp: false,
   };
 }
@@ -114,9 +115,31 @@ export function trainStat(run, stat, mult = 1) {
   return step(run, { stats });
 }
 
-export function trainNewTech(run, id) {
-  if (!run.training || !run.unlocked.includes(id) || run.newKnown.includes(id)) return run;
-  return step(run, { newKnown: [...run.newKnown, id] });
+// 決め技の習得ゲージ（10/14 本人「稽古の出来で決め技を習得できるようにしてください」→ A 習得ゲージ）
+// kimeteProgress＝{ 決め技の id: 0〜1 }（途中で番付へ戻っても残る）。満タンで newKnown へ入れ、ゲージからは外す（覚えた物はゲージに無い）
+const progressOf = (run) => (run.kimeteProgress && typeof run.kimeteProgress === 'object' ? run.kimeteProgress : {});
+const FULL = 1 - 1e-9; // 0.35 を3回足した丸めの誤差で満タンを取りこぼさない
+// 今のゲージ（覚えた＝1・まだ＝0〜1）
+export function kimeteGauge(run, id) {
+  if (run.newKnown.includes(id)) return 1;
+  const v = progressOf(run)[id];
+  return Number.isFinite(v) ? v : 0;
+}
+
+// 決め技の稽古1コマ（score＝遊びの出来 0〜1・src/core/drills.js）。稽古の最中・解禁済み・まだ覚えていない時だけ。
+// ゲージを足して1コマ使う（数え方は trainStat と同じ）・心技体は伸びない。
+// 返す物＝{ run, from, to, learned }（結果の画面でゲージを前→後へ動かす）。何もしない時は run が同じ物・to＝from・learned＝false
+export function trainKimete(run, id, score) {
+  const from = kimeteGauge(run, id);
+  if (!run.training || !run.unlocked.includes(id) || run.newKnown.includes(id)) return { run, from, to: from, learned: false };
+  const sum = from + kimeteGain(score);
+  const progress = { ...progressOf(run) };
+  if (sum >= FULL) {
+    delete progress[id];
+    return { run: step(run, { newKnown: [...run.newKnown, id], kimeteProgress: progress }), from, to: 1, learned: true };
+  }
+  progress[id] = sum;
+  return { run: step(run, { kimeteProgress: progress }), from, to: sum, learned: false };
 }
 
 export const serializeRun = (run) => JSON.stringify(run);
@@ -143,6 +166,14 @@ export function deserializeRun(text) {
     const mine = newTechIds(c.type);
     c.unlocked = mine.filter((id, k) => NEW_TECH_AT[k] <= c.wins);
     c.newKnown = Array.isArray(c.newKnown) ? c.newKnown.filter((id) => c.unlocked.includes(id)) : [];
+    // 決め技のゲージ：無い古い記録は {}・数でない／0以下／1以上・解禁していない・覚えた id は捨てる
+    const kp = c.kimeteProgress && typeof c.kimeteProgress === 'object' && !Array.isArray(c.kimeteProgress) ? c.kimeteProgress : {};
+    const progress = {};
+    for (const id of Object.keys(kp)) {
+      const v = kp[id];
+      if (typeof v === 'number' && v > 0 && v < 1 && c.unlocked.includes(id) && !c.newKnown.includes(id)) progress[id] = v;
+    }
+    c.kimeteProgress = progress;
     const pending = Array.isArray(c.pendingLearn) ? c.pendingLearn.filter(inGame) : [];
     c.pendingLearn = pending.length ? pending : null;
     c.learnKind = c.pendingLearn && RANK_IDS.includes(c.learnKind) ? c.learnKind : null;

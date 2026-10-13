@@ -1,18 +1,18 @@
 // src/scenes/OpponentScene.js — 今日の相手（20体版 Task 4・10/13）：相手の絵と型・得意と苦手（系統）・心技体・決め技を選ぶ札5枚・ことねの勧め → 取組へ
 // 作戦表の頃の名残（よく使う手・技の勧めの吹き出し）は外した。シニアにも読める大きな札と、下の真ん中の「取組へ」1つだけ
 // 決め技の札：覚えた物だけ押して選べる（選んだ札が朱に光る）。最初は勧め（recommendKimete）を選んでおく。覚えていない物は灰色
-import { TYPES } from '../data/types.js?v=34';
-import { OKAMI } from '../data/heroes.js?v=34';
-import { t, foeLabel } from '../i18n/i18n.js?v=34';
-import { session, prepareOpponent } from '../state.js?v=34';
-import { playBout } from '../ui/sfx.js?v=34';
-import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=34';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=34';
+import { TYPES } from '../data/types.js?v=35';
+import { OKAMI } from '../data/heroes.js?v=35';
+import { t, foeLabel } from '../i18n/i18n.js?v=35';
+import { session, prepareOpponent } from '../state.js?v=35';
+import { playBout } from '../ui/sfx.js?v=35';
+import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=35';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=35';
 import {
   button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
   preloadTypeArt, preloadGuideArt, addAura, clearScene, COLORS,
-} from '../ui/widgets.js?v=34';
-import { currentFoe } from '../core/run.js?v=34';
+} from '../ui/widgets.js?v=35';
+import { currentFoe } from '../core/run.js?v=35';
 
 const INFO = { y: 270, h: 240 }; // 相手の札（150〜390）：左に絵・右に型と得意・苦手
 const ART = { x: 175, r: 100, h: 200 };

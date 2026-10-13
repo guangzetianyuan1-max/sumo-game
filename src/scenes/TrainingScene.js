@@ -1,23 +1,25 @@
 // src/scenes/TrainingScene.js — 稽古（10/12 夜 本人「倒せない敵が出た場合、稽古モードに移り、新技や心技体を鍛える」）
 // 1回3コマ。コマごとに遊びを選ぶ（20体版 Task 6・10/13 本人「一押し、連打、長押しの訓練が欲しい」）：
-//   一押し稽古＝技・連打稽古＝体・長押し稽古＝心（遊びは DrillScene）／決め技を覚える（解禁していて覚えていない時だけ・押すと稽古の絵を1秒）
+//   一押し稽古＝技・連打稽古＝体・長押し稽古＝心（遊びは DrillScene）／決め技を覚える（解禁していて覚えていない時だけ）
+//   決め技の札（10/14 本人「稽古の出来で決め技を習得できるようにしてください」）＝その技に合った遊び（kimete.js の drill）を決め技モードで開く。
+//   出来で習得ゲージ（run.kimeteProgress）がたまり、満タンで覚える。札にゲージの％（0%は出さない）
 // 親方が一番低い心技体に合う遊びを勧める（★と金の字）。
 // 負けた後の稽古は3コマ終えると同じ相手へ。番付からいつでも入る稽古（training.voluntary・10/13 本人「好きなときに稽古が出来るように」）は、
 // どのコマでも「番付へ戻る」で抜けられる（残りのコマは捨てる）・終われば番付へ
-import { t } from '../i18n/i18n.js?v=34';
-import { session, trainTechNow, trainLeaveNow } from '../state.js?v=34';
-import { canLeaveTraining, STATS } from '../core/run.js?v=34';
-import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=34';
-import { DRILLS, STAT_DRILL } from '../core/drills.js?v=34';
-import { playTraining, playBout } from '../ui/sfx.js?v=34';
+import { t } from '../i18n/i18n.js?v=35';
+import { session, trainLeaveNow } from '../state.js?v=35';
+import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=35';
+import { kimeteById } from '../data/kimete.js?v=35';
+import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=35';
+import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=35';
+import { playBout } from '../ui/sfx.js?v=35';
 import {
-  topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, preloadOyakataArt, preloadTrainingIndex, loadTrainingArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=34';
+  topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, preloadOyakataArt, clearScene, COLORS,
+} from '../ui/widgets.js?v=35';
 
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1235 は「稽古おわり」の字・1210 は番付へ戻る）
 const CARD = { w: 640, top: 470, step: 120, bottom: 1150 };
 const LEAVE_Y = 1212;
-const POP_MS = 1000;
 
 export class TrainingScene extends Phaser.Scene {
   constructor() {
@@ -25,14 +27,12 @@ export class TrainingScene extends Phaser.Scene {
   }
 
   preload() {
-    preloadTrainingIndex(this);
     preloadOyakataArt(this);
   }
 
   create() {
     if (!session.run) { this.scene.start('guide'); return; }
     if (!session.run.training) { this.scene.start('opponent'); return; }
-    loadTrainingArt(this);
     this.busy = false;
     this.draw();
   }
@@ -66,7 +66,11 @@ export class TrainingScene extends Phaser.Scene {
       this.card(i++, label, () => this.toDrill(kind), isRec ? COLORS.gold : COLORS.ink, step, h);
     }
     for (const id of techs) {
-      this.card(i++, t('train2.tech', { tech: t(`newtech.${id}`) }), () => this.doStep('waza', () => trainTechNow(id)), COLORS.gold, step, h, false); // 覚える音（waza）が鳴るので「ぽん」は鳴らさない
+      const k = kimeteById(id);
+      if (!k) continue;
+      const pct = kimetePct(kimeteGauge(r, id));
+      const label = t('train2.tech', { tech: t(`newtech.${id}`), drill: t(`drill.${k.drill}.short`) });
+      this.card(i++, label, () => this.toDrill(k.drill, id), COLORS.gold, step, h, true, pct > 0 ? t('kimete.progress', { pct }) : '');
     }
     if (cards.more) {
       fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.more', { n: cards.more }), textStyle(24, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
@@ -85,11 +89,14 @@ export class TrainingScene extends Phaser.Scene {
     }
   }
 
-  card(i, label, onTap, color, step, h, pon = true) {
+  // sub＝札の2行目（決め技の習得％）。あれば1行目を上へずらし、下に小さく出す
+  card(i, label, onTap, color, step, h, pon = true, sub = '') {
     const { width } = this.scale;
     const y = CARD.top + step * i + step / 2;
     const gfx = roundBox(this, width / 2, y, CARD.w, h, COLORS.panel, { radius: 26, stroke: COLORS.frame });
-    fitText(this.add.text(width / 2, y, label, textStyle(32, color)).setOrigin(0.5), CARD.w - 40);
+    const lift = sub ? Math.min(20, h * 0.18) : 0;
+    fitText(this.add.text(width / 2, y - lift, label, textStyle(sub ? 30 : 32, color)).setOrigin(0.5), CARD.w - 40);
+    if (sub) fitText(this.add.text(width / 2, y + h * 0.28, sub, textStyle(24, COLORS.ink, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 40);
     const zone = hitZone(this, width / 2, y, CARD.w, h);
     let down = false; // 押しはこの札の上で始まったものだけ数える（widgets.button と同じ）
     zone.on('pointerdown', () => { down = true; gfx.setAlpha(0.8); });
@@ -103,37 +110,10 @@ export class TrainingScene extends Phaser.Scene {
     });
   }
 
-  // 遊びの画面へ（押しの最中に場面を替えない：次のフレームへ）
-  toDrill(kind) {
+  // 遊びの画面へ（押しの最中に場面を替えない：次のフレームへ）。kimete＝決め技の id（決め技モード）
+  toDrill(kind, kimete = null) {
     if (this.busy) return;
     this.busy = true;
-    this.time.delayedCall(0, () => this.scene.start('drill', { kind }));
-  }
-
-  // 決め技を覚える1コマ：記録して保存 → 絵（あれば）と効果音 → 描き直すか、終わったら同じ相手へ（自分から来た稽古は番付へ）
-  doStep(kind, apply) {
-    if (this.busy) return;
-    this.busy = true;
-    const free = canLeaveTraining(session.run);
-    apply();
-    playTraining(kind);
-    // 押しの最中に札を消さない：描き直しは次のフレームへ
-    this.time.delayedCall(0, () => {
-      this.draw(); // 残りコマと札を新しい状態に（下地・絵・字はこの上に重ねる）
-      const { width, height } = this.scale;
-      this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setInteractive(); // 暗い下地（下の札を押せない）
-      const key = `train-${kind}`;
-      if (this.textures.exists(key)) {
-        const img = this.add.image(width / 2, height / 2, key);
-        img.setScale(Math.min(560 / img.width, 420 / img.height));
-      }
-      const done = !session.run.training;
-      if (done) fitText(this.add.text(width / 2, 1235, t(free ? 'train2.doneFree' : 'train2.done'), textStyle(34, COLORS.gold)).setOrigin(0.5), width - 60);
-      this.time.delayedCall(POP_MS, () => {
-        this.busy = false;
-        if (done) this.scene.start(free ? 'ladder' : 'opponent');
-        else this.draw(); // 下地・絵ごと描き直す
-      });
-    });
+    this.time.delayedCall(0, () => this.scene.start('drill', kimete ? { kind, kimete } : { kind }));
   }
 }

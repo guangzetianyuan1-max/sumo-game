@@ -1,18 +1,20 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { GuideScene } from './scenes/GuideScene.js?v=34';
-import { LadderScene } from './scenes/LadderScene.js?v=34';
-import { OpponentScene } from './scenes/OpponentScene.js?v=34';
-import { AfterScene } from './scenes/AfterScene.js?v=34';
-import { TrainingScene } from './scenes/TrainingScene.js?v=34';
-import { DrillScene } from './scenes/DrillScene.js?v=34';
-import { KamiScene } from './scenes/KamiScene.js?v=34';
-import { HelpScene } from './scenes/HelpScene.js?v=34';
-import { KenshoScene } from './scenes/KenshoScene.js?v=34';
-import { ClearScene } from './scenes/ClearScene.js?v=34';
-import { initLang } from './i18n/i18n.js?v=34';
-import { storage } from './ui/widgets.js?v=34';
-import { session, lastSlot } from './state.js?v=34';
-import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=34';
+import { CautionScene } from './scenes/CautionScene.js?v=35';
+import { CoverScene } from './scenes/CoverScene.js?v=35';
+import { GuideScene } from './scenes/GuideScene.js?v=35';
+import { LadderScene } from './scenes/LadderScene.js?v=35';
+import { OpponentScene } from './scenes/OpponentScene.js?v=35';
+import { AfterScene } from './scenes/AfterScene.js?v=35';
+import { TrainingScene } from './scenes/TrainingScene.js?v=35';
+import { DrillScene } from './scenes/DrillScene.js?v=35';
+import { KamiScene } from './scenes/KamiScene.js?v=35';
+import { HelpScene } from './scenes/HelpScene.js?v=35';
+import { KenshoScene } from './scenes/KenshoScene.js?v=35';
+import { ClearScene } from './scenes/ClearScene.js?v=35';
+import { initLang } from './i18n/i18n.js?v=35';
+import { storage } from './ui/widgets.js?v=35';
+import { session, lastSlot } from './state.js?v=35';
+import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=35';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;
@@ -58,7 +60,7 @@ function start() {
     parent: 'game',
     backgroundColor: '#141a2e',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 720, height: 1280 },
-    scene: [GuideScene, HelpScene, LadderScene, OpponentScene, KenshoScene, KamiScene, AfterScene, ClearScene, TrainingScene, DrillScene],
+    scene: [CautionScene, CoverScene, GuideScene, HelpScene, LadderScene, OpponentScene, KenshoScene, KamiScene, AfterScene, ClearScene, TrainingScene, DrillScene],
   });
   hookMusic(game);
 }

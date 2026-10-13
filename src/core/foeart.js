@@ -1,6 +1,6 @@
 // フィギュア風の立ち絵の選び方（10/12 夜 設計書 §8・§10）：主人公・敵の絵の鍵と置き場・段階の見せ方・取組での敵の傾け方
 // 絵は tools/prep_figures.py が assets/figures/ に置く（画面用）・assets/figures/dot/（取組用のドット）
-import { PLAY_COUNT } from './ladder.js?v=34';
+import { PLAY_COUNT } from './ladder.js?v=35';
 
 // 壱号・弐号＝ふだんの姿／参号〜伍号＝本気の姿／20体版は20体目（PLAY_COUNT - 1）が大ボス
 export function foeForm(foe) {

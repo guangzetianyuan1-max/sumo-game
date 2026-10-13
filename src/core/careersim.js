@@ -1,12 +1,12 @@
 // 一生の通し（20体版の強さ合わせと試験用・設計書 §5）。取組は紙相撲の自動（kamiai.autoBout）
-// 勝てば次の敵へ・負けたら稽古（3コマ）：解禁していて覚えていない決め技があれば1コマで覚え、残りは一番低い心技体を伸ばす。
+// 勝てば次の敵へ・負けたら稽古（3コマ）：解禁していて覚えていない決め技があれば、ふつうの出来（6割＝ゲージ満タン）の1コマで覚え、残りは一番低い心技体を伸ばす。
 // 取組ごとに、覚えた決め技の中から敵の型との相性（affinity）が一番良い物を持っていく（同じなら解禁の早い物）。
 // 最初は五月雨突きが解禁済みでも、まだ覚えていない＝最初の稽古までは決め技無しで取る
-import { newRun, currentFoe, recordResult, startTraining, trainStat, trainNewTech, STATS } from './run.js?v=34';
-import { autoBout } from './kamiai.js?v=34';
-import { recommendKimete } from './kimetepick.js?v=34';
-import { PLAY_COUNT } from './ladder.js?v=34';
-import { drillMult, NORMAL_SCORE } from './drills.js?v=34';
+import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=35';
+import { autoBout } from './kamiai.js?v=35';
+import { recommendKimete } from './kimetepick.js?v=35';
+import { PLAY_COUNT } from './ladder.js?v=35';
+import { drillMult, NORMAL_SCORE } from './drills.js?v=35';
 
 export const MAX_BOUTS = 300;
 
@@ -21,7 +21,7 @@ export function trainAfterLoss(run) {
   let r = startTraining(run);
   while (r.training) {
     const learn = r.unlocked.find((id) => r.newKnown.indexOf(id) < 0);
-    if (learn) { r = trainNewTech(r, learn); continue; }
+    if (learn) { r = trainKimete(r, learn, NORMAL_SCORE).run; continue; } // 6割の出来＝1コマで習得（10/14 の習得ゲージの前と同じ結果）
     const low = STATS.reduce((a, b) => (r.stats[b] < r.stats[a] ? b : a), STATS[0]);
     r = trainStat(r, low, SIM_DRILL_MULT);
   }

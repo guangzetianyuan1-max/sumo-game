@@ -1,9 +1,9 @@
 // src/scenes/AfterScene.js — 取組の後（10/12 夜）：勝ち＝倒した相手・心技体の伸び・昇進・新技の解禁・クリア → 番付表
 // 負け＝心技体の伸び（少し）・「もう一度」（相手の情報へ）か「稽古へ」。同じ相手に3連敗したら案内役が稽古を勧める（選ぶのは本人）
-import { t, foeLabel } from '../i18n/i18n.js?v=34';
-import { session, suggestTraining, trainBegin } from '../state.js?v=34';
-import { playBout } from '../ui/sfx.js?v=34';
-import { button, topTitle, fitText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=34';
+import { t, foeLabel } from '../i18n/i18n.js?v=35';
+import { session, suggestTraining, trainBegin } from '../state.js?v=35';
+import { playBout } from '../ui/sfx.js?v=35';
+import { button, topTitle, fitText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=35';
 
 const STATS = ['shin', 'gi', 'tai'];
 

@@ -1,15 +1,15 @@
 // src/state.js — 場面をまたぐ選び。run は勝ち抜き（入門を終えるまで null）。移り変わりはここの関数で行い、そのたびに保存する
 // 10/12 夜 場所をやめて100体の勝ち抜きへ（設計書 §3）。場所の頃の関数は basho.js・career.js に残る（使わない）
-import { TYPE_IDS, TYPES } from './data/types.js?v=34';
-import { recommendStrategy } from './core/recommend.js?v=34';
-import { defaultStrategy } from './core/strategy.js?v=34';
-import { CAREER_KEY } from './core/career.js?v=34';
-import { learnMove } from './core/learn.js?v=34';
-import { rankOf } from './core/ladder.js?v=34';
-import { HERO_TYPE } from './data/heroes.js?v=34';
+import { TYPE_IDS, TYPES } from './data/types.js?v=35';
+import { recommendStrategy } from './core/recommend.js?v=35';
+import { defaultStrategy } from './core/strategy.js?v=35';
+import { CAREER_KEY } from './core/career.js?v=35';
+import { learnMove } from './core/learn.js?v=35';
+import { rankOf } from './core/ladder.js?v=35';
+import { HERO_TYPE } from './data/heroes.js?v=35';
 import {
-  newRun, currentFoe, recordResult, startTraining, leaveTraining, trainStat, trainNewTech, serializeRun, deserializeRun,
-} from './core/run.js?v=34';
+  newRun, currentFoe, recordResult, startTraining, leaveTraining, trainStat, trainKimete, serializeRun, deserializeRun,
+} from './core/run.js?v=35';
 
 export const session = {
   you: HERO_TYPE,
@@ -159,7 +159,12 @@ export const trainFreeBegin = (store = localStore()) => keep(store, startTrainin
 export const trainLeaveNow = (store = localStore()) => keep(store, leaveTraining(session.run));
 // 稽古の遊び（src/core/drills.js）の出来の倍率 mult を掛けて伸ばす
 export const drillStatNow = (stat, mult, store = localStore()) => keep(store, trainStat(session.run, stat, mult));
-export const trainTechNow = (id, store = localStore()) => keep(store, trainNewTech(session.run, id));
+// 決め技の稽古1コマ（score＝遊びの出来・10/14）：ゲージを足して保存し、{ run, from, to, learned } を返す（結果の画面用）
+export function drillKimeteNow(id, score, store = localStore()) {
+  const note = trainKimete(session.run, id, score);
+  keep(store, note.run);
+  return note;
+}
 export const learnNow = (id, store = localStore()) => keep(store, learnMove(session.run, id));
 
 // つづきから：稽古の途中なら稽古・まだ遊び方を見ていない（かつ未クリア）なら遊び方・ほかは番付表（紙相撲では従来の技を覚える画面へは行かない・古い記録に pendingLearn が残っていても無視）

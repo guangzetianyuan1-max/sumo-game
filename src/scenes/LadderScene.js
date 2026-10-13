@@ -1,10 +1,10 @@
 // src/scenes/LadderScene.js — 勝ち抜き番付（10/12 夜）：主人公の絵と名・地位・倒した数の目盛り・次の昇進・心技体・次の相手 → 相手の情報
 // 負けた後の稽古の途中なら稽古へ（つづきからと同じ）。下に「稽古する」：いつでも何度でも自分から稽古に入れる（10/13 本人「好きなときに稽古が出来るように」）
-import { t, heroName, foeLabel } from '../i18n/i18n.js?v=34';
-import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=34';
-import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=34';
-import { currentFoe, canLeaveTraining } from '../core/run.js?v=34';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=34';
+import { t, heroName, foeLabel } from '../i18n/i18n.js?v=35';
+import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=35';
+import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=35';
+import { currentFoe, canLeaveTraining } from '../core/run.js?v=35';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=35';
 
 const BAR = { x: 60, y: 520, w: 600, h: 34 };
 const HELP_Y = 1062; // 「遊び方」（次の相手の行 960 と、大きなボタン 1135〜 の間）
