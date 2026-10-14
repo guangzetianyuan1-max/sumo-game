@@ -1,10 +1,10 @@
 // 紙相撲の計算（10/13 本人「紙相撲に切り替える」・設計書 2026-10-13-sumo-kamizumo-design.md）
 // 画面から切り離した、型紙2枚の動き。単位＝画面の px と秒。x＝足もとの真ん中・y＝箱の面からの高さ（上が＋）
 // a＝傾き（＋＝自分の後ろへ反る）。東＝主人公＝左から右へ（dir +1）・西＝敵＝右から左へ（dir -1）
-import { makeRng } from './rng.js?v=38';
-import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=38';
-import { ON_BEAT } from './beat.js?v=38';
-import { IPPON, ipponJudge } from './drills.js?v=38';
+import { makeRng } from './rng.js?v=39';
+import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=39';
+import { ON_BEAT } from './beat.js?v=39';
+import { IPPON, ipponJudge } from './drills.js?v=39';
 
 export { ON_BEAT };
 
@@ -218,6 +218,32 @@ export function press(st, side) {
   if (!st.f[side].down) st.f[side].upHeld = false; // 立っていて新しい押し＝起き上がりの指はもう関係ない（2本目の指で猶予を延ばし続けられない・Ruling 6 直し2）
   if (st.f[side].ring) return pressRing(st, side);
   tap(st, side);
+  return null;
+}
+
+// ---- ボタン2つ（10/15 設計書 §11）：画面の指の入口の分け方だけ（物の動きは press・tap・hold のまま・機械のたたき手は press/hold を使う） ----
+// 左＝連打だけ：押し合いの間の tap（true を返す）。〇・守りのバー・倒れている時と、立ち合い（ready）の間は何もしない（false）。
+// 立っていて受けた押しは起き上がりの指（upHeld）を外す（press と同じ：右を押したままで次の攻めを止め続けられない）
+export function mash(st, side) {
+  const me = st.f[side];
+  if (st.phase !== 'push' || me.ring || me.down || barOpen(st, side)) return false;
+  me.upHeld = false;
+  const t = st.tactic;
+  if (t && t.side !== side && t.phase === 'warn') return false; // 自分への予告の間は跳ねない（tap の早期 return と同じ）＝左は沈まない・数えない（バーの結果が出た後も予告は続く）
+  tap(st, side);
+  return true;
+}
+
+// 右＝一押しと長押し：倒れていれば長押しの始まり（起き上がり）・〇があればその判定（press と同じ 0・1・2）・
+// 押し合いの間はほかも長押しの始まり（バーの間はため始め・無い時は何も起きない）。跳ねない・立ち合いの早押しにならない。〇の判定のほかは null
+export function strike(st, side) {
+  if (st.phase === 'done') return null;
+  const me = st.f[side];
+  if (me.down) { hold(st, side, true); return null; }
+  if (me.ring) return press(st, side);
+  if (st.phase !== 'push') return null;
+  me.upHeld = false;
+  hold(st, side, true);
   return null;
 }
 

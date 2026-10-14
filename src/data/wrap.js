@@ -20,3 +20,18 @@ export function jaWrap(text, maxWidth, measure) {
     return lines.join('\n');
   }).join('\n');
 }
+
+// 行の長さをそろえて折る（最後の行に2〜3字だけ残さない）：まず貪欲に折って行数 n を決め、全体の幅÷n から少しずつ広げて、同じ行数で収まる一番狭い幅で折り直す。
+// 段落（改行）が複数ある文は、段落ごとに同じことをする。step＝広げる刻み（字の大きさの半分くらい）
+export function jaWrapBalanced(text, maxWidth, measure, step = 10) {
+  if (typeof text !== 'string') return '';
+  return text.split('\n').map((para) => {
+    const n = jaWrap(para, maxWidth, measure).split('\n').length;
+    if (n < 2) return jaWrap(para, maxWidth, measure);
+    for (let w = measure(para) / n; w < maxWidth; w += step) {
+      const out = jaWrap(para, w, measure);
+      if (out.split('\n').length <= n) return out;
+    }
+    return jaWrap(para, maxWidth, measure);
+  }).join('\n');
+}

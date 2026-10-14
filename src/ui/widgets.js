@@ -1,15 +1,15 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=38';
-import { HERO_IDS } from '../data/heroes.js?v=38';
-import { heroArt } from '../core/foeart.js?v=38';
-import { GUIDE_IDS } from '../data/guides.js?v=38';
-import { HEYA_IDS } from '../data/heya.js?v=38';
-import { t, getLang } from '../i18n/i18n.js?v=38';
-import { jaWrap } from '../data/wrap.js?v=38';
-import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=38';
-import { TRAININGS } from '../core/career.js?v=38';
-import { saveNow } from '../state.js?v=38';
-import { playBout } from './sfx.js?v=38';
+import { TYPE_IDS } from '../data/types.js?v=39';
+import { HERO_IDS } from '../data/heroes.js?v=39';
+import { heroArt } from '../core/foeart.js?v=39';
+import { GUIDE_IDS } from '../data/guides.js?v=39';
+import { HEYA_IDS } from '../data/heya.js?v=39';
+import { t, getLang } from '../i18n/i18n.js?v=39';
+import { jaWrap, jaWrapBalanced } from '../data/wrap.js?v=39';
+import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=39';
+import { TRAININGS } from '../core/career.js?v=39';
+import { saveNow } from '../state.js?v=39';
+import { playBout } from './sfx.js?v=39';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -140,7 +140,7 @@ export function speakerFace(scene, who, x, y, size, mood = 'normal') {
   } else {
     const box = roundBox(scene, x, fy, face, face, COLORS.buttonSub, { radius: 22, stroke: COLORS.frame });
     const label = isHeya ? t(`heya.${who}.oyakata`) : t(`guide.${who}.name`);
-    const text = scene.add.text(x, fy, label, textStyle(Math.round(face / 5), COLORS.ink, {
+    const text = scene.add.text(x, fy, label, textStyle(Math.max(28, Math.round(face / 5)), COLORS.ink, {
       align: 'center', wordWrap: { width: face - 16, useAdvancedWrap: true },
     })).setOrigin(0.5);
     fitText(text, face - 16);
@@ -148,15 +148,15 @@ export function speakerFace(scene, who, x, y, size, mood = 'normal') {
     objs.push(box, text);
   }
   if (isHeya) {
-    const tag = scene.add.text(x, y + size / 2 - tagH / 2, t('oyakata.label'), textStyle(20, COLORS.gold)).setOrigin(0.5);
+    const tag = scene.add.text(x, y + size / 2 - tagH / 2, t('oyakata.label'), textStyle(28, COLORS.gold)).setOrigin(0.5);
     objs.push(fitText(tag, size));
   }
   return objs;
 }
-const OYAKATA_TAG_H = 26; // 顔の下の「親方」の札の高さ（字20px）
+const OYAKATA_TAG_H = 36; // 顔の下の「親方」の札の高さ（字28px）
 
 // 吹き出しの字。日本語は行頭禁則つきで自分で折り（jaWrap）、英語は Phaser の折り返し。収まるまで字を一段ずつ小さくする
-export function bubbleText(scene, x, y, str, inner, { size = 26, min = 14, lineSpacing = 4 } = {}) {
+export function bubbleText(scene, x, y, str, inner, { size = 28, min = 28, lineSpacing = 4 } = {}) {
   const ja = getLang() === 'ja';
   const style = { fontStyle: '500', lineSpacing, ...(ja ? {} : { wordWrap: { width: inner.w, useAdvancedWrap: true } }) };
   const text = scene.add.text(x, y, str, textStyle(size, COLORS.ink, style)).setOrigin(0.5);
@@ -165,10 +165,10 @@ export function bubbleText(scene, x, y, str, inner, { size = 26, min = 14, lineS
     text.setFontSize(s);
     if (!ja) return;
     probe.setFontSize(s);
-    text.setText(jaWrap(str, inner.w, (v) => {
+    text.setText(jaWrapBalanced(str, inner.w, (v) => {
       probe.setText(v);
       return probe.width;
-    }));
+    }, s / 2));
   };
   let s = size;
   set(s);
@@ -177,13 +177,31 @@ export function bubbleText(scene, x, y, str, inner, { size = 26, min = 14, lineS
     set(s);
   }
   if (probe) probe.destroy();
-  fitText(text, inner.w); // 区切りの無い長い語が残っても枠の幅に収める
+  fitText(text, inner.w + 16); // 区切りの無い長い語が残っても枠の幅に収める（吹き出しの内側の余白 14 までは字がはみ出してよい＝行末の句読点のぶら下げで縮めない）
   if (text.displayHeight > inner.h) text.setScale(text.scaleX * inner.h / text.displayHeight); // 最後の守り
   return text;
 }
 
+// 折り返す字（真ん中そろえ・上の端が y）。日本語は行頭禁則つきで自分で折り、英語は Phaser の折り返し。maxW を越えない（長い語は縮める）
+export function wrapText(scene, x, y, str, maxW, size, color, extra = {}) {
+  const ja = getLang() === 'ja';
+  const text = scene.add.text(x, y, str, textStyle(size, color, { align: 'center', lineSpacing: 4, ...extra, ...(ja ? {} : { wordWrap: { width: maxW, useAdvancedWrap: true } }) })).setOrigin(0.5, 0);
+  if (ja) {
+    const probe = scene.add.text(0, 0, '', textStyle(size, color, extra)).setVisible(false);
+    const measure = (v) => {
+      probe.setText(v);
+      return probe.width;
+    };
+    // 2行以上になる時は行の長さをそろえる（最後の行に2〜3字だけ残さない）
+    const wrapped = jaWrapBalanced(str, maxW, measure, size / 2);
+    text.setText(wrapped);
+    probe.destroy();
+  }
+  return fitText(text, maxW);
+}
+
 // 吹き出し（札の地・金の縁・左に顔へ向くしっぽ）。left,top,w,h の中に str を折り返し、収まるまで字を小さくする。部品の配列を返す
-export function speechBubble(scene, left, top, w, h, str, { size = 26, min = 14 } = {}) {
+export function speechBubble(scene, left, top, w, h, str, { size = 28, min = 28 } = {}) {
   const cy = top + h / 2;
   const box = roundBox(scene, left + w / 2, cy, w, h, COLORS.panel, { radius: 22, stroke: COLORS.frame });
   const tail = scene.add.graphics();
@@ -261,14 +279,14 @@ export function hitZone(scene, x, y, w, h) {
 const MULTI_TAP_MS = 150;
 const lastTap = new WeakMap(); // 画面 → { at, zone }
 
-export function button(scene, x, y, w, h, label, onTap, { color = COLORS.button, size = 30, sub = null, subSize = 24 } = {}) {
+export function button(scene, x, y, w, h, label, onTap, { color = COLORS.button, size = 30, sub = null, subSize = 28 } = {}) {
   const gfx = roundBox(scene, x, y, w, h, color, { radius: h / 2, stroke: COLORS.frame });
   const zone = hitZone(scene, x, y, w, h);
   const text = scene.add.text(x, sub ? y - h * 0.2 : y, label, textStyle(size, COLORS.ink, { align: 'center' })).setOrigin(0.5);
-  fitText(text, w - 48);
+  fitText(text, w - 36);
   if (sub) {
     const subText = scene.add.text(x, y + h * 0.22, sub, textStyle(subSize, COLORS.sub, { align: 'center', fontStyle: '500' })).setOrigin(0.5);
-    fitText(subText, w - 48);
+    fitText(subText, w - 36);
   }
   // 押しはこのボタンの上で始まったものだけ数える（外で押して滑り込んだ離しは無視）
   let down = false;
@@ -299,7 +317,7 @@ export const BACK = { x: 20, y: 20, w: 150, h: 56 };
 export const TOP_LEFT_FREE = BACK.x + BACK.w + 16; // 左上の「もどる」の右の端＋すき間＝上の段の字はここから右に置く
 
 export function backButton(scene, onTap) {
-  return button(scene, BACK.x + BACK.w / 2, BACK.y + BACK.h / 2, BACK.w, BACK.h, t('common.backTop'), onTap, { color: COLORS.buttonSub, size: 24 });
+  return button(scene, BACK.x + BACK.w / 2, BACK.y + BACK.h / 2, BACK.w, BACK.h, t('common.backTop'), onTap, { color: COLORS.buttonSub, size: 28 });
 }
 
 // 右上の「セーブ」（10/11 本人「セーブボタンを要所に入れて欲しい」）。「もどる」と左右対称（右20・上20・150×56）。
@@ -311,7 +329,7 @@ const TOAST_MS = 1500;
 export function saveButton(scene) {
   const { width } = scene.scale;
   const x = width - SAVE.right - SAVE.w / 2;
-  return button(scene, x, SAVE.y + SAVE.h / 2, SAVE.w, SAVE.h, t('save.button'), () => showSaveToast(scene, saveNow()), { color: COLORS.buttonSub, size: 24 });
+  return button(scene, x, SAVE.y + SAVE.h / 2, SAVE.w, SAVE.h, t('save.button'), () => showSaveToast(scene, saveNow()), { color: COLORS.buttonSub, size: 28 });
 }
 
 // 画面の下・大きなボタンのすぐ上に出す小さな札（押しても進まない時の理由の1行と同じ所）。
@@ -325,7 +343,7 @@ function showSaveToast(scene, ok) {
   }
   const D = 900;
   const cy = 1100;
-  const text = scene.add.text(width / 2, cy, t(ok ? 'save.done' : 'save.fail'), textStyle(26, ok ? COLORS.gold : COLORS.ink, { fontStyle: '500' }))
+  const text = scene.add.text(width / 2, cy, t(ok ? 'save.done' : 'save.fail'), textStyle(28, ok ? COLORS.gold : COLORS.ink, { fontStyle: '500' }))
     .setOrigin(0.5).setDepth(D + 1);
   fitText(text, width - 2 * SAVE.right - 36);
   const w = text.displayWidth + 40;
@@ -349,8 +367,8 @@ export function topTitle(scene, y, str, size, color, { save = false } = {}) {
 }
 
 // 心・技・体の3本の横棒（金の棒＋暗い溝・値は 0〜100 で棒の長さ・右に数）。x,y は左上。使った高さを返す。
-// compact＝3本を横に1列に並べた小さい版（取組の画面用）。ラベルの文は stat.shin / stat.gi / stat.tai
-export function statBars(scene, x, y, w, stats, { compact = false } = {}) {
+// ラベルの文は stat.shin / stat.gi / stat.tai（字 28：日本語は1字なので狭く、英語は Spirit が収まる幅）
+export function statBars(scene, x, y, w, stats) {
   const keys = ['shin', 'gi', 'tai'];
   const GOLD = 0xe3c27a;
   const track = (cx, cy, tw, th) => roundBox(scene, cx + tw / 2, cy, tw, th, 0x2f3858, { radius: th / 2, shadow: false });
@@ -358,30 +376,17 @@ export function statBars(scene, x, y, w, stats, { compact = false } = {}) {
     const fw = Math.max(th, tw * Math.max(0, Math.min(100, v)) / 100);
     return roundBox(scene, cx + fw / 2, cy, fw, th, GOLD, { radius: th / 2, shadow: false });
   };
-  if (compact) {
-    const col = w / 3;
-    const size = 18;
-    keys.forEach((k, i) => {
-      const cx = x + i * col;
-      const label = scene.add.text(cx, y, t(`stat.${k}`), textStyle(size, COLORS.ink)).setOrigin(0, 0);
-      fitText(label, col * 0.5);
-      scene.add.text(cx + col - 10, y, String(Math.round(stats[k])), textStyle(size, COLORS.gold)).setOrigin(1, 0);
-      track(cx, y + 30, col - 10, 10);
-      fill(cx, y + 30, col - 10, 10, stats[k]);
-    });
-    return 38;
-  }
   const ROWH = 44;
-  const labelW = 96;
-  const numW = 46;
+  const labelW = getLang() === 'ja' ? 64 : 124;
+  const numW = 58;
   keys.forEach((k, i) => {
     const cy = y + i * ROWH + ROWH / 2;
-    fitText(scene.add.text(x, cy, t(`stat.${k}`), textStyle(26, COLORS.ink)).setOrigin(0, 0.5), labelW - 6);
+    fitText(scene.add.text(x, cy, t(`stat.${k}`), textStyle(28, COLORS.ink)).setOrigin(0, 0.5), labelW - 6);
     const bx = x + labelW;
     const bw = w - labelW - numW;
     track(bx, cy, bw, 18);
     fill(bx, cy, bw, 18, stats[k]);
-    scene.add.text(x + w, cy, String(Math.round(stats[k])), textStyle(26, COLORS.gold)).setOrigin(1, 0.5);
+    scene.add.text(x + w, cy, String(Math.round(stats[k])), textStyle(28, COLORS.gold)).setOrigin(1, 0.5);
   });
   return ROWH * keys.length;
 }

@@ -1,12 +1,14 @@
-// src/core/kamibutton.js — 紙相撲の下のボタン1つの見た目（10/14 ボタン1つ Task 3・設計書 2026-10-14-sumo-one-button-ring-bar-design.md §2）。画面から切り離した純粋な関数
-// 場面→mode：立ち合い前 wait・合図（立ち合いの〇）go・押し合い tap・決め技の〇 ring・守りのバー bar・
-//   バーが出た時に指が押したまま（ためていない）again（「はなして、もう一度」・ledger Ruling 6/7 の後始末）・
-//   踏ん張り中（バーに失敗して来た敵の踏ん張りの act＝押すと跳ね返される）stay「待て」（最終点検の直し 3）・倒れた hold・終わり done
-// 〇とバーの絵そのものは src/ui/hud.js（中央上の〇・左端のバー）。ここはボタンの字・色・脈・満ちと、下の案内・ことねの吹き出しの鍵だけ
-import { KAMI, beatOffset, gaugeLit, barGauge } from './kami.js?v=38';
-import { gaugeTier } from './gaugetier.js?v=38';
-import { IPPON } from './drills.js?v=38';
-import { BAR } from './tactics.js?v=38';
+// src/core/kamibutton.js — 紙相撲の下のボタン2つの見た目（10/15 ボタン2つに戻す・設計書 2026-10-14-sumo-one-button-ring-bar-design.md §11）。画面から切り離した純粋な関数
+// 左＝連打だけ（leftLook）・右＝一押しと長押し（rightLook：〇の判定・守りのバー・起き上がり）。どちらも、出番でない時は暗い（off）
+// 場面→mode（両方の元）：立ち合い前 wait・合図（立ち合いの〇）go・押し合い tap・決め技の〇 ring・守りのバー bar・
+//   バーが出た時に右の指が押したまま（ためていない）again（「はなして、もう一度」・ledger Ruling 6/7 の後始末）・
+//   踏ん張り中（バーに失敗して来た敵の踏ん張りの act＝左で押すと跳ね返される）stay「待て」・倒れた hold・終わり done
+// 左が明るいのは tap だけ（stay は「待て」で暗い）・〇／バー／again／倒れの時は暗く「→右」。右が明るいのは go・ring・bar・again・hold（tap・stay の時は暗い）
+// 〇とバーの絵そのものは src/ui/hud.js（中央上の〇・左端のバー）。ここはボタンの字・色・脈・満ち・暗さと、下の案内・ことねの吹き出しの鍵だけ
+import { KAMI, beatOffset, gaugeLit, barGauge } from './kami.js?v=39';
+import { gaugeTier } from './gaugetier.js?v=39';
+import { IPPON } from './drills.js?v=39';
+import { BAR } from './tactics.js?v=39';
 
 export const BUTTON_COLOR = { // 遊び方の見本（HelpScene）も同じ色を使う
   wait: 0x5a5f6e, // 灰
@@ -18,10 +20,12 @@ export const BUTTON_COLOR = { // 遊び方の見本（HelpScene）も同じ色�
   stay: 0x6e4a46, // くすんだ赤茶（踏ん張り中は待て・攻めの札の「踏ん張り中」と同じ系統）
   hold: 0x3d6fc8, // 青（起き上がり）
   done: 0x5a5f6e,
+  off: 0x3a3f4c, // 暗い灰（出番でないボタン・左右とも）
 };
 const LABEL = { wait: 'wait', go: 'go', ring: 'go', tap: 'tap', bar: 'bar', again: 'again', stay: 'stay', hold: 'hold', done: 'wait' }; // 〇の時は立ち合いも決め技も「一押し！」
 const HINT = { wait: 'ready', go: 'ready', ring: 'ring', tap: 'push', bar: 'bar', again: 'again', stay: 'stay', hold: 'down' };
 const COACH = { wait: 'ready', go: 'ready', ring: 'finish', tap: 'push', bar: 'bar', again: 'again', stay: 'stay', hold: 'down' };
+const DIM = { wait: true, stay: true, done: true, off: true }; // 暗く描く mode
 const RING_PULSE_S = 0.5; // 〇のぴったりからこの秒離れると脈は 0
 
 // 決め技のゲージの段（光っている間だけ・光っていない＝0）：相性の倍率と、光ってからの割合（gaugeTier）
@@ -32,12 +36,14 @@ export function gaugeTierOf(st, side = 'east') {
   return gaugeTier(me.kimete ? me.kimete.power : 1, frac);
 }
 
-const look = (mode, pulse = 0, fill = 0, alert = false, band = null) => ({ mode, label: `kami.btn.${LABEL[mode]}`, color: BUTTON_COLOR[mode], pulse, fill, alert, band });
+const look = (mode, pulse = 0, fill = 0, alert = false, band = null) => ({ mode, label: `kami.btn.${LABEL[mode]}`, color: BUTTON_COLOR[mode], pulse, fill, alert, band, dim: !!DIM[mode] });
+// 出番でないボタン：左＝「→右」（toRight）・右＝「一押し 長押し」（right）
+const off = (label) => ({ mode: 'off', label: `kami.btn.${label}`, color: BUTTON_COLOR.off, pulse: 0, fill: 0, alert: false, band: null, dim: true });
 const ringPulse = (st, r) => Math.max(0, 1 - Math.abs(st.t - r.hitAt) / RING_PULSE_S);
 
-// ボタン1つの見た目：{ mode, label（字の鍵）, color, pulse（0〜1・ふちの輪）, fill（0〜1・弧）, alert（赤いふち＝守りの間）, band（バーの間だけ・弧の上の緑の帯 [下, 上]＝左端のバーと同じ割合） }
+// 場面の見た目（左右の元）：{ mode, label（字の鍵）, color, pulse（0〜1・ふちの輪）, fill（0〜1・弧）, alert（赤いふち＝守りの間）, band（バーの間だけ・弧の上の緑の帯 [下, 上]＝左端のバーと同じ割合）, dim（暗く） }
 // 倒れている間は〇やバーがあっても hold（長押しは起き上がりに使う・バーはためられない）
-export function buttonLook(st, side = 'east') {
+function sceneLook(st, side) {
   const me = st.f[side];
   if (st.phase === 'done') return look('done');
   if (st.phase === 'ready') {
@@ -52,19 +58,32 @@ export function buttonLook(st, side = 'east') {
     return look('bar', 0, b.heldFrom === null ? 0 : barGauge(st), true, [b.center - b.half, b.center + b.half]);
   }
   const tac = st.tactic;
+  if (tac && tac.side !== side && tac.phase === 'warn') return look('stay'); // 予告の間（バーの結果が出た後も続く）は左で跳ねられない＝暗く「待て」
   if (tac && tac.side !== side && tac.id === 'fumbari' && tac.phase === 'act') return look('stay'); // 踏ん張り中は待つ（解けたら連打）
   return look('tap', Math.max(0, 1 - beatOffset(st) / (KAMI.BEAT / 2)));
 }
 
+// 左のボタン（連打）：押し合いの連打だけ明るい・踏ん張り中は「待て」・立ち合い前と終わりは暗い・〇／バー／はなして／倒れは暗く「→右」
+export function leftLook(st, side = 'east') {
+  const l = sceneLook(st, side);
+  return l.mode === 'tap' || l.mode === 'stay' || l.mode === 'wait' || l.mode === 'done' ? l : off('toRight');
+}
+
+// 右のボタン（一押しと長押し）：〇＝「一押し！」・バー＝「長押し！」・はなして もう一度・倒れ＝「長押しで起きる」・立ち合い前と終わりは暗い・連打の間と踏ん張り中は暗い
+export function rightLook(st, side = 'east') {
+  const l = sceneLook(st, side);
+  return l.mode === 'tap' || l.mode === 'stay' ? off('right') : l;
+}
+
 // 下の案内の1行の鍵（終わったら null）
 export function hintKey(st, side = 'east') {
-  const l = buttonLook(st, side);
+  const l = sceneLook(st, side);
   return l.mode === 'done' ? null : `kami.hint.${HINT[l.mode]}`;
 }
 
 // 練習の一番（1体目）のことねの吹き出しの鍵：立ち合い＝ready・押し合い＝push・〇＝finish・バー＝bar・はなして もう一度＝again・踏ん張り中＝stay・倒れた＝down・終わり＝null
 export function coachKey(st, side = 'east') {
-  const l = buttonLook(st, side);
+  const l = sceneLook(st, side);
   return l.mode === 'done' ? null : `kami.coach.${COACH[l.mode]}`;
 }
 

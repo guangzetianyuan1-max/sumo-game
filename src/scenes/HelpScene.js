@@ -1,27 +1,27 @@
-// src/scenes/HelpScene.js — 遊び方の3枚（20体版 Task 4・10/13／10/14 ボタン1つに書き直し）：ことねの顔と吹き出しで、紙相撲のたたき方を1枚ずつ
-// 1枚目＝ボタンは1つ・連打で前へ押して箱から落とす・倒れたら長押し／2枚目＝立ち合いと決め技は中央上の〇（縮む金の輪が白い輪に重なった瞬間に一押し）／
-// 3枚目＝相手の攻めは赤い札で予告され、左にバーが出る・長押しでためて緑の帯で離すと「こらえ成功！」
-// 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン1つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く
+// src/scenes/HelpScene.js — 遊び方の3枚（20体版 Task 4・10/13／10/15 ボタン2つに書き直し）：ことねの顔と吹き出しで、紙相撲のたたき方を1枚ずつ
+// 1枚目＝ボタンは2つ・左を連打で前へ押して箱から落とす・倒れたら右を長押し／2枚目＝立ち合いと決め技は中央上の〇（縮む金の輪が白い輪に重なった瞬間に右を一押し）／
+// 3枚目＝相手の攻めは赤い札で予告され、左にバーが出る・右を長押しでためて緑の帯で離すと「こらえ成功！」
+// 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=38';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=38';
-import { kamiArt } from '../core/foeart.js?v=38';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=38';
-import { t } from '../i18n/i18n.js?v=38';
-import { session, markHelpSeen } from '../state.js?v=38';
-import { ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=38';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=38';
+import { KAMI } from '../core/kami.js?v=39';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=39';
+import { kamiArt } from '../core/foeart.js?v=39';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=39';
+import { t, getLang } from '../i18n/i18n.js?v=39';
+import { session, markHelpSeen } from '../state.js?v=39';
+import { ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=39';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=39';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）
 const MINI = { k: 0.62, ground: 556, boxH: 66 }; // 見本の紙相撲：箱の上の面の y・箱の前の面の高さ
 const MINI_FIG_H = 250; // 見本の型紙の高さ
-const MINI_BTN = { y: 684, r: 58 }; // 見本の下のボタン1つ（箱の下・真ん中）
+const MINI_BTN = { y: 678, r: 64, dx: 115 }; // 見本の下のボタン2つ（箱の下・真ん中から左右へ dx）
 const MINI_RING = { at: { x: 360, y: 250 }, k: 0.4, ms: 1000, hold: 700 }; // 見本の〇（札の中の中央上・型紙の頭 306 より上・本番の 0.4 倍）：縮む長さ・ぴったりの後に止める長さ
 const MINI_BAR = { box: { x: 84, top: 226, h: 290, w: 30 }, spec: { center: 0.75, half: 0.12 }, ms: 1300, hold: 900 }; // 見本のバー（札の左端）：緑の帯で止まる
 const ALERT = 0xff4a4a; // 守りのバーの間のボタンのふちの赤い光（KamiScene と同じ）
 const WARN_RED = 0xb3261e; // 予告の札の赤（KamiScene と同じ）
-const COACH = { faceX: 100, faceY: 880, size: 150, left: 190, top: 785, w: 500, h: 190 };
+const COACH = { faceX: 84, faceY: 940, size: 130, left: 160, top: 770, w: 540, h: 340 }; // 吹き出しは見本の札（〜750）の下から足もとのボタン（1132〜）の上まで＝字 32 で収める
 const FOOT_Y = 1190;
 const HERO_KAMI = kamiArt(`hero_${HERO_TYPE}`);
 const FOE_KAMI = kamiArt('foe_robot_normal'); // 1体目の相手（ロボット）
@@ -59,7 +59,7 @@ export class HelpScene extends Phaser.Scene {
     this.mini(width, this.page);
 
     speakerFace(this, OKAMI, COACH.faceX, COACH.faceY, COACH.size);
-    speechBubble(this, COACH.left, COACH.top, COACH.w, COACH.h, t(`help.${this.page + 1}`), { size: 32, min: 18 });
+    speechBubble(this, COACH.left, COACH.top, COACH.w, COACH.h, t(`help.${this.page + 1}`), { size: 36, min: 28 });
 
     const last = this.page === PAGES - 1;
     if (last) {
@@ -78,7 +78,7 @@ export class HelpScene extends Phaser.Scene {
     this.scene.start('ladder');
   }
 
-  // 紙相撲の小さな見本：箱・紙の土俵・型紙2枚・下の大きなボタン1つ。page で場面を変える（①連打 ②中央上の〇 ③左端のバー）
+  // 紙相撲の小さな見本：箱・紙の土俵・型紙2枚・下の大きなボタン2つ。page で場面を変える（①左の連打 ②中央上の〇と右の一押し ③左端のバーと右の長押し）
   mini(width, page) {
     const { ground, boxH, k } = MINI;
     const cx = width / 2;
@@ -98,44 +98,49 @@ export class HelpScene extends Phaser.Scene {
     const foe = this.fig(FOE_KAMI.key, cx, ground);
     if (hero) hero.setX(cx - hero.displayWidth / 2 - space / 2);
     if (foe) foe.setX(cx + foe.displayWidth / 2 + space / 2);
-    const by = MINI_BTN.y;
+    const by = MINI_BTN.y, lx = cx - MINI_BTN.dx, rx = cx + MINI_BTN.dx;
     if (page === 0) {
-      // ①連打：主人公が跳ねて押す・ボタンは「連打！」で押すたびに沈む
+      // ①連打：主人公が跳ねて押す・左のボタンは「連打！」で押すたびに沈む・右は暗い
       if (hero) this.tweens.add({ targets: hero, y: ground - 22, duration: 180, yoyo: true, repeat: -1, repeatDelay: 120 });
-      const btn = this.miniButton(cx, by, 'tap', t('kami.btn.tap'));
+      const btn = this.miniButton(lx, by, 'tap', t('kami.btn.tap'));
       this.tweens.add({ targets: btn, scale: 0.9, duration: 90, yoyo: true, repeat: -1, repeatDelay: 120 });
+      this.miniButton(rx, by, 'off', t('kami.btn.right'), false, true);
     } else if (page === 1) {
-      // ②中央上の〇：白い的の輪に金の輪が縮んで重なる → ◎ → くり返す。ボタンは「一押し！」で脈打つ
+      // ②中央上の〇：白い的の輪に金の輪が縮んで重なる → ◎ → くり返す。右のボタンは「一押し！」で脈打つ・左は暗く「→右」
       this.miniRing();
-      const btn = this.miniButton(cx, by, 'go', t('kami.btn.go'), true);
+      this.miniButton(lx, by, 'off', t('kami.btn.toRight'), false, true);
+      const btn = this.miniButton(rx, by, 'go', t('kami.btn.go'), true);
       this.tweens.add({ targets: btn, scale: 1.1, duration: 360, yoyo: true, repeat: -1 });
     } else {
       // ③左端のバー：相手が赤い札（突っ張り「来るぞ！」）と赤い光 → バーが緑の帯までたまって「こらえ成功！」。ボタンは「長押し！」と赤いふち
       const warn = [];
       if (foe) {
         const bx = Math.min(foe.x, width - 130), wy = ground - MINI_FIG_H - 30;
-        warn.push(this.add.rectangle(bx, wy, 220, 52, WARN_RED, 0.95).setStrokeStyle(4, 0xffe3d6, 1));
-        warn.push(fitText(this.add.text(bx, wy, t('kami.warn.tsuppari'), textStyle(32, '#ffffff', { stroke: '#4a0d08', strokeThickness: 5 })).setOrigin(0.5), 200));
+        warn.push(this.add.rectangle(bx, wy, 270, 56, WARN_RED, 0.95).setStrokeStyle(4, 0xffe3d6, 1));
+        warn.push(fitText(this.add.text(bx, wy, t('kami.warn.tsuppari'), textStyle(32, '#ffffff', { stroke: '#4a0d08', strokeThickness: 5 })).setOrigin(0.5), 256));
       }
-      this.miniButton(cx, by, 'bar', t('kami.btn.bar'));
-      const halo = this.add.graphics().setPosition(cx, by);
+      this.miniButton(lx, by, 'off', t('kami.btn.toRight'), false, true);
+      this.miniButton(rx, by, 'bar', t('kami.btn.bar'));
+      const halo = this.add.graphics().setPosition(rx, by);
       halo.lineStyle(8, ALERT, 1).strokeCircle(0, 0, MINI_BTN.r + 8);
       this.tweens.add({ targets: halo, alpha: 0.3, duration: 300, yoyo: true, repeat: -1 });
       this.miniBar(foe, warn);
     }
   }
 
-  // 見本のボタン1つ（本番の色と字）。dark＝金の面に濃い字
-  miniButton(bx, by, mode, label, dark = false) {
+  // 見本のボタン1つ（本番の色と字）。dark＝金の面に濃い字・dim＝使わない方（暗い面・灰の字・薄く）
+  miniButton(bx, by, mode, label, dark = false, dim = false) {
     const r = MINI_BTN.r;
     const btn = this.add.container(bx, by);
+    if (getLang() !== 'ja' && !label.includes('\n')) label = label.replace(' ', '\n'); // 英語は2語なら2行に（円の中で字 28 を保つ）
     const bg = this.add.graphics();
     bg.fillStyle(0x000000, 0.35).fillCircle(0, 5, r);
     bg.fillStyle(BUTTON_COLOR[mode], 1).fillCircle(0, 0, r);
     bg.fillStyle(0xffffff, 0.12).fillCircle(0, -r * 0.35, r * 0.62);
-    const txt = this.add.text(0, 0, label, textStyle(26, dark ? '#3b2810' : COLORS.ink, { stroke: dark ? '#fff3c4' : '#141a2e', strokeThickness: 4, align: 'center' })).setOrigin(0.5);
-    fitText(txt, r * 2 - 16);
+    const txt = this.add.text(0, 0, label, textStyle(28, dark ? '#3b2810' : dim ? COLORS.sub : COLORS.ink, { stroke: dark ? '#fff3c4' : '#141a2e', strokeThickness: 4, align: 'center' })).setOrigin(0.5);
+    fitText(txt, r * 2 - 6);
     btn.add([bg, txt]);
+    if (dim) btn.setAlpha(0.6);
     return btn;
   }
 

@@ -1,10 +1,10 @@
 // src/scenes/LadderScene.js — 勝ち抜き番付（10/12 夜）：主人公の絵と名・地位・倒した数の目盛り・次の昇進・心技体・次の相手 → 相手の情報
 // 負けた後の稽古の途中なら稽古へ（つづきからと同じ）。下に「稽古する」：いつでも何度でも自分から稽古に入れる（10/13 本人「好きなときに稽古が出来るように」）
-import { t, heroName, foeLabel } from '../i18n/i18n.js?v=38';
-import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=38';
-import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=38';
-import { currentFoe, canLeaveTraining } from '../core/run.js?v=38';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=38';
+import { t, heroName, foeLabel } from '../i18n/i18n.js?v=39';
+import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=39';
+import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=39';
+import { currentFoe, canLeaveTraining } from '../core/run.js?v=39';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=39';
 
 const BAR = { x: 60, y: 520, w: 600, h: 34 };
 const HELP_Y = 1062; // 「遊び方」（次の相手の行 960 と、大きなボタン 1135〜 の間）
@@ -52,12 +52,12 @@ export class LadderScene extends Phaser.Scene {
     statBars(this, 40, 640, 640, r.stats);
 
     // 左下に小さく「遊び方」（説明を飛ばした人も、いつでも同じ3枚に入れる）
-    button(this, 140, HELP_Y, 220, 64, t('ladder.help'), () => this.scene.start('help'), { size: 26, color: COLORS.buttonSub });
+    button(this, 150, HELP_Y, 240, 72, t('ladder.help'), () => this.scene.start('help'), { size: 28, color: COLORS.buttonSub });
 
     if (r.cleared) {
       fitText(this.add.text(width / 2, 960, t('ladder.clear'), textStyle(40, COLORS.gold)).setOrigin(0.5), width - 60);
       // クリアの画面をもう一度見る（「遊び方」の右・同じ高さ）
-      button(this, 470, HELP_Y, 340, 64, t('ladder.seeClear'), () => this.scene.start('clear'), { size: 26 });
+      button(this, 490, HELP_Y, 340, 72, t('ladder.seeClear'), () => this.scene.start('clear'), { size: 28 });
       button(this, width / 2, 1190, 460, 110, t('ladder.toTop'), () => this.scene.start('guide'), { size: 38 });
       return;
     }

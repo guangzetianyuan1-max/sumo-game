@@ -1,12 +1,12 @@
 // src/scenes/GuideScene.js — 最初の画面：題・言葉の切り替え・記録①〜③の札（10/11 本人「昔話と同じように最大3つの四股名ですすめられるように」）。
 // 中身のある札を押す＝その記録のつづきへ（その時の画面へ）。空きの札を押す＝その記録でそのまま入門（10/13〜主人公はバランス型・案内役は若女将に固定＝選ぶ画面なし → 遊び方の3枚 → 番付表）。
 // 中身のある札の「はじめから」は2度押し（1度目は知らせるだけ・指1本の二重発火は数えない）で、その記録を消して入門へ
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=38';
-import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=38';
-import { session, startRun, SLOT_COUNT, slotState, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=38';
-import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=38';
-import { secondPress } from '../ui/press.js?v=38';
-import { playBout } from '../ui/sfx.js?v=38';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=39';
+import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=39';
+import { session, startRun, SLOT_COUNT, slotState, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=39';
+import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=39';
+import { secondPress } from '../ui/press.js?v=39';
+import { playBout } from '../ui/sfx.js?v=39';
 
 const CARD = { w: 640, h: 300, top: 210, gap: 40 }; // 札3枚：210〜1190（下に知らせの1行）
 const NEW = { w: 200, h: 64 }; // 札の右下の「はじめから」
@@ -84,7 +84,7 @@ export class GuideScene extends Phaser.Scene {
     }
 
     if (isLast) {
-      this.add.text(right - PAD, top + 38, t('slot.last'), textStyle(24, COLORS.gold, { fontStyle: '500' })).setOrigin(1, 0.5);
+      this.add.text(right - PAD, top + 38, t('slot.last'), textStyle(28, COLORS.gold, { fontStyle: '500' })).setOrigin(1, 0.5);
     }
     // 左に自分のタイプの絵、右にしこ名（大）・番付・タイプ
     const key = heroKey(this, sum.type);
@@ -98,7 +98,7 @@ export class GuideScene extends Phaser.Scene {
     const room = right - PAD - tx;
     fitText(this.add.text(tx, top + 112, heroName(sum.type), textStyle(60, COLORS.ink)).setOrigin(0, 0.5), room);
     fitText(this.add.text(tx, top + 172, t(`div.${sum.rank}`), textStyle(30, COLORS.ink)).setOrigin(0, 0.5), room);
-    fitText(this.add.text(tx, top + 222, sum.cleared ? t('slot.clear') : t('slot.count', { n: sum.wins }), textStyle(26, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), right - PAD - NEW.w - 16 - tx);
+    fitText(this.add.text(tx, top + 222, sum.cleared ? t('slot.clear') : t('slot.count', { n: sum.wins }), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), right - PAD - NEW.w - 16 - tx);
 
     zone.on('pointerup', () => {
       gfx.setAlpha(1);
@@ -114,7 +114,7 @@ export class GuideScene extends Phaser.Scene {
     // はじめから（札の押し当たりより後に置く＝上にある方だけが押しを受ける）
     const armedHere = this.armed && this.armed.n === n;
     button(this, right - PAD - NEW.w / 2, top + CARD.h - PAD - NEW.h / 2, NEW.w, NEW.h, t('slot.new'), () => this.pressNew(n), {
-      size: 26, color: armedHere ? COLORS.button : COLORS.buttonSub,
+      size: 28, color: armedHere ? COLORS.button : COLORS.buttonSub,
     });
   }
 

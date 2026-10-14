@@ -6,16 +6,16 @@
 // 親方が一番低い心技体に合う遊びを勧める（★と金の字）。
 // 負けた後の稽古は3コマ終えると同じ相手へ。番付からいつでも入る稽古（training.voluntary・10/13 本人「好きなときに稽古が出来るように」）は、
 // どのコマでも「番付へ戻る」で抜けられる（残りのコマは捨てる）・終われば番付へ
-import { t } from '../i18n/i18n.js?v=38';
-import { session, trainLeaveNow } from '../state.js?v=38';
-import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=38';
-import { kimeteById } from '../data/kimete.js?v=38';
-import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=38';
-import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=38';
-import { playBout } from '../ui/sfx.js?v=38';
+import { t } from '../i18n/i18n.js?v=39';
+import { session, trainLeaveNow } from '../state.js?v=39';
+import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=39';
+import { kimeteById } from '../data/kimete.js?v=39';
+import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=39';
+import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=39';
+import { playBout } from '../ui/sfx.js?v=39';
 import {
   topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, preloadOyakataArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=38';
+} from '../ui/widgets.js?v=39';
 
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1235 は「稽古おわり」の字・1210 は番付へ戻る）
 const CARD = { w: 640, top: 470, step: 120, bottom: 1150 };
@@ -49,9 +49,9 @@ export class TrainingScene extends Phaser.Scene {
     const low = STATS.reduce((a, b) => (r.stats[b] < r.stats[a] ? b : a), STATS[0]);
     const rec = STAT_DRILL[low];
     // 琴浪親方：負けた後は怒鳴る顔・自分から来た時はふつうの顔（心技体の棒と札の間）
-    speakerFace(this, 'kotonami', 100, 398, 112, free ? 'normal' : 'shout');
+    speakerFace(this, 'kotonami', 100, 400, 112, free ? 'normal' : 'shout');
     const line = `${t(free ? 'train2.oyakataFree' : 'train2.oyakata')} ${t('train2.recDrill', { stat: t(`stat.${low}`), drill: t(`drill.${rec}`) })}`;
-    speechBubble(this, 180, 342, 500, 112, line, { size: 26, min: 14 });
+    speechBubble(this, 180, 336, 500, 128, line, { size: 28, min: 28 });
     const cards = techCards(r, TECH_CARD_LIMIT);
     const techs = cards.show;
     const nextAt = cards.nextAt;
@@ -73,11 +73,11 @@ export class TrainingScene extends Phaser.Scene {
       this.card(i++, label, () => this.toDrill(k.drill, id), COLORS.gold, step, h, true, pct > 0 ? t('kimete.progress', { pct }) : '');
     }
     if (cards.more) {
-      fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.more', { n: cards.more }), textStyle(24, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
+      fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.more', { n: cards.more }), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
       i += 1;
     }
     if (nextAt !== undefined) {
-      fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.locked', { n: nextAt - r.wins }), textStyle(26, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
+      fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.locked', { n: nextAt - r.wins }), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
     }
     // 番付からの稽古だけ：いつでも番付へ戻れる（残りのコマは捨てる）
     if (free) {
@@ -96,7 +96,7 @@ export class TrainingScene extends Phaser.Scene {
     const gfx = roundBox(this, width / 2, y, CARD.w, h, COLORS.panel, { radius: 26, stroke: COLORS.frame });
     const lift = sub ? Math.min(20, h * 0.18) : 0;
     fitText(this.add.text(width / 2, y - lift, label, textStyle(sub ? 30 : 32, color)).setOrigin(0.5), CARD.w - 40);
-    if (sub) fitText(this.add.text(width / 2, y + h * 0.28, sub, textStyle(24, COLORS.ink, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 40);
+    if (sub) fitText(this.add.text(width / 2, y + h * 0.28, sub, textStyle(28, COLORS.ink, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 40);
     const zone = hitZone(this, width / 2, y, CARD.w, h);
     let down = false; // 押しはこの札の上で始まったものだけ数える（widgets.button と同じ）
     zone.on('pointerdown', () => { down = true; gfx.setAlpha(0.8); });

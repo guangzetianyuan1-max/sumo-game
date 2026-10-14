@@ -1,43 +1,47 @@
 // src/scenes/KamiScene.js — 紙相撲の取組（10/13 本人「紙相撲に切り替える」・設計書 2026-10-13-sumo-kamizumo-design.md）
-// 箱の上の紙の土俵に型紙2枚。下の真ん中の大きなボタンをたたくと主人公（東・左）が跳ねて前へ。敵（西・右）は機械がたたく。箱から落ちた方の負け
+// 箱の上の紙の土俵に型紙2枚。下の左の大きなボタンを連打すると主人公（東・左）が跳ねて前へ。敵（西・右）は機械がたたく。箱から落ちた方の負け
 // 動きの計算は src/core/kami.js（画面から切り離してある）。この画面は描くのと、指を計算へ渡すだけ
-// 指：下の真ん中のボタン1つ（10/14 ボタン1つ 設計書 2026-10-14-sumo-one-button-ring-bar-design.md）。出ている〇とバーそのものをさわっても同じ押し（hud.js の hudTouch・最終点検の直し 1）。
-//     ほかの所は何も起きない（カットインを閉じるだけ）。触れた瞬間を1回のたたき（押したままでは連打にならない）・
-//     中央上の〇（立ち合い・決め技）が出ている間の押しは〇の判定（跳ねない）・相手の攻めの予告の間は左端のバーをためる長押し（緑の帯で離す）・倒れている時は長押しで起き上がる
+// 指：下のボタン2つ（10/15 ボタン2つに戻す・設計書 2026-10-14-sumo-one-button-ring-bar-design.md §11）。左＝連打だけ（kami.js の mash：触れた瞬間を1回のたたき・
+//     〇・バー・倒れている時と立ち合いは効かない＝暗い）／右＝一押しと長押し（kami.js の strike：中央上の〇（立ち合い・決め技）の判定・相手の攻めの予告の間は
+//     左端のバーをためる長押し（緑の帯で離す）・倒れている時は長押しで起き上がる。どれも無い時は何も起きない＝暗い）。
+//     出ている〇とバーそのものをさわっても右と同じ押し（hud.js の hudTouch・右のボタンの zone）。ほかの所は何も起きない（カットインを閉じるだけ）。
+//     2本の指（左で連打しながら右を押す）は、それぞれのボタンが自分の指だけを数える（左の押しは〇の判定・バーのためにならない）
 // 〇とバーの置き場所と絵は src/ui/hud.js（稽古と同じ）。〇は判定の ◎○× を一瞬出す・バーは「こらえ成功！」
 // 相手の攻め：予告（warn）の間、敵の頭の上に赤い札（敵の必殺技は「必殺技！〇〇」）と型紙の赤い光。実行（act）に入った時にその攻めの音。踏ん張り・はたきの実行の間は落ち着いた暗い赤の札（危ない間）・
 //   踏ん張りが解けたら「ふっ」と金の札「今だ！押せ！」。敵の必殺技が決まった時（届いた時だけ）は、その技の名前のカットイン
 // 終わったら 0.8秒そのまま見せ、勝ち負け（喜び・悔しいのカットイン）を出して recordNow を1回だけ・1.8秒後に取組の後（after）へ
 // 演出（20体版 Task 5）：カットイン（気合・決め・喜び・悔しい・敵の必殺技）は上に重ねるだけ・たたくと閉じる・新しい〇や予告が出たらすぐ閉じる／決め技の〇が出た時は段の音（金の帯は〇に替えた）
-import { KAMI, ON_BEAT, newBout, step, press, hold, beatOffset, barGauge } from '../core/kami.js?v=38';
-import { isTactic, FOE_KIME_ID } from '../core/tactics.js?v=38';
-import { buttonLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey } from '../core/kamibutton.js?v=38';
-import { cutinArt } from '../core/cutin.js?v=38';
-import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=38';
-import { chosenKimete } from '../core/kimetepick.js?v=38';
-import { kimariteOf } from '../core/kamiresult.js?v=38';
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=38';
-import { currentFoe } from '../core/run.js?v=38';
-import { makeRng } from '../core/rng.js?v=38';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=38';
-import { t, foeLabel, kimariteLabel } from '../i18n/i18n.js?v=38';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=38';
-import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=38';
-import { playBout } from '../ui/sfx.js?v=38';
-import { isMuted } from '../ui/music.js?v=38';
-import { GYOJI, tachiaiVoiceAt, nokottaDue } from '../core/gyoji.js?v=38';
-import { createBigButton } from '../ui/bigbutton.js?v=38';
-import { drawCutinBand } from '../ui/cutinband.js?v=38';
-import { HUD, ringShape, barShape, drawRing, drawBar, hudTouch } from '../ui/hud.js?v=38';
-import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=38';
+import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge } from '../core/kami.js?v=39';
+import { isTactic, FOE_KIME_ID } from '../core/tactics.js?v=39';
+import { leftLook, rightLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey } from '../core/kamibutton.js?v=39';
+import { cutinArt } from '../core/cutin.js?v=39';
+import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=39';
+import { chosenKimete } from '../core/kimetepick.js?v=39';
+import { kimariteOf } from '../core/kamiresult.js?v=39';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=39';
+import { currentFoe } from '../core/run.js?v=39';
+import { makeRng } from '../core/rng.js?v=39';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=39';
+import { t, foeLabel, kimariteLabel } from '../i18n/i18n.js?v=39';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=39';
+import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=39';
+import { playBout } from '../ui/sfx.js?v=39';
+import { isMuted } from '../ui/music.js?v=39';
+import { GYOJI, tachiaiVoiceAt, nokottaDue } from '../core/gyoji.js?v=39';
+import { createBigButton } from '../ui/bigbutton.js?v=39';
+import { drawCutinBand } from '../ui/cutinband.js?v=39';
+import { HUD, ringShape, barShape, drawRing, drawBar, hudTouch } from '../ui/hud.js?v=39';
+import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=39';
 
 const FIG_H = 330; // 型紙の高さ（敵は段階の倍率を掛ける）
 const VIS = FIG_H / 230; // 見た目の大きさの倍率（計算の座標は変えない・縦方向の跳ね・落ちは同じ比で描く）
 const HINT_Y = GROUND + BOX_H + 25; // 案内の1行（箱の下の端 900 とボタンの弧の上端 947 の間）
 const CALL_FADE = 0.3; // はっけよいが消えていく長さ（秒）
 const HOP_DRAW = 3; // 跳ねの高さは計算の3倍で描く（計算の跳ねは低い・Ruling 6）
-// 下の真ん中の立体のボタン1つ（v34 と同じ・稽古とも同じ：押していない時の面の中心・面の直径）。y は面＋側面18＋弧で画面の下の端 1280 に収まる高さ
-const BTN = { x: 360, y: 1104, d: 300 };
+// 下の立体のボタン2つ（押していない時の面の中心・面の直径）：画面の下を左右に分ける。どちらも直径 280（片方の親指で届く・本人「片指でどちらか押せるように」）。
+// 面の間 60・たたける範囲（半径＋15）の間 30＝隣を誤って押さない。y は面＋側面18＋弧で画面の下の端 1280 に収まる高さ（弧の上端 948 は箱の下の案内の下）
+const LEFT_BTN = { x: 190, y: 1104, d: 280 }; // 左＝連打
+const RIGHT_BTN = { x: 530, y: 1104, d: 280 }; // 右＝一押しと長押し
 const WARN_DEPTH = 21; // 予告の札はカットインの帯（depth 20）より上
 const HUD_DEPTH = 22; // 〇とバーと ◎○×：カットインの帯（20）と予告の札（21）より上＝気合・必殺技のカットインと同じコマでも判定が読める
 const CALL_Y = 440; // はっけよい：中央上の〇（的の輪 180〜340）の下・型紙の頭（470）の上
@@ -69,7 +73,7 @@ const FACE_GAP = 90; // ぶつかった時の足もとの間
 const SHIFT_EASE = 0.1; // 描く位置のずらしが動く長さ（秒・倒れた時に飛ばない）
 const TXT_SHADOW = [0, 3, '#0a0f20', 6, false, true]; // 背景の上の字の薄い影
 // 練習の一番（1体目）のことねの顔と吹き出し：画面のいちばん上（30〜138・見出しと相手の名前の上に重ねる）。中央上の〇（的の輪 180〜340）と左端のバー（300〜）を隠さない
-const COACH_BOX = { x: 78, y: 84, size: 100, left: 150, top: 30, w: 545, h: 108 };
+const COACH_BOX = { x: 78, y: 92, size: 100, left: 150, top: 22, w: 545, h: 140 };
 // はじめて見る攻め・敵の必殺技の吹き出し（ことねが返し方を1行・同じ場所。予告の札 y≈336 や下のボタンとは重ならない）：予告が出てからこの秒数だけ
 const TIP_SECS = 3.2;
 // カットインの帯（20体版 Task 5）：画面の上の方に横長・約1秒・たたくと閉じる（取組の計算は止めない）
@@ -113,7 +117,7 @@ export class KamiScene extends Phaser.Scene {
     const { east, west } = boutParams({ heroStats: run.stats, foeIndex: foe.index, heroKimete: this.heroKimete });
     this.st = newBout({ east, west, seed });
     this.cpu = driver(cpuParams(foe.index), makeRng(seed ^ 0x9e3779b9), undefined, ringRngFor(seed, 'west'), barRngFor(seed, 'west'));
-    this.lastDown = -Infinity; // 前に指がボタンに触れた時（ms）
+    this.lastDown = { left: -Infinity, right: -Infinity }; // 前に指がそれぞれのボタンに触れた時（ms）
     this.prev = { east: newPrev(), west: newPrev(), gap: Infinity, finisherAt: -Infinity, tac: null, slapAt: -Infinity, lastBar: null, lastFoeKime: null, ring: null };
     this.lastThud = -Infinity;
     this.contacted = false; // 立ち合いのぶつかりを鳴らしたか（2度目からは「ばしっ」）
@@ -149,24 +153,36 @@ export class KamiScene extends Phaser.Scene {
     this.figs.west = this.figure(kamiArt(foeArt(foe).file).key, foeArt(foe).key, FIG_H * stageScale(foe.stage));
     if (this.figs.west) addAura(this, this.figs.west, foeAura(foe));
 
-    // 下の真ん中の立体のボタン1つ（src/ui/bigbutton.js・押すと沈む／離すとばねで戻る・音と振動つき）。指の受け付けもこの部品
-    // 出ている〇とバーの上の指も、この部品が同じ指として受ける（zone＝hudTouch・同じ onDown/onUp・2本目の指も同じ数え方＝二重に押さない）
-    // カットインの帯の間にたたいた時は、帯を閉じるだけ（ただ倒れている時・相手の攻めの最中・〇の間は、そのまま押しにする）。false＝押したことにしない（沈まない・鳴らない）
-    this.btn = createBigButton(this, {
-      ...BTN,
-      zone: (p) => hudTouch(this.st, p) !== null,
+    // 下の立体のボタン2つ（src/ui/bigbutton.js・押すと沈む／離すとばねで戻る・音と振動つき）。指の受け付けもこの部品（それぞれが自分の範囲の指だけを数える＝左右の2本の指は別々）
+    // 左＝連打（mash）。効かない時（〇・バー・倒れ・立ち合い）は沈まず小さく横に揺れる。長押しは持たない（離しても何もしない）
+    // 右＝一押しと長押し（strike）。出ている〇とバーの上の指も右が同じ指として受ける（zone＝hudTouch・同じ onDown/onUp・2本目の指も同じ数え方＝二重に押さない）
+    // カットインの帯の間にたたいた時は、帯を閉じるだけ（左は相手の攻めの最中＝組みの連打を飲み込まない・右は倒れ・攻め・〇の間は、そのまま押しにする）。false＝押したことにしない（沈まない・鳴らない）
+    this.lbtn = createBigButton(this, {
+      ...LEFT_BTN,
       onDown: () => {
-        if (Date.now() < this.guardUntil) return false; // 前の画面（懸賞旗）への二度たたきが、そのまま立ち合いの「つっぱり」にならない
+        if (Date.now() < this.guardUntil) return false; // 前の画面（懸賞旗）への二度たたきが、そのまま押しにならない
         if (this.cutin) {
           this.closeCutin();
-          // ただ倒れている時（長押しの起き上がり）と、相手の攻めの最中（予告のバー・構え・組み＝返す長押しを飲み込まない）と、〇の間（判定を飲み込まない）は、そのまま押しにする
+          if (!(this.st && this.st.tactic)) return false;
+        }
+        return this.mash();
+      },
+    });
+    this.rbtn = createBigButton(this, {
+      ...RIGHT_BTN,
+      zone: (p) => hudTouch(this.st, p) !== null,
+      onDown: () => {
+        if (Date.now() < this.guardUntil) return false; // 前の画面（懸賞旗）への二度たたきが、そのまま立ち合いの〇の判定にならない
+        if (this.cutin) {
+          this.closeCutin();
+          // ただ倒れている時（長押しの起き上がり）と、相手の攻めの最中（予告のバー＝返す長押しを飲み込まない）と、〇の間（判定を飲み込まない）は、そのまま押しにする
           if (!(this.st && (this.st.f.east.down || this.st.tactic || this.st.f.east.ring))) return false;
         }
-        return this.press();
+        return this.strike();
       },
-      onUp: () => { if (!this.btn.pressed) this.release(); }, // 2本の指で押した時は、両方離すまで押したまま
+      onUp: () => { if (!this.rbtn.pressed) this.release(); }, // 2本の指（右のボタンとバー）で押した時は、両方離すまで押したまま
     });
-    this.events.once('shutdown', () => this.btn.destroy());
+    this.events.once('shutdown', () => { this.lbtn.destroy(); this.rbtn.destroy(); });
     this.pushAt = null; // 押し合いに入った時（計算の秒）
     // 行司の声：立ち合い＝合図の少し前から「はっけよーい、のこった！」・押し合い＝約3.5秒ごとに「のこった、のこった！」（src/core/gyoji.js が間合いを決める）
     this.gyoji = { startAt: tachiaiVoiceAt(this.st.signalAt), started: false, lastAt: -Infinity, landAt: -Infinity, sounds: [] };
@@ -197,10 +213,10 @@ export class KamiScene extends Phaser.Scene {
     // 指：触れた瞬間に1回だけ（押したままでは連打しない）。倒れている時は押している間を長押し（ボタンの部品が受ける）。ボタンと〇・バーの外は何も起きない
     // ただカットインの帯が出ている間は、その外をたたいても帯が閉じる
     this.input.on('pointerdown', (p) => {
-      if (this.cutin && !this.btn.contains(p)) this.closeCutin();
+      if (this.cutin && !this.lbtn.contains(p) && !this.rbtn.contains(p)) this.closeCutin();
     });
     // 画面が裏へ回ったら長押しを離す（戻った時に勝手に起き上がらない・バーをため続けない）
-    const onHidden = () => { this.release(); this.btn.releaseAll(); };
+    const onHidden = () => { this.release(); this.lbtn.releaseAll(); this.rbtn.releaseAll(); };
     this.game.events.on('hidden', onHidden);
     this.events.once('shutdown', () => this.game.events.off('hidden', onHidden));
 
@@ -216,20 +232,32 @@ export class KamiScene extends Phaser.Scene {
     return img;
   }
 
-  // ボタンを押した：取組のたたき（または長押しの始まり）にしたら true・何も起きなかったら false（ボタンも沈まない）
-  // 押しは kami.js の press＝〇（立ち合い・決め技）が出ていればその判定（跳ねない）・無ければたたき。
-  // 押し合いの間は、押した指をそのまま hold へ渡す（相手の攻めの予告＝守りのバーの間は、それでため始め・離して判定。ほかの時は何も起きない）。倒れている時は長押しで起き上がり
-  press() {
-    const st = this.st;
-    if (!st || st.phase === 'done') return false;
+  // 同じボタンの同じ指の二度押し（DOUBLE_MS 以内）は数えない。左右は別々に数える（2本の指で同時に押しても両方効く）
+  fresh(which) {
     const now = this.time.now;
-    if (now - this.lastDown < DOUBLE_MS) return false; // 同じ指の二度押し
-    this.lastDown = now;
-    if (st.f.east.down) { hold(st, 'east', true); return true; }
+    if (now - this.lastDown[which] < DOUBLE_MS) return false;
+    this.lastDown[which] = now;
+    return true;
+  }
+
+  // 左のボタン（連打）：押し合いのたたき（kami.js の mash）にしたら true。〇・バー・倒れ・立ち合いの間は効かない＝沈まず小さく横に揺れる（false）
+  mash() {
+    const st = this.st;
+    if (!st || st.phase === 'done' || !this.fresh('left')) return false;
+    if (mash(st, 'east')) return true;
+    this.lbtn.shake();
+    return false;
+  }
+
+  // 右のボタン（一押しと長押し）：kami.js の strike＝〇（立ち合い・決め技）が出ていればその判定（跳ねない）・倒れていれば長押しで起き上がり・
+  // 押し合いの間は長押しの始まり（守りのバーの間はため始め・離して判定。ほかの時は何も起きない＝損はない・指は数える＝出た時に押したままなら「はなして、もう一度」）。
+  // 立ち合いの〇が出る前は効かない（早押しは無い）＝沈まず小さく横に揺れる（false）
+  strike() {
+    const st = this.st;
+    if (!st || st.phase === 'done' || !this.fresh('right')) return false;
     const ring = st.f.east.ring;
-    const wasPush = st.phase === 'push'; // 立ち合いの一押しで押し合いに入っても、その指は こらえにしない
-    const judge = press(st, 'east');
-    if (wasPush && judge === null && !ring) hold(st, 'east', true); // バーの間なら ため始め（kami.js の hold）。〇の押しは渡さない
+    if (st.phase === 'ready' && !ring) { this.rbtn.shake(); return false; }
+    const judge = strike(st, 'east');
     if (ring && ring.kind === 'tachiai' && judge === 2) this.showCutin('kiai', t('cutin.kiai')); // 立ち合いの〇がぴったり＝気合のカットイン
     return true;
   }
@@ -456,12 +484,18 @@ export class KamiScene extends Phaser.Scene {
     this.barSayUntil = this.time.now + BAR_SAY.ms;
   }
 
-  // 下のボタン1つ：場面で字と色が変わる（見た目は buttonLook・描くのは立体のボタンの部品）
-  // 押し合い＝拍で輪が太く明るく／〇＝ぴったりに近いほど輪が太く・脈打つ／バー＝ためた分の弧と赤いふち（「はなして、もう一度」も赤いふち）／踏ん張り中＝薄く「待て」／倒れ＝ふちに起き上がりの弧
+  // 下のボタン2つ：場面で字と色が変わる（見た目は leftLook・rightLook・描くのは立体のボタンの部品）
+  // 左：押し合い＝「連打！」拍で輪が太く明るく／踏ん張り中＝暗く「待て」／〇・バー・倒れ＝暗く「→右」（出番は右）
+  // 右：〇＝「一押し！」ぴったりに近いほど輪が太く・脈打つ／バー＝「長押し！」ためた分の弧と赤いふち（「はなして、もう一度」も赤いふち）／倒れ＝ふちに起き上がりの弧／何も無い時＝暗い
+  // 暗い時は薄く・平らに沈み（押せない見た目）・字も灰。明るいのは多くて片方（どちらを押すか迷わない）
   drawButtons() {
-    const l = buttonLook(this.st);
+    this.paintButton(this.lbtn, leftLook(this.st));
+    this.paintButton(this.rbtn, rightLook(this.st));
+  }
+
+  paintButton(btn, l) {
     const ring = l.mode === 'go' || l.mode === 'ring';
-    this.btn.setLook({
+    btn.setLook({
       color: l.color,
       label: t(l.label),
       pulse: l.pulse,
@@ -469,12 +503,13 @@ export class KamiScene extends Phaser.Scene {
       arc: l.mode === 'hold' || l.mode === 'bar',
       band: l.band, // バーの間：弧の上に緑の帯（左端のバーと同じ割合）・たまりは金
       fillColor: l.mode === 'bar' ? BAR_FILL : null,
-      dim: l.mode === 'wait' || l.mode === 'stay' || l.mode === 'done', // 待つ時は薄く（踏ん張り中は押すと跳ね返される）
+      dim: l.dim,
+      raise: l.dim ? 0.35 : 1,
       throb: ring,
-      ink: ring ? { color: DARK_TXT, stroke: '#fff3c4' } : { color: COLORS.ink, stroke: '#141a2e' },
+      ink: ring ? { color: DARK_TXT, stroke: '#fff3c4' } : l.dim ? { color: COLORS.sub, stroke: '#141a2e' } : { color: COLORS.ink, stroke: '#141a2e' },
       halo: l.alert ? ALERT : null,
     });
-    this.btn.update();
+    btn.update();
   }
 
   // 中央上の〇と左端のバー（src/ui/hud.js）・〇の判定の ◎○×（一瞬）・バーの結果の字の消え方
@@ -533,7 +568,7 @@ export class KamiScene extends Phaser.Scene {
     }
   }
 
-  // はじめて見る攻め・敵の必殺技：予告が出た時、まだ見ていなければ 返し方（ボタン（またはバー）を長押し・緑で離す）を ことねの吹き出しで出し、見たと記録する（その場で保存＝次の取組では出ない）
+  // はじめて見る攻め・敵の必殺技：予告が出た時、まだ見ていなければ 返し方（右のボタン（またはバー）を長押し・緑で離す）を ことねの吹き出しで出し、見たと記録する（その場で保存＝次の取組では出ない）
   startTip(id) {
     const seen = session.run && Array.isArray(session.run.seenTactics) ? session.run.seenTactics : [];
     if (!session.run || !(isTactic(id) || id === FOE_KIME_ID) || seen.includes(id)) return;
@@ -543,7 +578,7 @@ export class KamiScene extends Phaser.Scene {
     const { x, y, size, left, top, w, h } = COACH_BOX;
     tip.key = `tactic.tip.${id}`;
     tip.until = this.st.t + TIP_SECS;
-    tip.objs = [...speakerFace(this, OKAMI, x, y, size), ...speechBubble(this, left, top, w, h, t(tip.key), { size: 28, min: 18 })];
+    tip.objs = [...speakerFace(this, OKAMI, x, y, size), ...speechBubble(this, left, top, w, h, t(tip.key), { size: 28, min: 28 })];
     tip.objs.forEach((o) => o.setDepth(9)); // 練習の吹き出し（8）より上
   }
 
@@ -571,7 +606,7 @@ export class KamiScene extends Phaser.Scene {
     c.objs = [];
     if (!key) return;
     const { x, y, size, left, top, w, h } = COACH_BOX;
-    c.objs = [...speakerFace(this, OKAMI, x, y, size), ...speechBubble(this, left, top, w, h, t(key), { size: 28, min: 18 })];
+    c.objs = [...speakerFace(this, OKAMI, x, y, size), ...speechBubble(this, left, top, w, h, t(key), { size: 28, min: 28 })];
     c.objs.forEach((o) => o.setDepth(8));
   }
 

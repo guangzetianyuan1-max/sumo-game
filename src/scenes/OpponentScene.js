@@ -1,30 +1,30 @@
 // src/scenes/OpponentScene.js — 今日の相手（20体版 Task 4・10/13）：相手の絵と型・得意と苦手（系統）・心技体・決め技を選ぶ札5枚・ことねの勧め → 取組へ
 // 作戦表の頃の名残（よく使う手・技の勧めの吹き出し）は外した。シニアにも読める大きな札と、下の真ん中の「取組へ」1つだけ
 // 決め技の札：覚えた物だけ押して選べる（選んだ札が朱に光る）。最初は勧め（recommendKimete）を選んでおく。覚えていない物は灰色
-import { TYPES } from '../data/types.js?v=38';
-import { OKAMI } from '../data/heroes.js?v=38';
-import { t, foeLabel } from '../i18n/i18n.js?v=38';
-import { session, prepareOpponent } from '../state.js?v=38';
-import { playBout } from '../ui/sfx.js?v=38';
-import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=38';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=38';
+import { TYPES } from '../data/types.js?v=39';
+import { OKAMI } from '../data/heroes.js?v=39';
+import { t, foeLabel } from '../i18n/i18n.js?v=39';
+import { session, prepareOpponent } from '../state.js?v=39';
+import { playBout } from '../ui/sfx.js?v=39';
+import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=39';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=39';
 import {
-  button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
+  button, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
   preloadTypeArt, preloadGuideArt, addAura, clearScene, COLORS,
-} from '../ui/widgets.js?v=38';
-import { currentFoe } from '../core/run.js?v=38';
-import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=38';
+} from '../ui/widgets.js?v=39';
+import { currentFoe } from '../core/run.js?v=39';
+import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=39';
 
-const INFO = { y: 270, h: 240 }; // 相手の札（150〜390）：左に絵・右に型と得意・苦手
+const INFO = { y: 286, h: 292 }; // 相手の札（140〜432）：得意・苦手は英語だと5行になるので高めに：左に絵・右に型と得意・苦手
 const ART = { x: 175, r: 100, h: 200 };
 const TEXT_X = 305; // 右の字の左端
-const STATS_Y = 430; // 心技体の見出し（棒はその下）
-const PICK_Y = 636; // 「決め技をえらぶ」
-const CARD = { w: 200, h: 112, gap: 20, row1: 720, row2: 848 }; // 札5枚：上に3枚・下に2枚（行の間 16）
-// ことねの顔と吹き出し：おすすめ（または稽古の案内）・この相手の攻めの名前を並べた1行（返し方はどれも「ボタン（またはバー）を長押し・緑で離す」。踏ん張りの「来たら待ち、解けたら押す」は はじめての吹き出しと遊び方で教える＝ここは字を 26 以上に保つ）・この相手の必殺技の名前（10/14 ボタン1つ）。
+const STATS_Y = 462; // 心技体の見出し（棒はその下）
+const PICK_Y = 648; // 「決め技をえらぶ」
+const CARD = { w: 216, h: 112, gap: 12, row1: 724, row2: 852 }; // 札5枚：上に3枚・下に2枚（行の間 16）
+// ことねの顔と吹き出し：おすすめ（または稽古の案内）・この相手の攻めの名前を並べた1行（返し方はどれも「右のボタン（またはバー）を長押し・緑で離す」。踏ん張りの「来たら待ち、解けたら左を連打」は はじめての吹き出しと遊び方で教える＝ここは字を 26 以上に保つ）・この相手の必殺技の名前（10/14・10/15 ボタン2つ）。
 // 下の段の札の下 904 と「取組へ」の上 1132 の間に広げる。字は 26 以上を保つ（ja・en とも・大ボスは勧めの1行を外す）
-const COACH = { faceX: 92, size: 130, left: 178, top: 912, w: 512, h: 212, font: 30, min: 18 };
-const TAG = { w: 140, h: 32, dy: 2, size: 24 }; // 勧めの金の札：札の上の縁に少しかかる（下の段の札でも上の段の札 776 に重ならない）
+const COACH = { faceX: 70, size: 108, left: 138, top: 912, w: 560, h: 212, font: 30, min: 28 };
+const TAG = { w: 150, h: 38, dy: 2, size: 28 }; // 勧めの金の札：札の上の縁に少しかかる（下の段の札でも上の段の札 776 に重ならない）
 const GO_Y = 1190;
 const AFF_KEY = (a) => (a > 1 ? 'good' : a < 1 ? 'bad' : 'normal');
 const AFF_COLOR = { good: COLORS.gold, normal: COLORS.sub, bad: '#d9a08f' };
@@ -87,9 +87,11 @@ export class OpponentScene extends Phaser.Scene {
     const right = (y, str, size, color) => fitText(this.add.text(TEXT_X, y, str, textStyle(size, color)).setOrigin(0, 0.5), room);
     const archs = (list) => (list.length ? list.map((a) => t(`arch.${a}`)).join(t('arch.join')) : t('arch.none'));
     const ty = TYPES[opp];
-    right(INFO.y - 66, t(`type.${opp}.name`), 46, COLORS.ink);
-    right(INFO.y + 4, t('opp.strongArch', { arch: archs(ty.strong) }), 30, COLORS.ink);
-    right(INFO.y + 62, t('opp.weakArch', { arch: archs(ty.weak ? ty.weak.arch : []) }), 30, COLORS.gold);
+    right(INFO.y - 100, t(`type.${opp}.name`), 46, COLORS.ink);
+    // 得意・苦手は長い名前が並ぶと1行に収まらない＝字 28 のまま左そろえで2行まで折る（苦手は得意の下に続ける）
+    const block = (y, str, color) => wrapText(this, TEXT_X, y, str, room, 28, color, { align: 'left' }).setOrigin(0, 0);
+    const strong = block(INFO.y - 68, t('opp.strongArch', { arch: archs(ty.strong) }), COLORS.ink);
+    block(strong.y + strong.displayHeight + 10, t('opp.weakArch', { arch: archs(ty.weak ? ty.weak.arch : []) }), COLORS.gold);
 
     this.drawStats(width);
 
@@ -132,16 +134,16 @@ export class OpponentScene extends Phaser.Scene {
       glow.lineStyle(6, 0xfff3c4, 1).strokeRoundedRect(x - CARD.w / 2 - 4, y - CARD.h / 2 - 4, CARD.w + 8, CARD.h + 8, 26);
     }
     const nameColor = c.state === 'learned' ? COLORS.ink : COLORS.sub;
-    const name = fitText(this.add.text(x, y - 24, t(`newtech.${c.id}`), textStyle(28, nameColor)).setOrigin(0.5), CARD.w - 20);
+    const name = fitText(this.add.text(x, y - 24, t(`newtech.${c.id}`), textStyle(28, nameColor)).setOrigin(0.5), CARD.w - 12);
     if (c.state === 'locked') {
       name.setAlpha(0.6);
-      this.lock(x - 74, y + 28);
-      fitText(this.add.text(x + 14, y + 28, t('opp.locked', { n: c.at }), textStyle(26, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5).setAlpha(0.8), CARD.w - 64);
+      this.lock(x - 86, y + 28);
+      fitText(this.add.text(x + 14, y + 28, t('opp.locked', { n: c.at }), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5).setAlpha(0.8), CARD.w - 60);
     } else if (c.state === 'learnable') {
-      fitText(this.add.text(x, y + 28, t('opp.canLearn'), textStyle(26, COLORS.gold, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 20);
+      fitText(this.add.text(x, y + 28, t('opp.canLearn'), textStyle(28, COLORS.gold, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 12);
     } else {
       const k = AFF_KEY(c.aff);
-      fitText(this.add.text(x, y + 28, t(`opp.aff.${k}`), textStyle(26, on ? COLORS.ink : AFF_COLOR[k])).setOrigin(0.5), CARD.w - 20);
+      fitText(this.add.text(x, y + 28, t(`opp.aff.${k}`), textStyle(28, on ? COLORS.ink : AFF_COLOR[k])).setOrigin(0.5), CARD.w - 12);
     }
     if (c.id === this.rec) {
       // 勧めの札の上の縁に小さな金の札

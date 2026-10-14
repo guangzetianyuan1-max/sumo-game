@@ -1,12 +1,12 @@
 // src/scenes/CoverScene.js — 表紙（10/14 本人「表紙を…冒頭に」）：土俵の絵の上に題名・主人公と20体目の大ボスの型紙が向き合う・「画面をたたいて はじめる」
 // 新しい絵は無し（今ある土俵の背景と型紙だけ）。たたくと音を起こし（最初の手ざわり＝main.js の unlockOnGesture が音楽を起こす）、ぽんを鳴らして記録を選ぶ画面（guide）へ
-import { t } from '../i18n/i18n.js?v=38';
-import { kamiArt, foeArt, foeAura } from '../core/foeart.js?v=38';
-import { PLAY_COUNT } from '../core/ladder.js?v=38';
-import { HERO_TYPE } from '../data/heroes.js?v=38';
-import { preloadArena } from '../ui/arena.js?v=38';
-import { addAura, fitText, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=38';
-import { playBout } from '../ui/sfx.js?v=38';
+import { t } from '../i18n/i18n.js?v=39';
+import { kamiArt, foeArt, foeAura } from '../core/foeart.js?v=39';
+import { PLAY_COUNT } from '../core/ladder.js?v=39';
+import { HERO_TYPE } from '../data/heroes.js?v=39';
+import { preloadArena } from '../ui/arena.js?v=39';
+import { addAura, fitText, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=39';
+import { playBout } from '../ui/sfx.js?v=39';
 
 const BOSS = { index: PLAY_COUNT - 1, stage: 4 }; // 20体目の大ボス（foeArt・foeAura は index と段階だけで絵と光を決める）
 const GROUND_Y = 905; // 型紙の足もと（土俵の絵の楕円の下のあたり）
@@ -47,7 +47,7 @@ export class CoverScene extends Phaser.Scene {
     // たたいて はじめる（点滅）・一番下に小さく © と版
     const tap = fitText(this.add.text(width / 2, 1085, t('cover.tap'), textStyle(46, COLORS.gold)).setOrigin(0.5).setShadow(...SHADOW), width - 60);
     this.tweens.add({ targets: tap, alpha: 0.25, duration: 750, yoyo: true, repeat: -1 });
-    this.credit = this.add.text(width / 2, 1235, t('cover.credit'), textStyle(26, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5);
+    this.credit = this.add.text(width / 2, 1235, t('cover.credit'), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5);
     this.loadVersion();
     this.input.on('pointerdown', () => this.start());
   }
