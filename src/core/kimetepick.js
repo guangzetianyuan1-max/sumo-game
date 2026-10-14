@@ -1,7 +1,7 @@
 // 決め技を選ぶ（相手の情報の画面・20体版 Task 4）。画面から切り離した純粋な関数
 // 覚えた決め技＝run.newKnown のうち KIMETE にある物。勧め＝その中で敵の型との相性（affinity）が一番良い物・同じなら解禁の早い物
 // 一生の通し（careersim.bestKimete）も同じ勧めを使う＝試しと本番で同じ物を持っていく
-import { KIMETE, affinity } from '../data/kimete.js?v=35';
+import { KIMETE, affinity } from '../data/kimete.js?v=36';
 
 const known = (run) => (run && Array.isArray(run.newKnown) ? run.newKnown : []);
 

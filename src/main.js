@@ -1,20 +1,20 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { CautionScene } from './scenes/CautionScene.js?v=35';
-import { CoverScene } from './scenes/CoverScene.js?v=35';
-import { GuideScene } from './scenes/GuideScene.js?v=35';
-import { LadderScene } from './scenes/LadderScene.js?v=35';
-import { OpponentScene } from './scenes/OpponentScene.js?v=35';
-import { AfterScene } from './scenes/AfterScene.js?v=35';
-import { TrainingScene } from './scenes/TrainingScene.js?v=35';
-import { DrillScene } from './scenes/DrillScene.js?v=35';
-import { KamiScene } from './scenes/KamiScene.js?v=35';
-import { HelpScene } from './scenes/HelpScene.js?v=35';
-import { KenshoScene } from './scenes/KenshoScene.js?v=35';
-import { ClearScene } from './scenes/ClearScene.js?v=35';
-import { initLang } from './i18n/i18n.js?v=35';
-import { storage } from './ui/widgets.js?v=35';
-import { session, lastSlot } from './state.js?v=35';
-import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=35';
+import { CautionScene } from './scenes/CautionScene.js?v=36';
+import { CoverScene } from './scenes/CoverScene.js?v=36';
+import { GuideScene } from './scenes/GuideScene.js?v=36';
+import { LadderScene } from './scenes/LadderScene.js?v=36';
+import { OpponentScene } from './scenes/OpponentScene.js?v=36';
+import { AfterScene } from './scenes/AfterScene.js?v=36';
+import { TrainingScene } from './scenes/TrainingScene.js?v=36';
+import { DrillScene } from './scenes/DrillScene.js?v=36';
+import { KamiScene } from './scenes/KamiScene.js?v=36';
+import { HelpScene } from './scenes/HelpScene.js?v=36';
+import { KenshoScene } from './scenes/KenshoScene.js?v=36';
+import { ClearScene } from './scenes/ClearScene.js?v=36';
+import { initLang } from './i18n/i18n.js?v=36';
+import { storage } from './ui/widgets.js?v=36';
+import { session, lastSlot } from './state.js?v=36';
+import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=36';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;

@@ -4,24 +4,24 @@
 // 指：下の真ん中の大きなボタンだけ（外は何も起きない）。立っている時＝触れた瞬間を1回のたたき（押したままでは連打にならない）／倒れている時＝押している間を長押し
 // 終わったら 0.8秒そのまま見せ、勝ち負け（喜び・悔しいのカットイン）を出して recordNow を1回だけ・1.8秒後に取組の後（after）へ
 // 演出（20体版 Task 5）：カットイン（気合・決め・喜び・悔しい）は上に重ねるだけ・たたくと閉じる／決め技のゲージはボタンと帯を段の色（青・赤・金・虹）で塗り、段が上がると音
-import { KAMI, newBout, step, tap, hold, gaugeLit, beatOffset } from '../core/kami.js?v=35';
-import { buttonLook, coachKey, gaugeTierOf } from '../core/kamibutton.js?v=35';
-import { TIER_COLOR } from '../core/gaugetier.js?v=35';
-import { cutinArt, KIAI_WINDOW } from '../core/cutin.js?v=35';
-import { boutParams, cpuParams, driver } from '../core/kamiai.js?v=35';
-import { chosenKimete } from '../core/kimetepick.js?v=35';
-import { kimariteOf } from '../core/kamiresult.js?v=35';
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=35';
-import { currentFoe } from '../core/run.js?v=35';
-import { makeRng } from '../core/rng.js?v=35';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=35';
-import { t, foeLabel, kimariteLabel } from '../i18n/i18n.js?v=35';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=35';
-import { session, prepareOpponent, boutSeed, recordNow } from '../state.js?v=35';
-import { playBout } from '../ui/sfx.js?v=35';
-import { createBigButton } from '../ui/bigbutton.js?v=35';
-import { drawCutinBand } from '../ui/cutinband.js?v=35';
-import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=35';
+import { KAMI, newBout, step, tap, hold, gaugeLit, beatOffset } from '../core/kami.js?v=36';
+import { buttonLook, coachKey, gaugeTierOf } from '../core/kamibutton.js?v=36';
+import { TIER_COLOR } from '../core/gaugetier.js?v=36';
+import { cutinArt, KIAI_WINDOW } from '../core/cutin.js?v=36';
+import { boutParams, cpuParams, driver } from '../core/kamiai.js?v=36';
+import { chosenKimete } from '../core/kimetepick.js?v=36';
+import { kimariteOf } from '../core/kamiresult.js?v=36';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=36';
+import { currentFoe } from '../core/run.js?v=36';
+import { makeRng } from '../core/rng.js?v=36';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=36';
+import { t, foeLabel, kimariteLabel } from '../i18n/i18n.js?v=36';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=36';
+import { session, prepareOpponent, boutSeed, recordNow } from '../state.js?v=36';
+import { playBout } from '../ui/sfx.js?v=36';
+import { createBigButton } from '../ui/bigbutton.js?v=36';
+import { drawCutinBand } from '../ui/cutinband.js?v=36';
+import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=36';
 
 const FIG_H = 330; // 型紙の高さ（敵は段階の倍率を掛ける）
 const VIS = FIG_H / 230; // 見た目の大きさの倍率（計算の座標は変えない・縦方向の跳ね・落ちは同じ比で描く）

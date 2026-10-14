@@ -1,13 +1,13 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=35';
-import { GUIDE_IDS } from '../data/guides.js?v=35';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=35';
-import { foeAt } from '../data/foes.js?v=35';
-import { inGame } from '../data/kimarite.js?v=35';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=35';
-import { startStats, growthMult, diminish } from './career.js?v=35';
-import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=35';
-import { kimeteGain } from './drills.js?v=35';
+import { TYPES } from '../data/types.js?v=36';
+import { GUIDE_IDS } from '../data/guides.js?v=36';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=36';
+import { foeAt } from '../data/foes.js?v=36';
+import { inGame } from '../data/kimarite.js?v=36';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=36';
+import { startStats, growthMult, diminish } from './career.js?v=36';
+import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=36';
+import { kimeteGain } from './drills.js?v=36';
 
 export const RUN_VERSION = 4;
 export const TRAIN_STEPS = 3; // 1回の稽古のコマ数

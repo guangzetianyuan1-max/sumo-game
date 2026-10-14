@@ -1,6 +1,6 @@
 // src/core/kamibutton.js — 紙相撲の下のボタンの見た目（場面→字の鍵・色・拍の近さ・起き上がりの進み）。画面から切り離した純粋な関数
-import { KAMI, beatOffset, gaugeLit } from './kami.js?v=35';
-import { gaugeTier, TIER_COLOR } from './gaugetier.js?v=35';
+import { KAMI, beatOffset, gaugeLit } from './kami.js?v=36';
+import { gaugeTier, TIER_COLOR } from './gaugetier.js?v=36';
 
 const COLOR = {
   wait: 0x5a5f6e, // 灰

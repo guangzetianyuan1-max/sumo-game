@@ -1,6 +1,6 @@
 {
-  "name": "SUMO",
-  "short_name": "SUMO",
+  "name": "トントン紙相撲",
+  "short_name": "トントン紙相撲",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",

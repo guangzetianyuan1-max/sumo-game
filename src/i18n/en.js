@@ -1,7 +1,7 @@
 // English text table. Keys must match ja.js (checked by tests/i18n.test.js).
 // Sumo terms stay in romaji (no macrons), as English-speaking sumo fans know them.
 export default {
-  'title': 'SUMO (working title)',
+  'title': 'Ton-Ton Paper Sumo',
   'lang.toggle': '日本語',
   'setup.you': 'Your type',
   'setup.start': 'Start',
@@ -560,7 +560,7 @@ export default {
   'caution.rest': 'Take a break now and then when playing for a long time.',
   'caution.fiction': 'This game is fiction. It has no connection to real wrestlers or organizations.',
   'caution.tap': 'Tap to continue',
-  'cover.sub': 'Paper sumo — rise to Yokozuna!',
+  'cover.sub': 'Tap, push, and rise to Yokozuna!',
   'cover.tap': 'Tap to start',
   'cover.credit': '© Himanabuta',
 };

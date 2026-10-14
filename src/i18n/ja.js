@@ -1,6 +1,6 @@
 // 日本語の文の表。項目は en.js と同じにそろえる（tests/i18n.test.js で確かめる）。
 export default {
-  'title': '相撲（仮）',
+  'title': 'トントン紙相撲',
   'lang.toggle': 'English',
   'setup.you': 'あなたのタイプ',
   'setup.start': '入門する',
@@ -559,7 +559,7 @@ export default {
   'caution.rest': '長く遊ぶときは、\nときどき休みましょう。',
   'caution.fiction': 'このゲームはフィクションです。\n実在の力士・団体とは無関係です。',
   'caution.tap': 'たたくと進みます',
-  'cover.sub': '紙相撲で 横綱をめざせ！',
+  'cover.sub': 'たたいて押して、横綱をめざせ！',
   'cover.tap': '画面をたたいて はじめる',
   'cover.credit': '© ひまなぶた',
 };
