@@ -1,36 +1,38 @@
 // 相手の型ごとの攻め（設計書 2026-10-14-sumo-two-buttons-and-foe-tactics-design.md §3）
 // 攻めは敵（西）だけが持つ。どれも 予告 warn → 実行 act → 後始末 after → 間 gap → 次の予告。一度に1つ。
 // 数字は Task 3 で強さを合わせる時に動かすので、全部ここに並べる。画面の字は i18n（tactic.<id>）。
-import { makeRng } from './rng.js?v=37';
-import { ON_BEAT } from './beat.js?v=37';
+import { makeRng } from './rng.js?v=38';
 
 export const TACTIC_IDS = ['fumbari', 'hataki', 'tsuppari', 'kumi'];
 export const TACTIC_START = 2.5;   // 押し合いが始まってから、最初の予告まで（秒）
-export const TACTIC_MIN_WARN = 0.6; // 予告の最短（秒）＝画面を見ている人が返せる長さ
 export const TACTIC_MIN_GAP = 3;    // 攻めの終わりから次の予告までの最短（秒）
 export const TACTIC_LAST = 19;      // この番号（20体目＝大ボス）は4つ全部
 // 体の番号で動く3つ：[1体目, 20体目]（間は直線）
 // 間 gap は 10/14 Task 3 の強さ合わせで [6, 3]→[4.5, 3]（10体目のはたきが1取組に2回ほど来る＝返さない人は10体目で ふつうの人より15ポイント以上負ける）
-export const TACTIC_CURVE = { warn: [0.9, 0.6], gap: [4.5, 3], power: [0.6, 1] };
+// 予告の長さは守りのバーから決める（barWarn）＝ここには持たない（ボタン1つ Task 2 直し・Ruling 8）
+// Task 2b 直し：gap の20体目 3→4→4.5（直し2・どの体も同じ間）。必殺技が攻めの順番に入り、攻めの数が増えた分
+export const TACTIC_CURVE = { gap: [4.5, 4.5], power: [0.6, 1] };
 
-// 攻めごと：warn＝予告の最短（tacticTiming の warn と大きい方）・act＝実行の秒・after＝後始末の秒・ほか＝強さの元の数
+// 攻めごと：act＝実行の秒・after＝後始末の秒・ほか＝強さの元の数（予告の秒は barWarn）
 export const TACTICS = {
   // 踏ん張り：act の間は重さ×mass。くっついて（間 ≤ reach）たたくと跳ね返されてよろける。解けた後 after 秒は重さ×afterMass（act の間に跳ね返されなかった時だけ＝待った褒美）
   // mass は brief の 2.5 だと act の間の連打で 24〜77px 押せ、たたき続ける方が得だった（設計書「押されても動かない」）ので 50。afterMass は 0.6 だと種によって待つ得が 2% しかなかったので 0.5
   // 10/14 Task 3（機械に人の反応 0.3 秒）：afterMass 0.5→0.25・recoilVx 150→700。待つ得・連打の損が小さく、一生の通しでは稽古を多く積んだ返さない人の方が
   // 後ろの重量（13・18体目）に勝ちやすかった（設計書 §4：踏ん張りの敵では どれも ふつうの人が勝ちやすい）
   // 10/14 最終点検：跳ね返しの速さ recoilVx は ×強さ（1体目 0.6 倍＝420・20体目 700）。1体目で連打する人が倒れすぎていた
-  fumbari: { warn: TACTIC_MIN_WARN, act: 2, after: 0.8, mass: 50, afterMass: 0.25, reach: 100, recoilVx: 700, recoilVa: 0.03 },
-  // はたき：act＝構え。くっついて（間 ≤ reach）拍を外して（beatOffset ≥ beat）たたくと前へ倒され、足もとは slide×強さ÷重さ の速さで自分の後ろへ滑る・敵は back px 下がる
-  // reach は 10/14 最終点検で 110→120（踏ん張りの跳ね返しを強さに比例させ、倒れた主人公への突っ張りを止めた分の強さ合わせ。返さない人が10体目で ふつうの人より15ポイント以上負ける、の余裕を戻す）
-  // beat＝拍に合う幅（取組の「カン」と同じ ON_BEAT）。滑るのは slideFrom 番（10体目）から＝はたかれると、ほぼ箱の外まで滑る（本物のはたき込み）。それまでは倒れて起き上がる
-  hataki: { warn: TACTIC_MIN_WARN, act: 1.2, after: 0.3, reach: 120, beat: ON_BEAT, back: 30, fallA: -1.5, slide: 4000, slideFrom: 9 },
-  // 突っ張り：予告の終わりに、間 ≤ reach なら一突き（遠ければ突き損ね）＝速さ push×強さ÷重さ・浮き lift・後ろへ反る va。こらえていれば braced÷（重さ×こらえの倍率）だけ
+  // ボタン1つ Task 2 直し1：recoilVx 700→1000（予告の間に跳ねられなくなった分、失敗した後に連打する人と返さない人が、返す人と同じだけ勝っていた＝13体目）
+  fumbari: { act: 2, after: 0.8, mass: 50, afterMass: 0.25, reach: 100, recoilVx: 1000, recoilVa: 0.03 },
+  // はたき：守りのバーに失敗すると、act の始めに（間 ≤ reach なら）前へはたき落とされ、足もとは slide×強さ÷重さ の速さで自分の後ろへ滑る・敵は back px 下がる（届かなければ はたき損ね）
+  // 10/14 ボタン1つ Task 2：拍に合わせて返す形（beat）は無くした（守りは長押しバー1つ）。act は一瞬（はたいたら すぐ after）
+  // 滑るのは slideFrom 番（8体目・Task 2b 直し2 で 10体目→8体目）から＝はたかれると、箱の端の近くまで滑る（本物のはたき込み）。それまでは倒れて起き上がる
+  // slide は Task 2 の強さ合わせで 4000→2500（守りがバー1つになり、失敗のたびに はたかれる。4000 では10体目からの はたきの敵がどれも壁＝初挑戦 1〜2割だった）
+  hataki: { act: 0, after: 0.3, reach: 120, back: 30, fallA: -1.5, slide: 2500, slideFrom: 7 }, // 直し2（Task 2b）：slideFrom 9→7（8体目で返さない人が ふつうの人より勝ちやすかった）
+  // 突っ張り：予告の終わりに（守りのバーに失敗していれば）、間 ≤ reach なら一突き（遠ければ突き損ね）＝速さ push×強さ÷重さ・浮き lift・後ろへ反る va
   // push は 10/14 Task 3 で 520→1100（520 では押し戻されても困らず、予告で こらえて たたけない方が損だった）
-  tsuppari: { warn: TACTIC_MIN_WARN, act: 0.3, after: 0.4, reach: 150, push: 1100, lift: 200, va: 0.05, braced: 60 },
+  tsuppari: { act: 0.3, after: 0.4, reach: 150, push: 1100, lift: 200, va: 0.05 },
   // 組んで寄る：間 ≤ start で予告。act の間は間 keep のまま、主人公を背中側へ carry×強さ px/秒 運ぶ（act の始めに間 > miss なら組み損ね）
   // 直近 window 秒に taps 回たたくと振りほどける・敵は stun 秒すき。10/14 Task 3：taps 5→6（ふつうの1秒4回では解けない＝速い連打が要る）・stun 0.4→0.8（振りほどいた得）
-  kumi: { warn: TACTIC_MIN_WARN, act: 1.5, after: 0.4, start: 100, keep: 90, miss: 110, carry: 90, taps: 6, window: 1.2, stun: 0.8 },
+  kumi: { act: 1.5, after: 0.4, start: 100, keep: 90, miss: 110, carry: 90, taps: 6, window: 1.2, stun: 0.8 },
 };
 
 const lerp = (a, b, k) => a + (b - a) * k;
@@ -51,12 +53,49 @@ export function tacticsFor(type, index, seed) {
   return a.slice(0, 2);
 }
 
-// 体の番号 → 予告の秒・次の攻めまでの間の秒・強さ
+// 体の番号 → 次の攻めまでの間の秒・強さ
 export function tacticTiming(index) {
   const k = clamp01((Number(index) || 0) / TACTIC_LAST);
   return {
-    warn: Math.max(TACTIC_MIN_WARN, lerp(TACTIC_CURVE.warn[0], TACTIC_CURVE.warn[1], k)),
     gap: Math.max(TACTIC_MIN_GAP, lerp(TACTIC_CURVE.gap[0], TACTIC_CURVE.gap[1], k)),
     power: lerp(TACTIC_CURVE.power[0], TACTIC_CURVE.power[1], k),
   };
 }
+
+// ---- 守りの長押しバー（10/14 ボタン1つ・設計書 2026-10-14-sumo-one-button-ring-bar-design.md §4） ----
+// 相手の攻めの予告が出ると、主人公の左端にバーが出る。押している間 held/fillMs でたまり、緑の帯（center ± half）で離せば こらえ成功（攻めは打ち消し）。
+// 帯の外で離す・満タン（1）まで押す・押さないまま予告が終わる＝失敗（攻めがそのまま来る）。稽古の長押し（drills.js の NAGAOSHI）と同じ考え
+// fillMs＝型ごとのたまる秒（ms・重量＝ゆっくり〜小兵＝速い）。後の体ほど ×fast まで速く（直線）。half＝帯の半分の幅 [1体目, 20体目]（直線）
+// react＝見てから押し始めるまで（人の反応）・lead＝押し始めまでの余裕。予告は「緑の真ん中に届く秒＋react＋lead」より短くしない（Review Focus #2）
+// stun＝こらえ成功で相手が すきになる秒・linger＝結果（成功・失敗）を画面に残す秒
+// tapMax＝これより短い押し（連打の一押し）を帯の下で離しても「まだ」（失敗にしない・Ruling 7）。予告から react 秒までの押し始めも「まだ」
+// getUp＝起き上がってから次の予告まで待つ秒（指を離すまでも待つ・Ruling 6）
+// 強さ合わせ（Task 2・kami_tune）：half [0.12, 0.07]→[0.14, 0.12]・stun 0.5→1.0。細い帯と短い すきでは、10体目からの はたきの敵が壁になり
+// （ふつうの人＝7割の攻めで押し、成功 約6割）、こらえ成功の得も小さかった（返さない人との差が出ない）
+// Task 2b 直し：half の20体目 0.12→0.13（大ボスの初挑戦を 3割の上へ）
+// late＝押し始めた押しが帯の上の端に届いてから、予告が終わるまでの最短の秒（最終点検の直し 2：反応の遅い人。予告は押し始めに合わせて延びるだけ）
+export const BAR = { fillMs: { heavy: 1700, yotsu: 1500, tall: 1400, small: 1200 }, fast: 0.85, half: [0.14, 0.13], center: 0.75, react: 0.3, lead: 0.5, stun: 1.0, linger: 0.6, tapMax: 0.2, getUp: 0.8, late: 0.15 };
+// 攻め → そのバーの型（型ごとの攻めの逆。バランスと大ボスも攻めの型の数を使う）
+export const TACTIC_TYPE = { fumbari: 'heavy', hataki: 'small', tsuppari: 'tall', kumi: 'yotsu' };
+
+// ---- 敵の必殺技（10/14 ボタン1つ Task 2b・設計書 §4.5）：攻めと同じ 予告 warn → act → after の形で、id＝FOE_KIME_ID（st.tactic.kime＝必殺技の id） ----
+// 攻めの順番の1つ（攻め・必殺技・攻め…・Ruling 10）。順番が来て、相手が届く（KIMETE_REACH＋reach px・うっちゃりは自分の背中側の端から edgeU px の内）なら予告＋主人公のバー。
+// 緑で離せば打ち消し（相手は BAR.stun 秒すき）・失敗＝決め技がそのまま決まる（予告の終わりに KIMETE_REACH＋slack px より離れていれば空振り）
+// act＝0（予告の終わりに一発）・after＝後始末の秒・next＝必殺技の終わりから次の攻めまでの秒（攻めの間 gap は使わない）
+export const FOE_KIME_ID = 'foeKime';
+// 強さ合わせ（Task 2b 直し・kami_tune）：next 1.5→1.2（4体目で返さない人が勝ちやすかった）・edgeU 225→205（大ボスのうっちゃりが鍛えた主人公に多すぎた）
+// wait＝順番が来て届かない時、届くのを待つ最長の秒（Ruling 12）・downMin＝これより弱い必殺技は倒さない（押すだけ・Ruling 11）
+export const FOE_KIME = { act: 0, after: 0.4, reach: 30, slack: 40, edgeU: 205, next: 1.2, wait: 1.0, downMin: 0.5 };
+// 必殺技の系統 → そのバーの型（§4.5：重量＝突き・小兵＝はたき・長身＝投げ・四つ＝寄り。うっちゃりは四つの数）
+export const KIME_TYPE = { tsuki: 'heavy', hiki: 'small', nage: 'tall', yori: 'yotsu', utchari: 'yotsu' };
+
+// 型と体の番号 → バーの数 { fillMs, center, half }（知らない型は四つの数＝真ん中）。後の新しい予告（敵の必殺技など）も型を渡せば同じバーを使える
+export function barSpec(type, index) {
+  const k = clamp01((Number(index) || 0) / TACTIC_LAST);
+  const base = has(BAR.fillMs, type) ? BAR.fillMs[type] : BAR.fillMs.yotsu;
+  return { fillMs: base * lerp(1, BAR.fast, k), center: BAR.center, half: lerp(BAR.half[0], BAR.half[1], k) };
+}
+// 押し始めてから緑の真ん中に届くまでの秒
+export const barReach = (spec) => spec.fillMs * spec.center / 1000;
+// そのバーに要る予告の最短（秒）
+export const barWarn = (spec) => barReach(spec) + BAR.react + BAR.lead;

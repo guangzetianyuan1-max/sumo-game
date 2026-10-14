@@ -1,7 +1,7 @@
 // 節目で技を覚える（10/12 作り直し・本人「節目で1つ覚える」）。従来の技は 勝ち越し・十両昇進・幕内昇進 で3つから1つ選ぶ
-import { IN_GAME, KIMARITE } from '../data/kimarite.js?v=37';
-import { TYPES } from '../data/types.js?v=37';
-import { divisionOf } from './banzuke.js?v=37';
+import { IN_GAME, KIMARITE } from '../data/kimarite.js?v=38';
+import { TYPES } from '../data/types.js?v=38';
+import { divisionOf } from './banzuke.js?v=38';
 
 const JURYO = 5; // divisionOf の段の番号（0＝横綱・4＝前頭・5＝十両）＝ basho.js の LEVEL と同じ
 const MAKUUCHI = 4;

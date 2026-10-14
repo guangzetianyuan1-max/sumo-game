@@ -8,36 +8,41 @@
 // 決め技モード（10/14 本人「稽古の出来で決め技を習得できるようにしてください」・data.kimete＝決め技の id）：
 //   遊びはその決め技の drill（kimete.js）。心技体は伸びず、出来で習得ゲージ（drills.kimeteGain）がたまる（drillKimeteNow を1回だけ）。
 //   結果＝点数と出来 → ゲージが前→後へたまる → 満タンなら「習得！」・決めのカットイン（kime）・kan の音／満タンでなければ「習得 75%」
-import { t } from '../i18n/i18n.js?v=37';
-import { session, drillStatNow, drillKimeteNow } from '../state.js?v=37';
-import { canLeaveTraining } from '../core/run.js?v=37';
-import { kimeteById } from '../data/kimete.js?v=37';
-import { cutinArt } from '../core/cutin.js?v=37';
+import { t } from '../i18n/i18n.js?v=38';
+import { session, drillStatNow, drillKimeteNow } from '../state.js?v=38';
+import { canLeaveTraining } from '../core/run.js?v=38';
+import { kimeteById } from '../data/kimete.js?v=38';
+import { cutinArt } from '../core/cutin.js?v=38';
 import {
   DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood,
-  IPPON, ipponHitMs, ipponRadius, ipponJudge, ipponMissed, ipponScore,
-  RENDA, rendaScore, NAGAOSHI, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct,
-} from '../core/drills.js?v=37';
-import { kamiArt, heroArt } from '../core/foeart.js?v=37';
-import { HERO_TYPE } from '../data/heroes.js?v=37';
-import { createBigButton } from '../ui/bigbutton.js?v=37';
-import { drawCutinBand } from '../ui/cutinband.js?v=37';
-import { playTraining, playBout } from '../ui/sfx.js?v=37';
+  IPPON, ipponHitMs, ipponJudge, ipponMissed, ipponScore,
+  RENDA, COUNTDOWN, countdownAt, rendaScore, NAGAOSHI, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct,
+} from '../core/drills.js?v=38';
+import { kamiArt, heroArt } from '../core/foeart.js?v=38';
+import { HERO_TYPE } from '../data/heroes.js?v=38';
+import { createBigButton } from '../ui/bigbutton.js?v=38';
+import { drawCutinBand } from '../ui/cutinband.js?v=38';
+import { HUD, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=38'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
+import { playTraining, playBout } from '../ui/sfx.js?v=38';
 import {
   button, fitText, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadHeroFigures, clearScene, COLORS,
-} from '../ui/widgets.js?v=37';
+} from '../ui/widgets.js?v=38';
 
 const BG_KEY = 'keiko-bg';
 const HERO_FILE = `hero_${HERO_TYPE}`;
 const FIG_H = 330; // 型紙の高さ（取組と同じ）
 const FEET_Y = 800; // 型紙の足もと（稽古場の床の上）
 const BTN = { x: 360, y: 1104, d: 300, hit: 165 }; // 取組と同じ立体のボタン
-const RING = { x: 470, y: 430 }; // 一押しの輪の中心（主人公の前・上）
-const PILLAR = { x: 452, w: 64, top: -10 }; // 鉄砲柱（背景の柱の上に重ねる図形）
-const GAUGE = { x: 620, top: 300, h: 460, w: 46 }; // 長押しのゲージ（縦）
+const FACE = -1; // 主人公は左向き（3つの遊びとも・10/14 本人）。型紙は右向きなので反転し、突く・傾けるの向きもこれで決める
+const HERO_X = { ippon: 410, renda: 450, nagaoshi: 410 }; // 型紙の中心 x（左端のバー x70・上の輪 x360 にかからない・連打は柱が左）
+const PILLAR = { x: 268, w: 64, top: -10 }; // 鉄砲柱（主人公の左・背景の柱の上に重ねる図形）
+const HUD_DEPTH = 6; // 〇とバー：上の見出しの帯と字（4・5）より上
 const FEEDBACK_Y = 560;
+const INFO_Y = 162; // 回数・残りの1行（見出しの帯の中）
+const INFO_Y_IPPON = 872; // 一押しだけは足もと（800）とボタンの弧（約944）の間へ：縮み始めの金の輪（中央上・半径 230＝y 30〜490）が字にかからない（最終点検の直し 6）
 const HEAD_H = 196; // 上の見出しの帯の高さ
-const COUNT = { x: 600, y: 470 }; // 連打の回数（柱の右に大きく）
+const COUNT = { x: 595, y: 470 }; // 連打の回数（主人公の右に大きく）
+const CD = { x: 360, y: 560, size: 280, goMs: 650 }; // 連打の前の 3・2・1・GO（大きな字・真ん中）
 const READY_MS = 900; // 一押しの「よーい」
 const RESULT_GUARD_MS = 600; // 結果の画面が出てから次へのボタンを出すまで（連打の最後のひとたたきが、そのまま結果を飛ばさない）
 const TXT_SHADOW = [0, 3, '#0a0f20', 6, false, true];
@@ -116,7 +121,7 @@ export class DrillScene extends Phaser.Scene {
     this.add.rectangle(0, 0, width, HEAD_H, 0x141a2e, 0.72).setOrigin(0, 0).setDepth(4);
     fitText(this.add.text(width / 2, 56, this.headLabel(), textStyle(50, COLORS.gold)).setOrigin(0.5).setShadow(...TXT_SHADOW).setDepth(5), width - 60);
     fitText(this.add.text(width / 2, 112, t(`drill.${kind}.how`), textStyle(28, COLORS.ink)).setOrigin(0.5).setShadow(...TXT_SHADOW).setDepth(5), width - 50);
-    this.info = this.add.text(width / 2, 162, '', textStyle(30, COLORS.gold)).setOrigin(0.5).setShadow(...TXT_SHADOW).setDepth(5);
+    this.info = this.add.text(width / 2, kind === 'ippon' ? INFO_Y_IPPON : INFO_Y, '', textStyle(30, COLORS.gold)).setOrigin(0.5).setShadow(...TXT_SHADOW).setDepth(5);
 
     // 鉄砲柱（連打だけ）：型紙の後ろ
     this.pillar = null;
@@ -131,17 +136,20 @@ export class DrillScene extends Phaser.Scene {
       this.pillar = g;
     }
     // 足もとの影と型紙
-    const heroX = kind === 'renda' ? 318 : kind === 'nagaoshi' ? 290 : 230;
+    const heroX = HERO_X[kind];
     this.heroX = heroX;
     this.add.ellipse(heroX, FEET_Y + 2, 170, 22, 0x000000, 0.35);
     this.hero = this.figure(heroX);
 
-    // 一押しの輪（的＝白・縮む金）
-    this.ring = kind === 'ippon' ? this.add.graphics() : null;
-    // 長押しのゲージ
-    this.gauge = kind === 'nagaoshi' ? this.add.graphics() : null;
+    // 一押しの輪（的＝白・縮む金）＝本番と同じ中央上・長押しのバー＝本番と同じ左端
+    this.ring = kind === 'ippon' ? this.add.graphics().setDepth(HUD_DEPTH) : null;
+    this.gauge = kind === 'nagaoshi' ? this.add.graphics().setDepth(HUD_DEPTH) : null;
 
     this.counter = kind === 'renda' ? this.add.text(COUNT.x, COUNT.y, '0', textStyle(110, COLORS.gold, { stroke: '#141a2e', strokeThickness: 10 })).setOrigin(0.5).setDepth(6) : null;
+    // 連打の前の 3・2・1・GO
+    this.cd = kind === 'renda' ? this.add.text(CD.x, CD.y, '', textStyle(CD.size, COLORS.gold, { stroke: '#141a2e', strokeThickness: 16 })).setOrigin(0.5).setDepth(11).setVisible(false) : null;
+    this.cdN = null; // 今出している数（3・2・1・0＝GO）
+    if (this.counter) this.counter.setVisible(false); // 数えるのは GO から
     this.feedback = this.add.text(width / 2, FEEDBACK_Y, '', textStyle(76, COLORS.gold, { stroke: '#141a2e', strokeThickness: 8 })).setOrigin(0.5).setDepth(10);
 
     this.btn = createBigButton(this, {
@@ -151,7 +159,8 @@ export class DrillScene extends Phaser.Scene {
     });
     this.btn.setLook({ color: 0xc8553d, label: t(`drill.btn.${kind}`) });
     if (kind === 'ippon') this.startAt = this.time.now + READY_MS;
-    this.phase = kind === 'ippon' ? 'ready' : 'wait';
+    if (kind === 'renda') this.startAt = this.time.now; // 連打：入ってすぐ 3・2・1・GO（押しは数えない）
+    this.phase = kind === 'ippon' ? 'ready' : kind === 'renda' ? 'count' : 'wait';
   }
 
   // 見出し：決め技モードは「決め技「○○」の稽古」・ふつうは遊びの名前
@@ -165,6 +174,7 @@ export class DrillScene extends Phaser.Scene {
     if (!key) return null;
     const img = this.add.image(x, FEET_Y, key).setOrigin(0.5, 1);
     img.setScale(FIG_H / img.height);
+    img.setFlipX(FACE < 0); // 左向き
     return img;
   }
 
@@ -178,20 +188,20 @@ export class DrillScene extends Phaser.Scene {
     this.feedbackUntil = this.time.now + ms;
   }
 
-  // 主人公が前へ突く（一押し・連打）
+  // 主人公が前（左）へ突く（一押し・連打）。dx は前へ進む長さ
   lunge(dx, ms) {
     if (!this.hero) return;
     this.tweens.killTweensOf(this.hero);
     this.hero.x = this.heroX;
     this.hero.angle = 0;
-    this.tweens.add({ targets: this.hero, x: this.heroX + dx, angle: 4, duration: ms, yoyo: true, ease: 'Quad.Out' });
+    this.tweens.add({ targets: this.hero, x: this.heroX + FACE * dx, angle: FACE * 4, duration: ms, yoyo: true, ease: 'Quad.Out' });
   }
 
   shakePillar() {
     if (!this.pillar) return;
     this.tweens.killTweensOf(this.pillar);
     this.pillar.x = PILLAR.x;
-    this.tweens.add({ targets: this.pillar, x: PILLAR.x + 7, duration: 40, yoyo: true, repeat: 1, ease: 'Sine.InOut' });
+    this.tweens.add({ targets: this.pillar, x: PILLAR.x + FACE * 7, duration: 40, yoyo: true, repeat: 1, ease: 'Sine.InOut' });
   }
 
   // ボタンを押した：遊びの1手にしたら true（沈む）・受け付けない時は false
@@ -206,8 +216,7 @@ export class DrillScene extends Phaser.Scene {
       return true;
     }
     if (this.kind === 'renda') {
-      if (this.phase === 'wait') { this.phase = 'run'; this.runAt = now; this.count = 0; }
-      if (this.phase !== 'run') return false;
+      if (this.phase !== 'run') return false; // 3・2・1・GO の間の押しは数えない（ボタンも沈まない）
       this.count += 1;
       if (this.counter) {
         this.tweens.killTweensOf(this.counter);
@@ -314,17 +323,15 @@ export class DrillScene extends Phaser.Scene {
       if (this.points.length >= IPPON.rounds) { this.finish(ipponScore(this.points)); return; }
       this.nextRing(now);
     }
-    // 的の輪（白・太い）と、ぴったりの幅の薄い帯
-    g.lineStyle(20, 0xffffff, 0.18).strokeCircle(RING.x, RING.y, IPPON.targetR);
-    g.lineStyle(5, 0xffffff, 0.95).strokeCircle(RING.x, RING.y, IPPON.targetR);
+    // 的の輪（白・太い）と縮む金の輪＝本番と同じ置き場所（HUD.ring）と形（hud.js の drawRing）。輪の間は的だけ
     if (this.phase === 'ring') {
       const el = now - this.roundAt;
       if (ipponMissed(el, this.hitMs)) { this.scoreIppon(0); return; }
-      const r = ipponRadius(el, this.hitMs);
-      g.lineStyle(10, 0xe3b23c, 1).strokeCircle(RING.x, RING.y, Math.max(2, r));
+      drawRing(g, ringShape({ from: 0, hitAt: this.hitMs / 1000 }, el / 1000));
       const near = Math.abs(el - this.hitMs) <= IPPON.perfectMs;
       this.btn.setLook({ pulse: near ? 1 : Math.max(0, 1 - Math.abs(el - this.hitMs) / 500) });
     } else {
+      drawRing(g, { x: HUD.ring.x, y: HUD.ring.y, target: IPPON.targetR, r: null });
       this.btn.setLook({ pulse: 0 });
     }
   }
@@ -338,15 +345,36 @@ export class DrillScene extends Phaser.Scene {
   }
 
   updateRenda(now) {
-    if (this.phase === 'wait') {
-      this.info.setText(t('drill.tapToStart'));
-      this.btn.setLook({ throb: true });
-      return;
+    if (this.phase === 'count') {
+      this.updateCountdown(now);
+      if (this.phase === 'count') return;
     }
     const left = Math.max(0, RENDA.ms - (now - this.runAt));
     this.info.setText(t('drill.time', { s: (left / 1000).toFixed(1), n: this.count }));
     this.btn.setLook({ throb: false, fill: left / RENDA.ms, arc: true });
     if (left <= 0) this.finish(rendaScore(this.count));
+  }
+
+  // 連打の前：3・2・1 を1秒ずつ。GO で5秒が始まる（runAt＝GO の時刻）。数が変わった時だけ字と音を出す
+  updateCountdown(now) {
+    const n = countdownAt(now - this.startAt);
+    this.info.setText(t('drill.ready'));
+    this.btn.setLook({ throb: false, fill: 0, arc: false });
+    if (n === this.cdN) return;
+    this.cdN = n;
+    this.cd.setVisible(true).setScale(1).setAlpha(1).setText(n > 0 ? String(n) : t('drill.go'));
+    fitText(this.cd, this.scale.width - 80);
+    const base = this.cd.scaleX;
+    this.cd.setScale(base * 1.25);
+    this.tweens.killTweensOf(this.cd);
+    this.tweens.add({ targets: this.cd, scale: base, duration: 220, ease: 'Back.Out' });
+    if (n > 0) { playBout('pon'); return; }
+    playBout('kan');
+    this.phase = 'run';
+    this.runAt = now;
+    this.count = 0;
+    if (this.counter) this.counter.setText('0').setVisible(true);
+    this.tweens.add({ targets: this.cd, alpha: 0, delay: CD.goMs - 250, duration: 250 });
   }
 
   updateNagaoshi(now) {
@@ -362,7 +390,7 @@ export class DrillScene extends Phaser.Scene {
       if (gv >= 1) { this.scoreNagaoshi(1); gv = 1; } // 満タンまで上げすぎ
       else if (this.hero) { // 足を上げる：型紙を持ち上げて後ろへ傾ける
         this.hero.y = FEET_Y - 70 * gv;
-        this.hero.angle = -14 * gv;
+        this.hero.angle = -FACE * 14 * gv; // 足を上げて後ろへ傾ける（左向きなら右回り）
       }
     }
     const shown = Math.min(done + (this.phase === 'gap' ? 0 : 1), NAGAOSHI.rounds);
@@ -371,19 +399,11 @@ export class DrillScene extends Phaser.Scene {
     this.btn.setLook({ fill: gv, arc: true, throb: this.phase === 'wait' });
   }
 
+  // 長押しのバー＝本番と同じ左端（HUD.bar）・同じ形（hud.js の drawBar）。帯は長押し稽古の判定（NAGAOSHI）
   drawGauge(v) {
     const g = this.gauge;
-    const { x, top, h, w } = GAUGE;
-    const y0 = top + h; // 下の端（0）
-    const at = (p) => y0 - h * p;
     g.clear();
-    g.fillStyle(0x141a2e, 0.85).fillRoundedRect(x - w / 2 - 6, top - 6, w + 12, h + 12, 14);
-    const b0 = NAGAOSHI.center - NAGAOSHI.half, b1 = NAGAOSHI.center + NAGAOSHI.half;
-    g.fillStyle(0x6fcf7f, 0.9).fillRect(x - w / 2, at(b1), w, at(b0) - at(b1)); // 緑の帯
-    g.fillStyle(0xffffff, 0.9).fillRect(x - w / 2, at(NAGAOSHI.center) - 1, w, 2); // 帯の真ん中
-    if (v > 0) g.fillStyle(0xe3b23c, 0.85).fillRect(x - w / 2 + 8, at(v), w - 16, y0 - at(v));
-    g.lineStyle(4, 0xe3c27a, 1).strokeRoundedRect(x - w / 2 - 6, top - 6, w + 12, h + 12, 14);
-    g.fillStyle(0xffffff, 1).fillTriangle(x - w / 2 - 22, at(v) - 10, x - w / 2 - 22, at(v) + 10, x - w / 2 - 6, at(v)); // 今の高さの矢印
+    drawBar(g, barShape({ center: NAGAOSHI.center, half: NAGAOSHI.half }, v));
   }
 
   // ---- 終わり：伸ばして保存（1回だけ）→ 結果 ----

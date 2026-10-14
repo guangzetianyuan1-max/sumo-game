@@ -63,6 +63,13 @@ export const ipponScore = (points) => clamp01(points.reduce((a, p) => a + p, 0) 
 
 // ---- 連打 ----
 export const RENDA = { ms: 5000, full: 30 };
+// 連打の前の 3・2・1・GO：from から 1 つずつ stepMs ごとに減り、from*stepMs で GO（0）＝そこから RENDA.ms を数える
+export const COUNTDOWN = { from: 3, stepMs: 1000 };
+// 経過 ms → 今出す数（3・2・1・0＝GO）。始まる前・壊れた値は最初の数
+export function countdownAt(elapsedMs) {
+  if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return COUNTDOWN.from;
+  return Math.max(0, COUNTDOWN.from - Math.floor(elapsedMs / COUNTDOWN.stepMs));
+}
 export const rendaScore = (count) => clamp01((Number.isFinite(count) ? count : 0) / RENDA.full);
 
 // ---- 長押し ----
@@ -83,7 +90,7 @@ export const nagaoshiScore = (points) => clamp01(points.reduce((a, p) => a + p, 
 // ---- 画面が裏へ回って戻った時の時計の直し（遊びの時計は画面が裏でも進む：戻った最初のコマで now が dur だけ飛ぶ） ----
 // c＝{ phase, roundAt, startAt, gapUntil, runAt }（遊びの今の時計）・now＝戻った最初のコマの時刻・dur＝裏にいた長さ（ms）。新しい時計を返す（元は書き換えない）
 //   一押し：輪が出ている最中ならその回をやり直す（外れにしない）／「よーい」と次の輪までの間は裏にいた分だけ後ろへ
-//   連打：走っている最中は裏にいた分だけ後ろへずらす（5秒が裏で尽きない）
+//   連打：走っている最中は裏にいた分だけ後ろへずらす（5秒が裏で尽きない）／3・2・1・GO の最中も同じく後ろへずらす（数えが裏で進まない）
 //   長押し：次の回までの間だけ後ろへずらす（押している最中は別に「やり直し」になる）
 export function shiftForHidden(kind, c, now, dur) {
   const d = Number.isFinite(dur) && dur > 0 ? dur : 0;
@@ -94,6 +101,7 @@ export function shiftForHidden(kind, c, now, dur) {
     else if (c.phase === 'gap') out.gapUntil = c.gapUntil + d;
   } else if (kind === 'renda') {
     if (c.phase === 'run') out.runAt = c.runAt + d;
+    else if (c.phase === 'count') out.startAt = c.startAt + d; // 3・2・1・GO は裏にいた間は止まる
   } else if (c.phase === 'gap') {
     out.gapUntil = c.gapUntil + d;
   }

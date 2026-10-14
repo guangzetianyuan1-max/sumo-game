@@ -1,6 +1,6 @@
 // src/ui/sfx.js — 効果音（10/11 本人「効果音付きで」）。音のファイルは使わず、Web Audio でその場で作る
 // どの音も 0.8 秒以内・重なった時も含めて音量の山は 0.35 以下。鳴らせない端末（AudioContext が無い・作ると例外）では何もしない
-import { isMuted } from './music.js?v=37'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
+import { isMuted } from './music.js?v=38'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
 
 let ctx = null;
 let broken = false; // 作ろうとして例外が出た端末では、2度目からは試さない

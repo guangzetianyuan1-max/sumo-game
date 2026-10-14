@@ -6,16 +6,16 @@
 // 親方が一番低い心技体に合う遊びを勧める（★と金の字）。
 // 負けた後の稽古は3コマ終えると同じ相手へ。番付からいつでも入る稽古（training.voluntary・10/13 本人「好きなときに稽古が出来るように」）は、
 // どのコマでも「番付へ戻る」で抜けられる（残りのコマは捨てる）・終われば番付へ
-import { t } from '../i18n/i18n.js?v=37';
-import { session, trainLeaveNow } from '../state.js?v=37';
-import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=37';
-import { kimeteById } from '../data/kimete.js?v=37';
-import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=37';
-import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=37';
-import { playBout } from '../ui/sfx.js?v=37';
+import { t } from '../i18n/i18n.js?v=38';
+import { session, trainLeaveNow } from '../state.js?v=38';
+import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=38';
+import { kimeteById } from '../data/kimete.js?v=38';
+import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=38';
+import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=38';
+import { playBout } from '../ui/sfx.js?v=38';
 import {
   topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, preloadOyakataArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=37';
+} from '../ui/widgets.js?v=38';
 
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1235 は「稽古おわり」の字・1210 は番付へ戻る）
 const CARD = { w: 640, top: 470, step: 120, bottom: 1150 };

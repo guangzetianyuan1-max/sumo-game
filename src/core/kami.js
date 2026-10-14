@@ -1,9 +1,10 @@
 // 紙相撲の計算（10/13 本人「紙相撲に切り替える」・設計書 2026-10-13-sumo-kamizumo-design.md）
 // 画面から切り離した、型紙2枚の動き。単位＝画面の px と秒。x＝足もとの真ん中・y＝箱の面からの高さ（上が＋）
 // a＝傾き（＋＝自分の後ろへ反る）。東＝主人公＝左から右へ（dir +1）・西＝敵＝右から左へ（dir -1）
-import { makeRng } from './rng.js?v=37';
-import { TACTICS, isTactic, tacticTiming, TACTIC_START } from './tactics.js?v=37';
-import { ON_BEAT } from './beat.js?v=37';
+import { makeRng } from './rng.js?v=38';
+import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=38';
+import { ON_BEAT } from './beat.js?v=38';
+import { IPPON, ipponJudge } from './drills.js?v=38';
 
 export { ON_BEAT };
 
@@ -28,8 +29,6 @@ export const KAMI = {
   MOMENTUM: 0.18,
   LATE: 30, LATE_UP: 0.08,
   FALL_Y: -40,
-  BRACE_DELAY: 0.15,  // 立っている時に押し続けて、この秒数を過ぎたら「こらえる」
-  BRACE_MASS: 2,      // こらえている間、ぶつかりで使う重さの倍率
   MAX_DT: 1 / 30,
 };
 
@@ -48,17 +47,34 @@ export const KIMETE_FX = {
 };
 const ARCHS = Object.keys(KIMETE_FX);
 
+// 一発の〇（10/14 ボタン1つ・設計書 2026-10-14-sumo-one-button-ring-bar-design.md §3）。判定は稽古の一押しと同じ ipponJudge（±70ms＝2・±170ms＝1・外＝0）
+// tachiaiHit＝合図から的に重なるまで（秒）・kimeHit＝光ってから重なるまで＝max(kimeMin, gaugeTime×kimeHit)（技が高いほど ゆっくり・稽古の 0.8〜1.3 秒に近く）
+// 10/14 Task 2（Ruling 3）：kimeHit 0.6→0.9・最短 kimeMin 0.8 秒（0.36 秒では見てから押せなかった）
+// charge＝立ち合いの当たりの強さ（判定 0・1・2 ごと。合図の前の早押しも 0.5）・kimeK＝決め技の強さ（判定 1・2・0 は出ない）・missStun＝決め技の外れの すき
+export const RING = { tachiaiHit: 0.9, kimeHit: 0.9, kimeMin: 0.8, charge: [0.5, 1.0, 1.6], kimeK: [0, 0.6, 1], missStun: 0.3 };
+const RING_NEAR = IPPON.nearMs / 1000; // 押さないまま hitAt からこれを過ぎたら外れ（〇が消える）
+
 const SIDES = ['east', 'west'];
 const other = (s) => (s === 'east' ? 'west' : 'east');
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+
+// 決め技の系統と相性の倍率（無い＝光らない）。名前の id がある＝敵の必殺技（〇でなく攻めの順番で予告とバーで来る・gap＝次の必殺技までの最短の秒）
+function kimeteOf(k) {
+  if (!k || ARCHS.indexOf(k.arch) < 0) return null;
+  const out = { arch: k.arch, power: k.power > 0 ? k.power : 1 };
+  if (typeof k.id === 'string' && k.id) { out.id = k.id; out.gap = k.gap > 0 ? k.gap : 0; }
+  return out;
+}
 
 function fighter(p, x, dir) {
   return {
     mass: p.mass, right: p.right, standTime: p.standTime, gaugeTime: p.gaugeTime, finisher: p.finisher, w: p.w,
     canFinish: p.canFinish !== false, // false なら決め技を出さない（古い呼び方。20体版は kimete の有る無しで決める）
-    kimete: p.kimete && ARCHS.indexOf(p.kimete.arch) >= 0 ? { arch: p.kimete.arch, power: p.kimete.power > 0 ? p.kimete.power : 1 } : null, // 決め技の系統と相性の倍率（無い＝光らない）
+    kimete: kimeteOf(p.kimete),
     x, y: 0, vx: 0, vy: 0, a: 0, va: 0, dir,
-    down: false, held: false, heldAt: -Infinity, landAt: -Infinity, standHeld: 0, stun: 0, fell: false, taps: [], charged: false,
+    down: false, held: false, standHeld: 0, upAt: -Infinity, upHeld: false, stun: 0, fell: false, taps: [], charged: false,
     litUntil: 0, litFrom: 0, cool: 0, pushT: 0, pushV: 0,
+    ring: null, // 一発の〇 { side, kind: 'tachiai'|'kime', from, hitAt }（無い＝null）
     tactics: Array.isArray(p.tactics) ? p.tactics.filter(isTactic) : [], tacticIndex: Number(p.tacticIndex) || 0, // 相手の攻め（西だけ）
   };
 }
@@ -69,9 +85,14 @@ export function newBout({ east, west, seed }) {
     t: 0, phase: 'ready', signalAt: 1 + rng() * 0.8, rng,
     f: { east: fighter({ ...east, tactics: [] }, 290, 1), west: fighter(west, 430, -1) }, // 攻めは敵（西）だけ
     winner: null, how: null, finisherBy: null, finisherAt: -Infinity, finisherArch: null,
-    lastKimete: null, // 最後に出た決め技 { side, arch }（画面の演出用）
+    lastKimete: null, // 最後に出た決め技 { side, arch, kime? }（画面の演出用・敵の必殺技は kime＝必殺技の id）
+    lastFoeKime: null, // 最後に予告の終わりまで来た敵の必殺技 { kime, arch, landed, at }（landed false＝バーは失敗したが届かず空振り。打ち消しは lastBar の ok）
     tactic: null, // 今の攻め { side, id, phase: 'warn'|'act'|'after', from, until }（画面と driver が読む）
-    tacticRun: { pushAt: null, next: null, n: 0, taps: [], recoiled: false, slapAt: -Infinity }, // 攻めの段取り（次の予告の時刻・何回目・組まれている間のたたき・はたいて倒した時刻＝画面の音の合図）
+    tacticRun: { pushAt: null, next: null, kimeTurn: false, kimeWait: null, n: 0, taps: [], recoiled: false, slapAt: -Infinity }, // 攻めの段取り（次の予告の時刻・何回目・組まれている間のたたき・はたいて倒した時刻＝画面の音の合図）
+    lastRing: null, // 最後に終わった〇 { side, kind, judge, at }（画面の◎○×の演出用・押さずに通り過ぎた時も judge 0）
+    bar: null, // 守りの長押しバー { side, tactic, from, fillMs, center, half, heldFrom, result: null|'ok'|'ng', gauge, at }（相手の攻めの予告の間・結果は BAR.linger 秒残る）
+    lastBar: null, // 最後に出たバーの結果 { side, tactic, result, gauge, at }（画面の「こらえ成功！」の演出用）
+    get ring() { return this.f.east.ring; }, // 画面に出す〇＝主人公の〇（敵の〇は st.f.west.ring・画面には出さない）
   };
   return st;
 }
@@ -104,8 +125,8 @@ function inZone(me, op) {
   return edge < KAMI.EDGE;
 }
 
-// 決め技の動き（系統ごと）
-function fireKimete(st, side, k) {
+// 決め技の動き（系統ごと）。kime＝敵の必殺技の id（lastKimete に残す）。弱い必殺技（強さ < FOE_KIME.downMin＝1〜4体目）は倒さない＝押すだけ（Ruling 11）
+function fireKimete(st, side, k, kime) {
   const me = st.f[side], op = st.f[other(side)];
   const arch = me.kimete.arch, fx = KIMETE_FX[arch];
   const s = KAMI.FINISH * me.finisher * me.kimete.power * k / op.mass;
@@ -119,42 +140,136 @@ function fireKimete(st, side, k) {
   if (fx.vy) op.vy = Math.max(op.vy, fx.vy);
   if (fx.va) op.va += fx.va * k; // 投げ：大きく回す（後ろへ反って倒れる）
   if (fx.time) { op.pushT = fx.time; op.pushV = me.dir * s * fx.push; op.stun = Math.max(op.stun, fx.time); }
-  if (fx.down) { op.down = true; op.standHeld = 0; op.va = 0; op.a = arch === 'hiki' ? -1.5 : 1.5; } // 引き＝前へ・うっちゃり＝後ろへ倒れる
-  st.lastKimete = { side, arch };
+  if (fx.down && !(kime && me.kimete.power < FOE_KIME.downMin)) { op.down = true; op.standHeld = 0; op.va = 0; op.a = arch === 'hiki' ? -1.5 : 1.5; } // 引き＝前へ・うっちゃり＝後ろへ倒れる
+  st.lastKimete = kime ? { side, arch, kime } : { side, arch };
   st.finisherArch = arch;
 }
 
+// 決め技の〇を出さない時：攻めの予告の間（バー＝1度に1つ・どちらの側も）・組まれている側は組まれている間（Ruling 3：振りほどきの連打が〇の判定に食われない）
+function ringBlocked(st, side) {
+  const t = st.tactic;
+  if (!t) return false;
+  return t.phase === 'warn' || (t.phase === 'act' && t.id === 'kumi' && t.side !== side);
+}
+
+// 敵の必殺技（名前の id がある決め技）＝〇でなく、攻めと同じ予告＋主人公のバーで来る（ボタン1つ Task 2b）。
+// id の無い決め技は、どちらの側でも今までのゲージと〇（本番では主人公だけ。西の〇の道は試験が型紙を直接作る時に使う）
+const warnKime = (f) => !!(f.kimete && f.kimete.id);
+
 // 決め技のゲージを点ける・消す（1コマごと）
+// 光ると同時に決め技の〇が出る。ゲージ（gaugeLit）は〇の間だけ光る＝litUntil は〇が通り過ぎる時刻（hitAt＋0.17）
 function updateGauge(st, side) {
   const me = st.f[side], op = st.f[other(side)];
-  const ok = !me.down && inZone(me, op); // 光ってよい形か（間の時間 cool とは分けて見る）
-  if (ok && st.t >= me.cool && st.t >= me.litUntil) { me.litFrom = st.t; me.litUntil = st.t + me.gaugeTime; me.cool = me.litUntil + 1.5; }
-  if (!ok && st.t < me.litUntil) me.litUntil = st.t; // 倒れた・相手が場所を外れた＝消す（次に光るのは cool の後）
+  if (warnKime(me)) return; // 敵の必殺技はゲージも〇も使わない＝攻めの順番で来る（updateTactic）
+  const ok = !me.down && inZone(me, op) && !ringBlocked(st, side); // 光ってよい形か（間の時間 cool とは分けて見る）
+  if (ok && st.t >= me.cool && st.t >= me.litUntil) {
+    const hitAt = st.t + Math.max(RING.kimeMin, me.gaugeTime * RING.kimeHit);
+    me.litFrom = st.t; me.litUntil = hitAt + RING_NEAR; me.cool = me.litUntil + 1.5;
+    me.ring = { side, kind: 'kime', from: st.t, hitAt };
+  }
+  if (!ok && st.t < me.litUntil) { me.litUntil = st.t; if (me.ring && me.ring.kind === 'kime') me.ring = null; } // 倒れた・相手が場所を外れた＝消す（次に光るのは cool の後）
 }
 
-// 決め技の入口（右ボタン）。光っていて出せる時だけ出して true・それ以外は何もせず false
-export function fire(st, side) {
-  if (st.phase !== 'push') return false;
-  const me = st.f[side], op = st.f[other(side)];
-  if (me.down || me.stun > 0 || me.fell) return false;
-  if (gaugeLit(st, side) && !inZone(me, op)) me.litUntil = st.t; // 場所を外れたゲージは消す
-  if (!gaugeLit(st, side)) return false;
-  const late = (st.t - me.litFrom) / me.gaugeTime; // 0＝光ってすぐ・1＝消える寸前
-  const k = late < 0.7 ? 1 : 0.4;
-  fireKimete(st, side, k);
-  if (inAct(st, 'kumi') && st.tactic.side !== side) enterPhase(st, 'after'); // 組まれている側の決め技は組まれている間でも出る＝組みが解ける
+// 〇の判定：今押したら 0・1・2（〇は消さない）。〇が無ければ 0
+export function ringJudge(st, side) {
+  const r = st.f[side].ring;
+  return r ? ipponJudge((st.t - r.hitAt) * 1000) : 0;
+}
+
+const endRing = (st, side, judge) => {
+  const r = st.f[side].ring;
+  st.f[side].ring = null;
+  st.lastRing = { side, kind: r.kind, judge, at: st.t };
+};
+
+// 立ち合いの当たり（power＝RING.charge の値）
+function charge(st, side, power) {
+  const me = st.f[side];
+  me.charged = true;
+  me.vx = me.dir * KAMI.CHARGE * power / me.mass;
+  if (st.f.east.charged && st.f.west.charged) st.phase = 'push';
+}
+
+// 〇が出ている時の押し。判定 0・1・2 を返す（すき・倒れている間は何もせず null・〇は残る）。跳ねない
+function pressRing(st, side) {
+  const me = st.f[side], op = st.f[other(side)], r = me.ring;
+  if (r.kind === 'tachiai') {
+    const j = ringJudge(st, side);
+    endRing(st, side, j);
+    charge(st, side, RING.charge[j]);
+    return j;
+  }
+  if (me.down || me.fell || me.stun > 0) return null;
+  if (!inZone(me, op)) { me.ring = null; me.litUntil = st.t; tap(st, side); return null; } // 場所を外れた〇は消える＝ふつうのたたき
+  const j = ringJudge(st, side);
+  endRing(st, side, j);
   me.litUntil = st.t;
-  if (late >= 0.7) me.stun = 0.3; // 外し気味＝一瞬すき
+  if (j === 0) { me.stun = Math.max(me.stun, RING.missStun); return 0; } // 外れ＝出ない・一瞬すき
+  fireKimete(st, side, RING.kimeK[j]);
   st.finisherBy = side;
   st.finisherAt = st.t;
-  return true;
+  return j;
 }
 
-// こらえている：立って箱の面にいる時に、押し始め（heldAt）と着地（landAt）の遅い方から 0.15 秒以上押し続けている（倒れている時の長押しは起き上がり）
-// 10/14 Task 4 直し1：跳ねている間は こらえない（たたいて押したままの指が空中で こらえになり、ゆっくり押す人だけ重さ×2 を得ていた）
-const isBracing = (st, f) => f.held && !f.down && grounded(f) && st.t - Math.max(f.heldAt, f.landAt) >= KAMI.BRACE_DELAY;
-export function bracing(st, side) {
-  return isBracing(st, st.f[side]);
+// ボタンの入口（1つ）：〇が出ていればその判定（0・1・2 を返す・跳ねない）・無ければ今の tap（null を返す）
+// バー（守り）が出ている間の押しは跳ねない（tap が止める）＝ためるのは hold（画面は押した指をそのまま hold へ）
+export function press(st, side) {
+  if (st.phase === 'done') return null;
+  if (!st.f[side].down) st.f[side].upHeld = false; // 立っていて新しい押し＝起き上がりの指はもう関係ない（2本目の指で猶予を延ばし続けられない・Ruling 6 直し2）
+  if (st.f[side].ring) return pressRing(st, side);
+  tap(st, side);
+  return null;
+}
+
+// 押さないまま〇が通り過ぎた（hitAt＋0.17）：立ち合いは判定 0 の弱い当たり・決め技は消えるだけ（すきは無い）
+function expireRings(st) {
+  for (const s of SIDES) {
+    const r = st.f[s].ring;
+    if (!r || st.t <= r.hitAt + RING_NEAR) continue;
+    endRing(st, s, 0);
+    if (r.kind === 'tachiai' && st.phase === 'ready' && !st.f[s].charged) charge(st, s, RING.charge[0]);
+  }
+}
+
+// ---- 守りの長押しバー（数は tactics.js の BAR・barSpec）：相手の攻めの予告の間だけ。立って押したままの「こらえ」は無い（10/14 ボタン1つ Task 2） ----
+// 新しい押し（離した→押した）でため始め、離した時のゲージが緑の帯（center ± half・1 未満）なら ok。満タンまで押す・予告の終わりまで決めない＝ng
+// 「まだ」（Ruling 7）：予告から BAR.react 秒より前の押し始めは数えない・BAR.tapMax 秒より短い押しを帯の下で離したら ため直し（連打の指で失敗にしない）
+const barOpen = (st, side) => !!st.bar && st.bar.side === side && st.bar.result === null;
+export const barInBand = (b, g) => g < 1 && Math.abs(g - b.center) <= b.half + 1e-9;
+
+// 今のゲージ 0〜1（押す前は 0・結果が出たら離した時の値で止まる）
+export function barGauge(st) {
+  const b = st.bar;
+  if (!b) return 0;
+  if (b.result !== null || b.heldFrom === null) return b.gauge;
+  return clamp01((st.t - b.heldFrom) * 1000 / b.fillMs);
+}
+
+// 攻めの予告に合わせてバーを出す（spec＝barSpec の数）。後の新しい予告（敵の必殺技など）も同じ形で出せる
+function startBar(st, side, tactic, spec) {
+  st.bar = { side, tactic, from: st.t, fillMs: spec.fillMs, center: spec.center, half: spec.half, heldFrom: null, result: null, gauge: 0, at: null, warnEnd: null };
+}
+
+// バーの結果。ok＝その攻めを打ち消し（予告から after へ・相手は BAR.stun 秒すき。踏ん張りは after＝軽い押し込みどき）／ng＝攻めはそのまま来る
+function endBar(st, result) {
+  const b = st.bar;
+  b.gauge = barGauge(st);
+  b.result = result; b.at = st.t;
+  st.lastBar = { side: b.side, tactic: b.tactic, result, gauge: b.gauge, at: st.t };
+  const t = st.tactic;
+  if (result === 'ok' && t && t.phase === 'warn' && t.side !== b.side) {
+    enterPhase(st, 'after');
+    const owner = st.f[t.side];
+    owner.stun = Math.max(owner.stun, BAR.stun);
+  }
+}
+
+// 1コマごと：満タンに届いたら失敗・結果は linger 秒で消す
+function updateBar(st) {
+  const b = st.bar;
+  if (!b) return;
+  if (b.result === null && b.heldFrom !== null && barGauge(st) >= 1) endBar(st, 'ng');
+  if (b.result !== null && st.t >= b.at + BAR.linger - 1e-9) st.bar = null;
 }
 
 // ---- 相手の攻め（数字は tactics.js）：予告 warn → 実行 act → 後始末 after → 間 gap ----
@@ -162,10 +277,10 @@ const gapOf = (st) => Math.abs(st.f.west.x - st.f.east.x);
 const inAct = (st, id) => !!st.tactic && st.tactic.id === id && st.tactic.phase === 'act';
 const tacticPower = (st) => tacticTiming(st.f[st.tactic.side].tacticIndex).power;
 
-// ぶつかりで使う重さ：こらえ×BRACE_MASS・踏ん張りの act ×mass・解けた後 ×afterMass
+// ぶつかりで使う重さ：踏ん張りの act ×mass・解けた後 ×afterMass
 function massOf(st, side) {
   const f = st.f[side], t = st.tactic;
-  let m = f.mass * (isBracing(st, f) ? KAMI.BRACE_MASS : 1);
+  let m = f.mass;
   if (t && t.side === side && t.id === 'fumbari') {
     if (t.phase === 'act') m *= TACTICS.fumbari.mass;
     else if (t.phase === 'after' && !st.tacticRun.recoiled) m *= TACTICS.fumbari.afterMass; // 待った時だけ、解けた後が軽い（押し込みどき）
@@ -174,23 +289,40 @@ function massOf(st, side) {
 }
 
 function enterPhase(st, phase) {
-  const t = st.tactic, warnFrom = t.from;
-  t.phase = phase; t.from = st.t; t.until = st.t + TACTICS[t.id][phase];
-  if (phase === 'act') { st.tacticRun.recoiled = false; startAct(st, warnFrom); }
+  const t = st.tactic;
+  if (st.bar && st.bar.result === null) st.bar = null; // 決まらないまま予告が終わった（倒れた・取りやめ）＝バーは消す（失敗の判定は updateTactic）
+  t.phase = phase; t.from = st.t; t.until = st.t + (t.id === FOE_KIME_ID ? FOE_KIME : TACTICS[t.id])[phase];
+  if (phase === 'act') { st.tacticRun.recoiled = false; startAct(st); }
 }
 
-// 実行の始まり：突っ張りの一突き・組みの組みつき
-function startAct(st, warnFrom) {
-  const t = st.tactic, op = st.f[other(t.side)];
-  if (t.id === 'tsuppari') {
+// 実行の始まり（守りのバーに失敗した時だけ来る）：突っ張りの一突き・はたき落とし・組みの組みつき・必殺技
+function startAct(st) {
+  const t = st.tactic, me = st.f[t.side], op = st.f[other(t.side)];
+  if (t.id === FOE_KIME_ID) { // 必殺技が決まる（今の決め技の効き目・〇の ぴったりと同じ強さ）。倒れている・届かない＝空振り（landed false）
+    const landed = !!me.kimete && !op.down && !op.fell && gapOf(st) <= KIMETE_REACH[me.kimete.arch] + FOE_KIME.slack;
+    if (landed) {
+      fireKimete(st, t.side, 1, t.kime);
+      st.finisherBy = t.side;
+      st.finisherAt = st.t;
+    }
+    st.lastFoeKime = { kime: t.kime, arch: t.arch, landed, at: st.t };
+    enterPhase(st, 'after');
+  } else if (t.id === 'tsuppari') {
     const d = TACTICS.tsuppari;
-    if (gapOf(st) > d.reach || op.down || op.fell) { enterPhase(st, 'after'); return; } // 届かない・倒れている＝突き損ね（倒れた主人公は こらえられないので突かない）
-    // こらえた＝ほとんど下がらない。予告の間に押し始めていれば、0.15秒に届いていなくても こらえた扱い
-    if (isBracing(st, op) || (op.held && !op.down && !op.fell && op.heldAt >= warnFrom)) { op.vx = -op.dir * d.braced / (op.mass * KAMI.BRACE_MASS); return; } // こらえた＝ほとんど下がらない
+    if (gapOf(st) > d.reach || op.down || op.fell) { enterPhase(st, 'after'); return; } // 届かない・倒れている＝突き損ね
     const power = tacticPower(st);
     op.vx = -op.dir * d.push * power / op.mass;
     op.vy = Math.max(op.vy, d.lift);
     if (!op.down) op.va += d.va * power; // 後ろへ反る
+  } else if (t.id === 'hataki') { // 前へはたき落とす（10体目からは足もとが箱の端まで滑る＝決め技の引きと同じ）・すぐ after
+    const d = TACTICS.hataki;
+    if (gapOf(st) <= d.reach && !op.down && !op.fell) {
+      op.down = true; op.a = d.fallA; op.va = 0; op.standHeld = 0;
+      st.tacticRun.slapAt = st.t;
+      if (me.tacticIndex >= d.slideFrom) op.vx = -op.dir * d.slide * tacticPower(st) / op.mass;
+      me.x -= me.dir * d.back;
+    }
+    enterPhase(st, 'after');
   } else if (t.id === 'kumi') {
     st.tacticRun.taps = [];
     if (gapOf(st) > TACTICS.kumi.miss || op.down) enterPhase(st, 'after'); // 予告の間に離れた・倒れた＝組み損ね
@@ -209,32 +341,67 @@ function applyGrip(st, dt) {
 }
 
 // 攻めの段取り（1コマごと・押し合いの間だけ）
+// 敵の必殺技の場所：'ok'＝出せる／'far'＝相手が届く距離（KIMETE_REACH＋FOE_KIME.reach）の外／'off'＝うっちゃりで自分が背中側の端から FOE_KIME.edgeU の外
+function kimePlace(me, op) {
+  const arch = me.kimete.arch;
+  if (arch === 'utchari' && (me.dir > 0 ? me.x - KAMI.BOX.l : KAMI.BOX.r - me.x) > FOE_KIME.edgeU) return 'off';
+  return Math.abs(op.x - me.x) > KIMETE_REACH[arch] + FOE_KIME.reach ? 'far' : 'ok';
+}
+
+// 攻めの段取り（1コマごと・押し合いの間だけ）
+// 敵の必殺技は攻めの順番の1つ（攻め・必殺技・攻め・必殺技…・ボタン1つ Task 2b Ruling 10）：順番が来て出せなければ（届かない・間の中）次の攻めへ、
+// 次の順番でまた試す（届かない時は FOE_KIME.wait 秒まで届くのを待ってから飛ばす・Ruling 12）。必殺技の後は攻めの間 gap を使わず FOE_KIME.next 秒で次の攻め（攻めを持たない敵は、必殺技だけを繰り返す）
 function updateTactic(st) {
   const run = st.tacticRun;
-  if (run.pushAt === null) { run.pushAt = st.t; run.next = st.t + TACTIC_START; }
+  if (run.pushAt === null) {
+    run.pushAt = st.t; run.next = st.t + TACTIC_START;
+    const w = st.f.west;
+    run.kimeTurn = warnKime(w); // 最初の順番は必殺技
+  }
   const t = st.tactic;
   if (t) {
-    const me = st.f[t.side];
+    const me = st.f[t.side], op = st.f[other(t.side)];
     if (t.phase !== 'after' && (me.down || me.fell)) { enterPhase(st, 'after'); return; } // 倒れた敵は攻めをやめる
+    if (t.phase === 'warn' && (op.down || op.fell)) { enterPhase(st, 'after'); return; } // 予告の間に主人公が倒れた＝バーをためられない＝攻めは来ない（Review Focus #3）
     if (st.t < t.until - 1e-9) return;
-    if (t.phase === 'warn') enterPhase(st, 'act');
+    if (t.phase === 'warn') { if (st.bar && st.bar.result === null) endBar(st, 'ng'); enterPhase(st, 'act'); } // 決めないまま予告が終わった＝失敗
     else if (t.phase === 'act') enterPhase(st, 'after');
-    else { st.tactic = null; run.next = st.t + tacticTiming(me.tacticIndex).gap; }
+    else { st.tactic = null; run.next = st.t + (t.id === FOE_KIME_ID ? FOE_KIME.next : tacticTiming(me.tacticIndex).gap); }
     return;
   }
-  const side = 'west', me = st.f[side], list = me.tactics;
-  if (!list.length || st.t < run.next || me.down || me.fell) return;
+  const side = 'west', me = st.f[side], op = st.f[other(side)], list = me.tactics;
+  if (st.t < run.next || me.down || me.fell || !(list.length || warnKime(me))) return;
+  if (op.down || op.fell || op.ring || me.ring) return; // 主人公が倒れている間は始めない（起き上がってから）・〇が出ている間も待つ（1度に1つ）
+  if (st.t < op.upAt + BAR.getUp || op.upHeld) return; // 起き上がってから getUp 秒・起き上がりの指を離すまでは始めない（Ruling 6）
+  const place = run.kimeTurn && st.t >= me.cool && !me.fell && !op.fell ? kimePlace(me, op) : null;
+  if (place === 'far') { // 届かない：FOE_KIME.wait 秒までは待つ（ほかの攻めも始めない）・過ぎたら攻めへ（うっちゃりの端の外 'off' は待たずに攻めへ）
+    if (run.kimeWait === null) run.kimeWait = st.t;
+    if (st.t < run.kimeWait + FOE_KIME.wait - 1e-9) return;
+  } else if (place === 'ok') {
+    run.kimeWait = null; // 必殺技の予告。バーの型は系統から（KIME_TYPE）・次の必殺技は予告の終わりから kimete.gap 秒より後
+    const spec = barSpec(KIME_TYPE[me.kimete.arch], me.tacticIndex);
+    const warn = barWarn(spec);
+    st.tactic = { side, id: FOE_KIME_ID, kime: me.kimete.id, arch: me.kimete.arch, phase: 'warn', from: st.t, until: st.t + warn };
+    me.cool = st.t + warn + me.kimete.gap;
+    run.kimeTurn = !list.length;
+    startBar(st, other(side), FOE_KIME_ID, spec);
+    return;
+  }
   for (let k = 0; k < list.length; k++) { // 順番に。組みはくっついた時だけ（離れていれば次の攻めへ）
     const id = list[(run.n + k) % list.length];
-    if (id === 'kumi' && (gapOf(st) > TACTICS.kumi.start || st.f[other(side)].down)) continue;
+    if (id === 'kumi' && gapOf(st) > TACTICS.kumi.start) continue;
     run.n += k + 1;
-    const warn = Math.max(TACTICS[id].warn, tacticTiming(me.tacticIndex).warn);
+    const spec = barSpec(TACTIC_TYPE[id], me.tacticIndex);
+    const warn = barWarn(spec); // 予告＝バーが間に合う長さ（Review Focus #2）
     st.tactic = { side, id, phase: 'warn', from: st.t, until: st.t + warn };
+    run.kimeWait = null;
+    if (warnKime(me)) run.kimeTurn = true; // 次の順番は必殺技
+    startBar(st, other(side), id, spec);
     return;
   }
 }
 
-// たたき（tap）が攻めに当たった時。true＝跳ねずに終わり
+// たたき（tap）が攻めに当たった時
 function tacticOnTap(st, side, beforeHop) {
   const t = st.tactic;
   if (!t || t.phase !== 'act' || t.side === side) return false;
@@ -244,16 +411,6 @@ function tacticOnTap(st, side, beforeHop) {
       const d = TACTICS.kumi;
       st.tacticRun.taps = st.tacticRun.taps.filter((x) => st.t - x < d.window).concat([st.t]);
       if (st.tacticRun.taps.length >= d.taps) { enterPhase(st, 'after'); owner.stun = Math.max(owner.stun, d.stun); }
-    } else if (t.id === 'hataki' && gapOf(st) <= TACTICS.hataki.reach) {
-      const d = TACTICS.hataki;
-      enterPhase(st, 'after');
-      if (beatOffset(st) >= d.beat) { // 拍を外した＝身をかわしてはたく
-        me.down = true; me.a = d.fallA; me.va = 0; me.standHeld = 0;
-        st.tacticRun.slapAt = st.t;
-        if (owner.tacticIndex >= d.slideFrom) me.vx = -me.dir * d.slide * tacticPower(st) / me.mass; // 10体目から：前へつんのめって倒れ、足もとは自分の後ろ（箱の端）へ滑る（決め技の引きと同じ）
-        owner.x -= owner.dir * d.back;
-        return true;
-      }
     }
     return false;
   }
@@ -265,7 +422,7 @@ function tacticOnTap(st, side, beforeHop) {
   return false;
 }
 
-// 左ボタン：立ち合いと跳ねだけ（光っていても跳ねる）
+// たたき：立ち合いと跳ねだけ（〇は見ない＝〇の判定は press）
 export function tap(st, side) {
   if (st.phase === 'done') return;
   const me = st.f[side], op = st.f[other(side)];
@@ -280,11 +437,10 @@ export function tap(st, side) {
   }
   if (me.down || me.stun > 0 || me.fell) return;
   if (inAct(st, 'kumi') && st.tactic.side !== side) tacticOnTap(st, side, true); // 組まれている間は、跳ねられなくても数える
-  if (bracing(st, side)) return; // こらえている間は跳ねない
   const t = st.tactic;
-  if (t && t.side === side && t.phase === 'act' && t.id !== 'tsuppari') return; // 構え・組みの間、攻める側は跳ねない
+  if (t && t.side !== side && t.phase === 'warn') return; // 自分への予告の間は跳ねない（バーの結果が出た後も・Ruling 5）＝ためるのは hold
+  if (t && t.side === side && (t.phase === 'warn' || (t.phase === 'act' && t.id !== 'tsuppari'))) return; // 予告（構え）・踏ん張り・組みの間、攻める側は跳ねない
   if (!grounded(me)) return;
-  if (inAct(st, 'hataki') && tacticOnTap(st, side, true)) return;
   me.taps = me.taps.filter((x) => st.t - x < 1).concat([st.t]);
   const off = beatOffset(st);
   const rhythm = off < ON_BEAT ? 1.6 : off < 0.16 ? 1.0 : 0.6;
@@ -296,33 +452,49 @@ export function tap(st, side) {
   tacticOnTap(st, side, false);
 }
 
+// 押し始めた押しが緑の上の端に届く前に予告が終わらないように、予告を延ばす（延びるだけ・最終点検の直し 2：反応の遅い人）。
+// 元の終わりは bar.warnEnd に控え、「まだ」の短い一押しなら元へ戻す（連打で予告を延ばし続けられない）
+function lateWarn(st, b, on) {
+  const t = st.tactic;
+  if (!t || t.phase !== 'warn' || t.side === b.side) return;
+  if (b.warnEnd === null) b.warnEnd = t.until;
+  if (on && st.t >= b.warnEnd - 1e-9) return; // 元の終わりを過ぎてからの押し直しでは延ばさない（同じコマで離して押し直す繰り返しで止め続けられない）
+  t.until = on ? Math.max(b.warnEnd, b.heldFrom + b.fillMs * (b.center + b.half) / 1000 + BAR.late) : b.warnEnd;
+}
+
+// 押す・離す（倒れている時は起き上がり。立っていてバーが出ていれば、新しい押しでため始め・離して判定）
 export function hold(st, side, on) {
-  const me = st.f[side];
-  if (on && !me.held) me.heldAt = st.t;
+  const me = st.f[side], was = me.held;
   me.held = !!on;
-  if (!on) me.standHeld = 0;
+  if (!on) { me.standHeld = 0; me.upHeld = false; }
+  if (!barOpen(st, side) || me.down || me.fell) return;
+  const b = st.bar;
+  if (on && !was && b.heldFrom === null) { if (st.t >= b.from + BAR.react - 1e-6) { b.heldFrom = st.t; lateWarn(st, b, true); } }
+  else if (!on && was && b.heldFrom !== null) {
+    const g = barGauge(st);
+    if (barInBand(b, g)) endBar(st, 'ok');
+    else if (st.t - b.heldFrom < BAR.tapMax && g < b.center - b.half) { b.heldFrom = null; lateWarn(st, b, false); } // 短い一押し＝まだ（延ばした予告も元へ）
+    else endBar(st, 'ng');
+  }
 }
 
 function moveOne(st, f, dt) {
   if (f.fell) return;
   const n = dt * 60; // コマの数
-  const air = !grounded(f); // 動く前に宙にいたか（着地の時刻 landAt を残す）
   if (f.pushT > 0) { f.vx += f.pushV * n; f.pushT = Math.max(0, f.pushT - dt); } // 寄られている間は押され続ける
   if (!grounded(f) || f.vy > 0) f.vy -= KAMI.G * dt;
   f.x += f.vx * dt;
   f.y += f.vy * dt;
   if (f.y <= 0 && onBox(f)) {
-    if (air) f.landAt = st.t;
     f.y = 0; f.vy = 0;
     f.vx *= Math.pow(f.down ? 0.93 : KAMI.FRICTION, n);
   }
   if (f.down) {
-    if (f.held) { f.standHeld += dt; if (f.standHeld >= f.standTime) { f.down = false; f.a = 0; f.va = 0; f.standHeld = 0; f.heldAt = st.t; } } // 起きた後の こらえるは、そこから数える
+    if (f.held) { f.standHeld += dt; if (f.standHeld >= f.standTime) { f.down = false; f.a = 0; f.va = 0; f.standHeld = 0; f.upAt = st.t; f.upHeld = true; } } // 起きた時刻（次の予告の猶予・Ruling 6）
   } else {
     f.va += -f.a * f.right * 60 * n;
     f.va *= Math.pow(KAMI.DAMP, n);
     f.a += f.va * n;
-    if (isBracing(st, f)) { f.va = 0; f.a *= Math.pow(0.8, n); } // こらえている間は傾かない（傾きは戻る）
     if (Math.abs(f.a) > KAMI.FALL_A) { f.down = true; f.a = Math.sign(f.a) * 1.5; f.va = 0; }
   }
   f.stun = Math.max(0, f.stun - dt);
@@ -355,10 +527,11 @@ export function step(st, dt) {
   for (const s of SIDES) moveOne(st, st.f[s], dt);
   collide(st);
   if (st.phase === 'push') for (const s of SIDES) updateGauge(st, s);
-  if (st.phase === 'ready' && st.t > st.signalAt + 1.5) { // たたかない側は、弱い当たりで自動で立ち合う
-    for (const s of SIDES) { const f = st.f[s]; if (!f.charged) { f.charged = true; f.vx = f.dir * KAMI.CHARGE * 0.6 / f.mass; } }
-    st.phase = 'push';
+  if (st.phase === 'ready' && st.t >= st.signalAt) { // 合図で、まだ立ち合っていない側に〇
+    for (const s of SIDES) { const f = st.f[s]; if (!f.charged && !f.ring) f.ring = { side: s, kind: 'tachiai', from: st.signalAt, hitAt: st.signalAt + RING.tachiaiHit }; }
   }
+  expireRings(st); // たたかない側は、〇が通り過ぎた時（合図＋0.9＋0.17秒）に弱い当たり 0.5 で立ち合う
+  updateBar(st);
   if (st.phase === 'push') updateTactic(st);
   for (const s of SIDES) { const f = st.f[s]; if (!f.fell && f.y < KAMI.FALL_Y) f.fell = true; }
   const e = st.f.east, w = st.f.west;
@@ -369,6 +542,7 @@ export function step(st, dt) {
     const win = st.finisherArch === 'hiki' ? 3 : 2; // 引きは倒してから落ちるまで時間がかかる
     st.how = st.finisherBy === st.winner && st.t - st.finisherAt <= win ? 'finisher' : lf.down ? 'down' : 'push';
     st.phase = 'done';
-    st.tactic = null; // 取組の終わりで攻めは止まる
+    st.tactic = null; st.bar = null; // 取組の終わりで攻めとバーは止まる
+    e.ring = null; w.ring = null;
   }
 }

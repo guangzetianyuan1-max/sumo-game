@@ -3,9 +3,9 @@
 // 形：地面の影 → 側面（厚み THICK px・面の色を暗くした円柱）→ 上の面（上が明るく下が暗い）＋つやの白い弧。押すと面が SINK px 沈み、側面が薄くなり、影が縮む
 // 押し：触れた瞬間に onDown → 音「カチッ」と振動 → 沈む／離すと SPRING_MS で少し行き過ぎて戻る。長押しの間は沈んだまま・連打は押すたびに沈んで戻る
 // 深さの計算は src/core/pressdepth.js（node で試験できる純粋な関数）
-import { pressDepth, SINK, MIN_HOLD_MS } from '../core/pressdepth.js?v=37';
-import { playBout } from './sfx.js?v=37';
-import { textStyle, fitText, COLORS } from './widgets.js?v=37';
+import { pressDepth, SINK, MIN_HOLD_MS } from '../core/pressdepth.js?v=38';
+import { playBout } from './sfx.js?v=38';
+import { textStyle, fitText, COLORS } from './widgets.js?v=38';
 
 export const THICK = 18; // 側面の厚み（押していない時）
 const FACE_TEX = 'bigbtn-face'; // 上の面の下地（白→灰の縦のグラデーション・色は tint で掛ける）
@@ -56,7 +56,8 @@ function faceTexture(scene) {
 }
 
 // opts：x・y（押していない時の面の中心）・d（面の直径）・onDown(pointer)（false を返すと押したことにしない＝沈まない・鳴らない）・onUp()
-//       hit（たたける範囲の半径・既定 d/2+15）・depth（既定 5）・sound（既定 'press'・null で無音）・textSize（既定 d*0.18）
+//       hit（たたける範囲の半径・既定 d/2+15）・depth（既定 5）・sound（既定 'press'・null で無音）・textSize（既定 d*0.18）・
+//       zone(pointer)（ボタンの外でも、真を返す所はボタンと同じに押せる＝同じ指の数え方・同じ onDown/onUp。取組の〇とバー・最終点検の直し 1）
 export function createBigButton(scene, opts) {
   const x = opts.x, y = opts.y, d = opts.d || 300;
   const R = d / 2;
@@ -74,7 +75,7 @@ export function createBigButton(scene, opts) {
   const caption = scene.add.text(x, y, '', textStyle(capSize, COLORS.ink, { stroke: '#141a2e', strokeThickness: 4, fontStyle: '500' })).setOrigin(0.5).setDepth(depth + 0.3).setVisible(false);
   const CAP_DY = -Math.round(d * 0.17), CAP_LABEL_DY = Math.round(d * 0.06); // 見出しは上へ・字は少し下へ
 
-  let look = { color: 0x5a5f6e, label: '', caption: '', pulse: 0, fill: 0, arc: false, dim: false, throb: false, rainbow: false, halo: null, ink: null, raise: 1, throbRate: 14 };
+  let look = { color: 0x5a5f6e, label: '', caption: '', pulse: 0, fill: 0, band: null, fillColor: null, arc: false, dim: false, throb: false, rainbow: false, halo: null, ink: null, raise: 1, throbRate: 14 };
   let raise = 1; // 今の浮き上がり（0＝箱に沈んで平ら・1＝側面の厚み THICK いっぱい）。look.raise へなめらかに寄せる
   let shakeAt = -Infinity; // 小さな横揺れの始まり（ms）
   let labelKey = null, labelBase = 1, capKey = null, capBase = 1;
@@ -82,7 +83,7 @@ export function createBigButton(scene, opts) {
   let ids = []; // 今ボタンを押している指
 
   const now = () => scene.time.now;
-  const inside = (p) => Math.hypot(p.x - x, p.y - y) <= hitR;
+  const inside = (p) => Math.hypot(p.x - x, p.y - y) <= hitR || (typeof opts.zone === 'function' && !!opts.zone(p));
   // もう離れている指：画面の指（manager.pointers）に同じ id があって、押されていない。離しの知らせ（pointerup）が来なかった指（タッチの取り消しなど）で
   // 押したまま固まらないよう、押すたび・描くたびに外す（onUp も呼ぶ＝場面の長押しも離れる）。見つからない id（simulateDown の -1 など）は外さない
   const stale = (id) => {
@@ -123,12 +124,13 @@ export function createBigButton(scene, opts) {
 
   const api = {
     x, y, d,
-    // 指がボタンの範囲に入っているか（ボタンの外の指の処理の判断用）
+    // 指がボタンの範囲（と zone）に入っているか（ボタンの外の指の処理の判断用）
     contains: inside,
     // 場面ごとの見た目：color（面の色 0xRRGGBB）・label（字・翻訳済み）・pulse（0〜1・ふちの輪が太く明るい）・fill（0〜1・起き上がりの弧）・
     // arc（弧の黒い溝を出す）・dim（薄く）・throb（脈打つ）・throbRate（脈の速さ・既定 14・小さいほどゆっくり）・rainbow（外に虹の輪を回す）・ink（{color,stroke} 字の色）・
     // raise（0〜1・側面の厚みの割合。0 に近いほど平らに沈んで「押せない」見た目・1 で浮き上がる。下の地面は動かない）・
-    // halo（0xRRGGBB・面の外に光の輪＝ぼかした太い輪＋細い芯。null で無し）・caption（字の上の小さな見出し・翻訳済み・'' で無し）
+    // halo（0xRRGGBB・面の外に光の輪＝ぼかした太い輪＋細い芯。null で無し）・caption（字の上の小さな見出し・翻訳済み・'' で無し）・
+    // band（[下, 上] 0〜1・弧の上に緑の帯。null で無し）・fillColor（弧のたまりの色・既定は薄い緑）
     setLook(next) {
       look = { ...look, ...next };
     },
@@ -202,8 +204,11 @@ export function createBigButton(scene, opts) {
         }
       }
       if (look.arc || look.fill > 0) {
+        const at = (p) => -Math.PI / 2 + Math.PI * 2 * Math.min(1, p);
         front.lineStyle(12, 0x000000, 0.4).strokeCircle(0, cy, rr);
-        if (look.fill > 0) front.lineStyle(12, 0x9cf0b4, 1).beginPath().arc(0, cy, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, look.fill), false).strokePath();
+        // band：弧の上の緑の帯（守りのバーと同じ割合）。その上に、たまりの弧を細く重ねる（帯が見え続ける）
+        if (look.band) front.lineStyle(12, 0x6fcf7f, 0.85).beginPath().arc(0, cy, rr, at(look.band[0]), at(look.band[1]), false).strokePath();
+        if (look.fill > 0) front.lineStyle(look.band ? 6 : 12, look.fillColor || 0x9cf0b4, 1).beginPath().arc(0, cy, rr, -Math.PI / 2, at(look.fill), false).strokePath();
       }
 
       // 字

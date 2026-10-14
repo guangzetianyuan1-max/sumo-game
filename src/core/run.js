@@ -1,16 +1,22 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=37';
-import { GUIDE_IDS } from '../data/guides.js?v=37';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=37';
-import { foeAt } from '../data/foes.js?v=37';
-import { inGame } from '../data/kimarite.js?v=37';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=37';
-import { startStats, growthMult, diminish } from './career.js?v=37';
-import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=37';
-import { kimeteGain } from './drills.js?v=37';
-import { isTactic } from './tactics.js?v=37';
+import { TYPES } from '../data/types.js?v=38';
+import { GUIDE_IDS } from '../data/guides.js?v=38';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=38';
+import { foeAt } from '../data/foes.js?v=38';
+import { inGame } from '../data/kimarite.js?v=38';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=38';
+import { startStats, growthMult, diminish } from './career.js?v=38';
+import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=38';
+import { kimeteGain } from './drills.js?v=38';
+import { isTactic, FOE_KIME_ID } from './tactics.js?v=38';
+
+// はじめて見た時に ことねが返し方を教える攻め：相手の攻め4つと、敵の必殺技（foeKime・ボタン1つ Task 3）。記録の seenTactics はこれだけを残す
+const seenable = (id) => isTactic(id) || id === FOE_KIME_ID;
 
 export const RUN_VERSION = 4;
+// 遊び方の版（Ruling 15・10/14 ボタン1つ）：これより古い版の遊び方を見た記録は、読み込みで「まだ見ていない」に戻し、見た攻めも空にする（古い返し方を教えていた）。
+// 遊び方を閉じた時に今の版を書く（state.markHelpSeen）。記録の版 RUN_VERSION は変えない
+export const HELP_VER = 2;
 export const TRAIN_STEPS = 3; // 1回の稽古のコマ数
 export const STATS = ['shin', 'gi', 'tai'];
 const r1 = (v) => Math.round(v * 10) / 10;
@@ -25,7 +31,7 @@ export function newRun({ type, seed }) {
     known: [...TYPES[type].sample], pendingLearn: null, learnKind: null,
     wins: 0, losses: 0, streak: 0, trainings: 0,
     unlocked: [newTechIds(type)[0]], newKnown: [], kimeteProgress: {}, seenTactics: [],
-    training: null, seed, cleared: false, seenHelp: false,
+    training: null, seed, cleared: false, seenHelp: false, helpVer: HELP_VER,
   };
 }
 
@@ -143,9 +149,9 @@ export function trainKimete(run, id, score) {
   return { run: step(run, { kimeteProgress: progress }), from, to: sum, learned: false };
 }
 
-// はじめて見た相手の攻め（取組で ことねが返し方を1回だけ教える・見たら記録）。知らない id・重なりは足さない
+// はじめて見た相手の攻め・敵の必殺技（取組で ことねが返し方を1回だけ教える・見たら記録）。知らない id・重なりは足さない
 export function markTacticSeen(run, id) {
-  if (!isTactic(id)) return run;
+  if (!seenable(id)) return run;
   const seen = Array.isArray(run.seenTactics) ? run.seenTactics : [];
   if (seen.includes(id)) return run;
   return { ...run, seenTactics: [...seen, id] };
@@ -167,8 +173,7 @@ export function deserializeRun(text) {
     if (!count(c.wins) || !count(c.losses) || !count(c.streak)) return null;
     c.cleared = c.wins >= CLEAR_AT;
     if (!count(c.trainings)) c.trainings = 0; // 稽古の回数を数える前の記録は 0 から
-    // seenTactics の無い記録は 2つのボタンの前の記録＝遊び方が変わったので、もう一度見せる（閉じると seenTactics: [] と一緒に保存され、繰り返さない）
-    c.seenHelp = c.seenHelp === true && Array.isArray(c.seenTactics);
+    c.seenHelp = c.seenHelp === true;
     if (c.training !== null && !(c.training && Number.isInteger(c.training.left) && c.training.left >= 1 && c.training.left <= TRAIN_STEPS)) return null;
     if (c.training) c.training = c.training.voluntary === true ? { left: c.training.left, voluntary: true } : { left: c.training.left }; // voluntary の無い古い記録は負けた後の稽古
     const known = Array.isArray(c.known) ? c.known.filter(inGame) : [];
@@ -185,7 +190,9 @@ export function deserializeRun(text) {
     }
     c.kimeteProgress = progress;
     // 見た攻め：無い古い記録は []・配列でない／知らない id／重なりは捨てる
-    c.seenTactics = Array.isArray(c.seenTactics) ? [...new Set(c.seenTactics.filter(isTactic))] : [];
+    c.seenTactics = Array.isArray(c.seenTactics) ? [...new Set(c.seenTactics.filter(seenable))] : [];
+    // 遊び方の版が古い（無い＝2つのボタンの頃まで）：遊び方をもう一度見せ、攻めの吹き出しも新しい返し方で出し直す（閉じると helpVer が書かれ、繰り返さない）
+    if (!(Number.isInteger(c.helpVer) && c.helpVer >= HELP_VER)) { c.seenHelp = false; c.seenTactics = []; }
     const pending = Array.isArray(c.pendingLearn) ? c.pendingLearn.filter(inGame) : [];
     c.pendingLearn = pending.length ? pending : null;
     c.learnKind = c.pendingLearn && RANK_IDS.includes(c.learnKind) ? c.learnKind : null;

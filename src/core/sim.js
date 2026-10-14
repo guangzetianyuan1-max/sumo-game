@@ -1,9 +1,9 @@
 // 数千番回して勝率を出す（強さ合わせの試験と tools/tune.mjs から使う）。東西を交互に入れ替えて、東の有利を消す。
-import { runBout } from './bout.js?v=37';
-import { makeWrestler } from './wrestler.js?v=37';
-import { defaultStrategy } from './strategy.js?v=37';
-import { TYPE_IDS } from '../data/types.js?v=37';
-import { TURN_LIMIT } from './tuning.js?v=37';
+import { runBout } from './bout.js?v=38';
+import { makeWrestler } from './wrestler.js?v=38';
+import { defaultStrategy } from './strategy.js?v=38';
+import { TYPE_IDS } from '../data/types.js?v=38';
+import { TURN_LIMIT } from './tuning.js?v=38';
 
 export function winRate(typeA, typeB, n, { a = {}, b = {} } = {}) {
   const A = makeWrestler(typeA, a);

@@ -12,6 +12,3 @@ export function gaugeTier(power, litFrac) {
   else if (p < 1) k -= 1;
   return Math.max(1, Math.min(4, k));
 }
-
-// 段の色（帯とボタン）：4＝虹は画面の側で色を回す
-export const TIER_COLOR = { 1: 0x3d8fe0, 2: 0xd9443a, 3: 0xe3c27a };
