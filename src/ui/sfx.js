@@ -1,6 +1,6 @@
 // src/ui/sfx.js — 効果音（10/11 本人「効果音付きで」）。音のファイルは使わず、Web Audio でその場で作る
 // どの音も 0.8 秒以内・重なった時も含めて音量の山は 0.35 以下。鳴らせない端末（AudioContext が無い・作ると例外）では何もしない
-import { isMuted } from './music.js?v=36'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
+import { isMuted } from './music.js?v=37'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
 
 let ctx = null;
 let broken = false; // 作ろうとして例外が出た端末では、2度目からは試さない
@@ -105,8 +105,8 @@ const BOUT = {
   slap: (c, t) => noise(c, t, { dur: 0.12, peak: 0.3, filter: 'highpass', f: 1200, q: 0.7, attack: 0.002 }),
   // 俵まで押し込む すり足「ずざざ」（低く絞った雑音が少しずつ消える）
   scrape: (c, t) => noise(c, t, { dur: 0.75, peak: 0.2, filter: 'lowpass', f: 1400, fEnd: 500, q: 0.8, attack: 0.08 }),
-  // 組み絵のカットイン「シャキーン＋拍子木」（設計書 9.7 の緑の段・足して 0.35 を超えない）
-  kumi: (c, t) => {
+  // 決め技が出た「シャキーン＋拍子木」（設計書 9.7 の緑の段・足して 0.35 を超えない。2つのボタンで kumi から kime へ名前を替えた＝kumi は組みつきの音）
+  kime: (c, t) => {
     tone(c, t, { freq: 1800, freqEnd: 3200, dur: 0.25, peak: 0.12 });
     noise(c, t, { dur: 0.3, peak: 0.08, filter: 'highpass', f: 4000, q: 0.7, attack: 0.002 });
     noise(c, t + 0.28, { dur: 0.05, peak: 0.15, filter: 'bandpass', f: 1800, q: 4, attack: 0.001 });
@@ -222,6 +222,45 @@ const BOUT = {
     tone(c, t, { freq: 70, freqEnd: 35, dur: 0.55, peak: 0.27 });
     noise(c, t, { dur: 0.12, peak: 0.07, filter: 'lowpass', f: 400, q: 0.7, attack: 0.002 });
   },
+  // ---- 2つのボタン（10/14・設計書 2026-10-14-sumo-two-buttons-and-foe-tactics-design.md）。どれも足して 0.35 以下・0.8秒以内（試験が数える）----
+  // 相手の攻めの予告：短く高い「ピッ」2つ（耳に付くが小さく）
+  warn: (c, t) => {
+    tone(c, t, { freq: 1760, dur: 0.06, peak: 0.12, type: 'square', attack: 0.002 });
+    tone(c, t + 0.1, { freq: 1760, dur: 0.06, peak: 0.12, type: 'square', attack: 0.002 });
+  },
+  // 踏ん張り：低く重い「ずん」（足を据える）
+  fumbari: (c, t) => {
+    tone(c, t, { freq: 65, freqEnd: 40, dur: 0.5, peak: 0.25, attack: 0.01 });
+    noise(c, t, { dur: 0.15, peak: 0.08, filter: 'lowpass', f: 300, q: 0.7, attack: 0.005 });
+  },
+  // はたき：乾いた平手「ぱしっ」
+  hataki: (c, t) => {
+    noise(c, t, { dur: 0.08, peak: 0.26, filter: 'highpass', f: 2000, q: 0.7, attack: 0.001 });
+    tone(c, t, { freq: 900, freqEnd: 500, dur: 0.05, peak: 0.06, attack: 0.001 });
+  },
+  // 突っ張り：胸を突く「ドッ」（低い当たり＋短い雑音）
+  tsuppari: (c, t) => {
+    tone(c, t, { freq: 150, freqEnd: 70, dur: 0.18, peak: 0.24, attack: 0.002 });
+    noise(c, t, { dur: 0.05, peak: 0.1, filter: 'bandpass', f: 1200, q: 1.5, attack: 0.001 });
+  },
+  // 組みつき：まわしをつかむ「がしっ」（こもった雑音2つ＋低い音）
+  kumi: (c, t) => {
+    noise(c, t, { dur: 0.05, peak: 0.16, f: 700, q: 2, attack: 0.002 });
+    noise(c, t + 0.06, { dur: 0.09, peak: 0.12, filter: 'lowpass', f: 900, q: 0.8, attack: 0.002 });
+    tone(c, t, { freq: 120, freqEnd: 80, dur: 0.15, peak: 0.1, attack: 0.003 });
+  },
+  // こらえる：腰を落とす「ぐっ」（下がる低い音）
+  brace: (c, t) => tone(c, t, { freq: 220, freqEnd: 110, dur: 0.16, peak: 0.18, type: 'triangle', attack: 0.01 }),
+  // 踏ん張りが解けた「ふっ」（最終点検・押しどきの合図）：上がる短い音＋息の雑音。小さく（山 0.2 以下）
+  release: (c, t) => {
+    tone(c, t, { freq: 330, freqEnd: 660, dur: 0.18, peak: 0.12, type: 'triangle', attack: 0.01 });
+    noise(c, t, { dur: 0.12, peak: 0.05, filter: 'highpass', f: 1500, q: 0.7, attack: 0.005 });
+  },
+  // 光っていない右を押した「ぼすっ」（小さく短い・押しても損はしない合図）
+  dud: (c, t) => {
+    tone(c, t, { freq: 120, freqEnd: 70, dur: 0.12, peak: 0.1 });
+    noise(c, t, { dur: 0.08, peak: 0.06, filter: 'lowpass', f: 450, q: 0.7, attack: 0.002 });
+  },
   // 確定：0.3秒の無音のあと、太鼓と笛（虹の時に gauge4 と一緒に鳴らす）
   gaugeMax: (c, t) => {
     tone(c, t + 0.3, { freq: 100, freqEnd: 55, dur: 0.45, peak: 0.16 });
@@ -256,7 +295,7 @@ export function playTraining(kind, volume = 1) {
   play(SOUNDS, kind, volume);
 }
 
-// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kumi（組み絵のカットイン）・gauge1〜4（ゲージの段）・gaugeMax（虹の確定）・press（大きなボタンの「カチッ」）・20体版 Task 6b の音（tachiai hop hopBeat land clash topple drop rise win lose promo flags pon kan bosu dosu zushin）。volume は playTraining と同じ
+// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kime（決め技が出た）・gauge1〜4（ゲージの段）・gaugeMax（虹の確定）・press（大きなボタンの「カチッ」）・20体版 Task 6b の音（tachiai hop hopBeat land clash topple drop rise win lose promo flags pon kan bosu dosu zushin）・2つのボタンの音（warn fumbari hataki tsuppari kumi brace dud release）。volume は playTraining と同じ
 export function playBout(kind, volume = 1) {
   play(BOUT, kind, volume);
 }

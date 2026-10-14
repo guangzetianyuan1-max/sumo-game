@@ -1,20 +1,20 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { CautionScene } from './scenes/CautionScene.js?v=36';
-import { CoverScene } from './scenes/CoverScene.js?v=36';
-import { GuideScene } from './scenes/GuideScene.js?v=36';
-import { LadderScene } from './scenes/LadderScene.js?v=36';
-import { OpponentScene } from './scenes/OpponentScene.js?v=36';
-import { AfterScene } from './scenes/AfterScene.js?v=36';
-import { TrainingScene } from './scenes/TrainingScene.js?v=36';
-import { DrillScene } from './scenes/DrillScene.js?v=36';
-import { KamiScene } from './scenes/KamiScene.js?v=36';
-import { HelpScene } from './scenes/HelpScene.js?v=36';
-import { KenshoScene } from './scenes/KenshoScene.js?v=36';
-import { ClearScene } from './scenes/ClearScene.js?v=36';
-import { initLang } from './i18n/i18n.js?v=36';
-import { storage } from './ui/widgets.js?v=36';
-import { session, lastSlot } from './state.js?v=36';
-import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=36';
+import { CautionScene } from './scenes/CautionScene.js?v=37';
+import { CoverScene } from './scenes/CoverScene.js?v=37';
+import { GuideScene } from './scenes/GuideScene.js?v=37';
+import { LadderScene } from './scenes/LadderScene.js?v=37';
+import { OpponentScene } from './scenes/OpponentScene.js?v=37';
+import { AfterScene } from './scenes/AfterScene.js?v=37';
+import { TrainingScene } from './scenes/TrainingScene.js?v=37';
+import { DrillScene } from './scenes/DrillScene.js?v=37';
+import { KamiScene } from './scenes/KamiScene.js?v=37';
+import { HelpScene } from './scenes/HelpScene.js?v=37';
+import { KenshoScene } from './scenes/KenshoScene.js?v=37';
+import { ClearScene } from './scenes/ClearScene.js?v=37';
+import { initLang } from './i18n/i18n.js?v=37';
+import { storage } from './ui/widgets.js?v=37';
+import { session, lastSlot } from './state.js?v=37';
+import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=37';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;
@@ -60,6 +60,7 @@ function start() {
     parent: 'game',
     backgroundColor: '#141a2e',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 720, height: 1280 },
+    input: { activePointers: 3 }, // 指は3本まで（既定は1本＝2本目の親指が落ちる。取組は左右の2つのボタンを両手で押す）
     scene: [CautionScene, CoverScene, GuideScene, HelpScene, LadderScene, OpponentScene, KenshoScene, KamiScene, AfterScene, ClearScene, TrainingScene, DrillScene],
   });
   hookMusic(game);

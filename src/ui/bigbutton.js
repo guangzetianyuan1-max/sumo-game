@@ -3,9 +3,9 @@
 // 形：地面の影 → 側面（厚み THICK px・面の色を暗くした円柱）→ 上の面（上が明るく下が暗い）＋つやの白い弧。押すと面が SINK px 沈み、側面が薄くなり、影が縮む
 // 押し：触れた瞬間に onDown → 音「カチッ」と振動 → 沈む／離すと SPRING_MS で少し行き過ぎて戻る。長押しの間は沈んだまま・連打は押すたびに沈んで戻る
 // 深さの計算は src/core/pressdepth.js（node で試験できる純粋な関数）
-import { pressDepth, SINK, MIN_HOLD_MS } from '../core/pressdepth.js?v=36';
-import { playBout } from './sfx.js?v=36';
-import { textStyle, fitText, COLORS } from './widgets.js?v=36';
+import { pressDepth, SINK, MIN_HOLD_MS } from '../core/pressdepth.js?v=37';
+import { playBout } from './sfx.js?v=37';
+import { textStyle, fitText, COLORS } from './widgets.js?v=37';
 
 export const THICK = 18; // 側面の厚み（押していない時）
 const FACE_TEX = 'bigbtn-face'; // 上の面の下地（白→灰の縦のグラデーション・色は tint で掛ける）
@@ -13,6 +13,9 @@ const FACE_PX = 300; // 下地の絵の大きさ（d に合わせて拡縮）
 const RING_GAP = 10; // 起き上がりの弧・虹の輪が面のふちから離れる距離
 const RAINBOW_SEG = 7; // 虹の輪の色の数
 const D2R = Math.PI / 180;
+const SHAKE_MS = 260; // 小さな横揺れ（光っていない決め技のボタンを押した時など）の長さ
+const SHAKE_PX = 7; // 横揺れの幅
+const RAISE_EASE = 0.25; // 浮き上がり（raise）が目標へ寄る割合（1コマごと）
 
 const r8 = (c) => (c >> 16) & 255, g8 = (c) => (c >> 8) & 255, b8 = (c) => c & 255;
 const rgb = (r, g, b) => (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
@@ -66,17 +69,40 @@ export function createBigButton(scene, opts) {
   face.setScale(d / FACE_PX);
   const front = scene.add.graphics().setPosition(x, y).setDepth(depth + 0.2); // つや・ふちの輪・起き上がりの弧・虹
   const label = scene.add.text(x, y, '', textStyle(opts.textSize || Math.round(d * 0.18), COLORS.ink, { stroke: '#141a2e', strokeThickness: 5 })).setOrigin(0.5).setDepth(depth + 0.3);
+  // 小さな見出し（caption：字の上に小さく・例「決め技」）。無い時は隠す
+  const capSize = Math.max(18, Math.round(d * 0.1));
+  const caption = scene.add.text(x, y, '', textStyle(capSize, COLORS.ink, { stroke: '#141a2e', strokeThickness: 4, fontStyle: '500' })).setOrigin(0.5).setDepth(depth + 0.3).setVisible(false);
+  const CAP_DY = -Math.round(d * 0.17), CAP_LABEL_DY = Math.round(d * 0.06); // 見出しは上へ・字は少し下へ
 
-  let look = { color: 0x5a5f6e, label: '', pulse: 0, fill: 0, arc: false, dim: false, throb: false, rainbow: false, ink: null };
-  let labelKey = null, labelBase = 1;
+  let look = { color: 0x5a5f6e, label: '', caption: '', pulse: 0, fill: 0, arc: false, dim: false, throb: false, rainbow: false, halo: null, ink: null, raise: 1, throbRate: 14 };
+  let raise = 1; // 今の浮き上がり（0＝箱に沈んで平ら・1＝側面の厚み THICK いっぱい）。look.raise へなめらかに寄せる
+  let shakeAt = -Infinity; // 小さな横揺れの始まり（ms）
+  let labelKey = null, labelBase = 1, capKey = null, capBase = 1;
   let pressAt = -Infinity, releaseAt = null; // 押し始め・離した時（ms）。releaseAt が null ＝ 押している最中
   let ids = []; // 今ボタンを押している指
 
   const now = () => scene.time.now;
   const inside = (p) => Math.hypot(p.x - x, p.y - y) <= hitR;
+  // もう離れている指：画面の指（manager.pointers）に同じ id があって、押されていない。離しの知らせ（pointerup）が来なかった指（タッチの取り消しなど）で
+  // 押したまま固まらないよう、押すたび・描くたびに外す（onUp も呼ぶ＝場面の長押しも離れる）。見つからない id（simulateDown の -1 など）は外さない
+  const stale = (id) => {
+    const m = scene.input && scene.input.manager;
+    const ps = m && m.pointers;
+    if (!ps) return false;
+    const q = ps.find((pp) => pp && pp.id === id);
+    return !!q && !q.isDown;
+  };
+  const dropStale = () => {
+    const gone = ids.filter(stale);
+    if (!gone.length) return;
+    ids = ids.filter((id) => gone.indexOf(id) < 0);
+    if (ids.length === 0 && releaseAt === null) releaseAt = Math.max(now(), pressAt + MIN_HOLD_MS);
+    if (opts.onUp) gone.forEach((id) => opts.onUp({ id, x, y }));
+  };
 
   const pointerDown = (p) => {
     if (!inside(p)) return;
+    dropStale();
     if (opts.onDown && opts.onDown(p) === false) return;
     if (ids.length === 0 || releaseAt !== null) pressAt = now();
     releaseAt = null;
@@ -100,34 +126,50 @@ export function createBigButton(scene, opts) {
     // 指がボタンの範囲に入っているか（ボタンの外の指の処理の判断用）
     contains: inside,
     // 場面ごとの見た目：color（面の色 0xRRGGBB）・label（字・翻訳済み）・pulse（0〜1・ふちの輪が太く明るい）・fill（0〜1・起き上がりの弧）・
-    // arc（弧の黒い溝を出す）・dim（薄く）・throb（脈打つ）・rainbow（外に虹の輪を回す）・ink（{color,stroke} 字の色）
+    // arc（弧の黒い溝を出す）・dim（薄く）・throb（脈打つ）・throbRate（脈の速さ・既定 14・小さいほどゆっくり）・rainbow（外に虹の輪を回す）・ink（{color,stroke} 字の色）・
+    // raise（0〜1・側面の厚みの割合。0 に近いほど平らに沈んで「押せない」見た目・1 で浮き上がる。下の地面は動かない）・
+    // halo（0xRRGGBB・面の外に光の輪＝ぼかした太い輪＋細い芯。null で無し）・caption（字の上の小さな見出し・翻訳済み・'' で無し）
     setLook(next) {
       look = { ...look, ...next };
     },
+    // 押しても何も起きない時の合図：小さく横に揺れる（沈まない）
+    shake() {
+      shakeAt = now();
+    },
     // 画面が描き直す時に毎コマ呼ぶ
     update() {
+      dropStale();
       const t = now();
+      const want = typeof look.raise === 'number' ? Math.max(0, Math.min(1, look.raise)) : 1;
+      raise += (want - raise) * RAISE_EASE;
+      if (Math.abs(want - raise) < 0.01) raise = want;
+      const thick = THICK * raise; // 今の側面の厚み
+      const base = THICK - thick; // 面が下がる分（平らなほど下）
+      const sp = (t - shakeAt) / SHAKE_MS;
+      const sx = sp >= 0 && sp < 1 ? SHAKE_PX * (1 - sp) * Math.sin(sp * Math.PI * 6) : 0;
       const held = releaseAt === null ? t - pressAt : releaseAt - pressAt;
       const rel = releaseAt === null ? null : t - releaseAt;
       const pd = pressDepth(held, rel);
-      const off = pd.depth - pd.over; // 面のずれ（正＝下）
+      const off = base + Math.min(pd.depth, thick) - pd.over; // 面のずれ（正＝下）：平らな時は側面の厚みより深く沈まない
       const k = Math.max(0, Math.min(1, pd.depth / SINK));
-      const throb = look.throb ? 1 + 0.06 * Math.sin((t / 1000) * 14) : 1;
+      const throb = look.throb ? 1 + 0.06 * Math.sin((t / 1000) * (look.throbRate || 14)) : 1;
       const col = look.color;
       const a = look.dim ? 0.7 : 1;
 
-      back.setScale(throb);
-      front.setScale(throb);
-      face.setScale((d / FACE_PX) * throb).setPosition(x, y + off * throb).setTint(scaleColor(col, 1.12)).setAlpha(a);
-      label.setPosition(x, y + off * throb);
+      back.setScale(throb).setPosition(x + sx, y);
+      front.setScale(throb).setPosition(x + sx, y);
+      face.setScale((d / FACE_PX) * throb).setPosition(x + sx, y + off * throb).setTint(scaleColor(col, 1.12)).setAlpha(a);
+      const capOn = !!look.caption;
+      label.setPosition(x + sx, y + (capOn ? CAP_LABEL_DY : 0) + off * throb);
+      caption.setVisible(capOn).setPosition(x + sx, y + CAP_DY + off * throb).setAlpha(a);
 
       // 影（地面）・側面：押すと影は縮んで薄く、側面は面が沈んだ分だけ薄くなる
       back.clear();
       const sy = THICK + 8 - 4 * k;
       back.fillStyle(0x000000, 0.16 - 0.05 * k).fillCircle(0, sy, R + 9 - 5 * k);
       back.fillStyle(0x000000, 0.26 - 0.08 * k).fillCircle(0, sy, R + 3 - 3 * k);
-      back.fillStyle(scaleColor(col, 0.5), a).fillRect(-R + 0.5, 0, 2 * R - 1, THICK).fillCircle(0, THICK, R);
-      back.fillStyle(0x000000, 0.18 * a).fillRect(-R + 0.5, THICK * 0.55, 2 * R - 1, THICK * 0.45); // 側面の下の方を少し暗く
+      back.fillStyle(scaleColor(col, 0.5), a).fillRect(-R + 0.5, base, 2 * R - 1, thick).fillCircle(0, THICK, R);
+      back.fillStyle(0x000000, 0.18 * a).fillRect(-R + 0.5, base + thick * 0.55, 2 * R - 1, thick * 0.45); // 側面の下の方を少し暗く
 
       // 面の上：縁取り・ふちの輪（拍に近いほど太く明るい）・つやの白い弧
       front.clear();
@@ -148,6 +190,10 @@ export function createBigButton(scene, opts) {
       front.fillStyle(0xffffff, 0.42 * a).fillPoints(pts, true);
       // 虹の輪・起き上がりの弧：沈まない外側（面と側面の真ん中を中心にする）
       const rr = R + RING_GAP, cy = THICK / 2;
+      if (look.halo !== null && look.halo !== undefined && !look.rainbow) {
+        front.lineStyle(26, look.halo, 0.22).strokeCircle(0, cy, rr + 6);
+        front.lineStyle(10, look.halo, 0.95).strokeCircle(0, cy, rr);
+      }
       if (look.rainbow) {
         const spin = t / 400;
         for (let i = 0; i < RAINBOW_SEG; i++) {
@@ -168,6 +214,14 @@ export function createBigButton(scene, opts) {
         labelBase = label.scaleX;
       }
       label.setScale(labelBase * throb);
+      if (look.caption !== capKey) {
+        capKey = look.caption;
+        caption.setScale(1).setText(look.caption || '');
+        fitText(caption, d - 60);
+        capBase = caption.scaleX;
+      }
+      caption.setScale(capBase * throb);
+      if (look.ink) caption.setColor(look.ink.color).setStroke(look.ink.stroke, 4);
       if (look.ink) label.setColor(look.ink.color).setStroke(look.ink.stroke, 5);
     },
     // 今押されているか（画面の確かめ用）
@@ -195,6 +249,7 @@ export function createBigButton(scene, opts) {
       face.destroy();
       front.destroy();
       label.destroy();
+      caption.destroy();
     },
   };
   return api;

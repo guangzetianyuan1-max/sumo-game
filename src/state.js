@@ -1,15 +1,15 @@
 // src/state.js — 場面をまたぐ選び。run は勝ち抜き（入門を終えるまで null）。移り変わりはここの関数で行い、そのたびに保存する
 // 10/12 夜 場所をやめて100体の勝ち抜きへ（設計書 §3）。場所の頃の関数は basho.js・career.js に残る（使わない）
-import { TYPE_IDS, TYPES } from './data/types.js?v=36';
-import { recommendStrategy } from './core/recommend.js?v=36';
-import { defaultStrategy } from './core/strategy.js?v=36';
-import { CAREER_KEY } from './core/career.js?v=36';
-import { learnMove } from './core/learn.js?v=36';
-import { rankOf } from './core/ladder.js?v=36';
-import { HERO_TYPE } from './data/heroes.js?v=36';
+import { TYPE_IDS, TYPES } from './data/types.js?v=37';
+import { recommendStrategy } from './core/recommend.js?v=37';
+import { defaultStrategy } from './core/strategy.js?v=37';
+import { CAREER_KEY } from './core/career.js?v=37';
+import { learnMove } from './core/learn.js?v=37';
+import { rankOf } from './core/ladder.js?v=37';
+import { HERO_TYPE } from './data/heroes.js?v=37';
 import {
-  newRun, currentFoe, recordResult, startTraining, leaveTraining, trainStat, trainKimete, serializeRun, deserializeRun,
-} from './core/run.js?v=36';
+  newRun, currentFoe, recordResult, startTraining, leaveTraining, trainStat, trainKimete, serializeRun, deserializeRun, markTacticSeen,
+} from './core/run.js?v=37';
 
 export const session = {
   you: HERO_TYPE,
@@ -125,6 +125,16 @@ export function prepareOpponent(store = localStore()) {
 export function markHelpSeen(store = localStore()) {
   if (!session.run) return null;
   if (session.run.seenHelp !== true) session.run = { ...session.run, seenHelp: true };
+  saveNow(store);
+  return session.run;
+}
+
+// はじめて見た相手の攻めを記録に書いて保存する（取組で ことねが返し方を教えた時・記録が無ければ何もしない）
+export function noteTacticSeen(id, store = localStore()) {
+  if (!session.run) return null;
+  const next = markTacticSeen(session.run, id);
+  if (next === session.run) return session.run;
+  session.run = next;
   saveNow(store);
   return session.run;
 }

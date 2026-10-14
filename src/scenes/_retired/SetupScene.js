@@ -1,8 +1,8 @@
 // src/scenes/SetupScene.js — 入門：主人公を5人から1人選ぶ → 番付表へ（勝ち抜きの間、主人公は変わらない）
-import { TYPE_IDS } from '../data/types.js?v=36';
-import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=36';
-import { session, startRun } from '../state.js?v=36';
-import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=36';
+import { TYPE_IDS } from '../data/types.js?v=37';
+import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=37';
+import { session, startRun } from '../state.js?v=37';
+import { button, backButton, fitText, roundBox, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, TOP_LEFT_FREE, storage } from '../ui/widgets.js?v=37';
 
 export class SetupScene extends Phaser.Scene {
   constructor() {

@@ -1,7 +1,7 @@
 // 稽古の応援と、稽古の画面の右下の助言（10/11 本人「女子は、ちゃんこと休みの際に応援。親方はそれ以外の稽古で応援」
 // 「画面右下に親方また女子が現れ、アドバイスをする」）。who＝娘の id か部屋の id・key＝i18n の鍵
-import { heyaOfGuide } from '../data/heya.js?v=36';
-import { TRAININGS } from './career.js?v=36';
+import { heyaOfGuide } from '../data/heya.js?v=37';
+import { TRAININGS } from './career.js?v=37';
 
 // 10/12 稽古を流れから外した＝右下の助言（trainingAdvice）は消した。応援の1行は稽古の画面（_retired）が使っていた物として残す
 const DAUGHTER_KINDS = ['chanko', 'rest'];

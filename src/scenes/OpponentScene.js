@@ -1,26 +1,31 @@
 // src/scenes/OpponentScene.js — 今日の相手（20体版 Task 4・10/13）：相手の絵と型・得意と苦手（系統）・心技体・決め技を選ぶ札5枚・ことねの勧め → 取組へ
 // 作戦表の頃の名残（よく使う手・技の勧めの吹き出し）は外した。シニアにも読める大きな札と、下の真ん中の「取組へ」1つだけ
 // 決め技の札：覚えた物だけ押して選べる（選んだ札が朱に光る）。最初は勧め（recommendKimete）を選んでおく。覚えていない物は灰色
-import { TYPES } from '../data/types.js?v=36';
-import { OKAMI } from '../data/heroes.js?v=36';
-import { t, foeLabel } from '../i18n/i18n.js?v=36';
-import { session, prepareOpponent } from '../state.js?v=36';
-import { playBout } from '../ui/sfx.js?v=36';
-import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=36';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=36';
+import { TYPES } from '../data/types.js?v=37';
+import { OKAMI } from '../data/heroes.js?v=37';
+import { t, foeLabel } from '../i18n/i18n.js?v=37';
+import { session, prepareOpponent } from '../state.js?v=37';
+import { playBout } from '../ui/sfx.js?v=37';
+import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=37';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=37';
 import {
   button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
   preloadTypeArt, preloadGuideArt, addAura, clearScene, COLORS,
-} from '../ui/widgets.js?v=36';
-import { currentFoe } from '../core/run.js?v=36';
+} from '../ui/widgets.js?v=37';
+import { currentFoe } from '../core/run.js?v=37';
+import { foeTacticsAt } from '../core/kamiai.js?v=37';
 
 const INFO = { y: 270, h: 240 }; // 相手の札（150〜390）：左に絵・右に型と得意・苦手
 const ART = { x: 175, r: 100, h: 200 };
 const TEXT_X = 305; // 右の字の左端
 const STATS_Y = 430; // 心技体の見出し（棒はその下）
 const PICK_Y = 636; // 「決め技をえらぶ」
-const CARD = { w: 200, h: 124, gap: 20, row1: 726, row2: 870 }; // 札5枚：上に3枚・下に2枚
-const COACH = { faceX: 92, size: 130, left: 178, top: 958, w: 512, h: 130 }; // ことねの顔と吹き出し
+const CARD = { w: 200, h: 112, gap: 20, row1: 720, row2: 848 }; // 札5枚：上に3枚・下に2枚（行の間 16）
+// ことねの顔と吹き出し：おすすめ（または稽古の案内）の下に、その相手の攻めと返し方を1行ずつ（balance は2つ・大ボスは4つ）
+const COACH = { faceX: 92, size: 130, left: 178, top: 924, w: 512, h: 192 };
+// 攻めが3つ以上（大ボス）の時の吹き出し：下の段の札の下 904 と「取組へ」の上 1132 の間に広げる。字は 26 以上を保つ（ja・en とも）
+const COACH_MANY = { top: 912, h: 212, size: 28 };
+const TAG = { w: 140, h: 32, dy: 2, size: 24 }; // 勧めの金の札：札の上の縁に少しかかる（下の段の札でも上の段の札 776 に重ならない）
 const GO_Y = 1190;
 const AFF_KEY = (a) => (a > 1 ? 'good' : a < 1 ? 'bad' : 'normal');
 const AFF_COLOR = { good: COLORS.gold, normal: COLORS.sub, bad: '#d9a08f' };
@@ -97,9 +102,12 @@ export class OpponentScene extends Phaser.Scene {
     cards.forEach((c, i) => this.card(c, pos[i][0], pos[i][1]));
 
     // ことねの一言（勧め・覚えた技が無ければ稽古の案内）
-    speakerFace(this, OKAMI, COACH.faceX, COACH.top + COACH.h / 2, COACH.size);
-    const say = this.rec ? t('opp.recommend', { tech: t(`newtech.${this.rec}`) }) : t('opp.noKimete');
-    speechBubble(this, COACH.left, COACH.top, COACH.w, COACH.h, say, { size: 30, min: 18 });
+    const advice = this.rec ? t('opp.recommend', { tech: t(`newtech.${this.rec}`) }) : t('opp.noKimete');
+    const tactics = foeTacticsAt(foe.index).map((id) => `• ${t(`opp.tactic.${id}`)}`); // 取組で この相手が使う攻め（取組の予告と同じ種）
+    const many = tactics.length >= 3; // 大ボス（攻め4つ）：勧めの1行は外す（勧めは札の「おすすめ」で分かる）・吹き出しを上下に広げる
+    const top = many ? COACH_MANY.top : COACH.top, h = many ? COACH_MANY.h : COACH.h;
+    speakerFace(this, OKAMI, COACH.faceX, top + h / 2, COACH.size);
+    this.coachText = speechBubble(this, COACH.left, top, COACH.w, h, (many ? tactics : [advice, ...tactics]).join('\n'), { size: many ? COACH_MANY.size : 30, min: 18 })[2];
 
     button(this, width / 2, GO_Y, 520, 116, t('opp.go'), () => this.go(), { size: 44 });
   }
@@ -137,8 +145,9 @@ export class OpponentScene extends Phaser.Scene {
     }
     if (c.id === this.rec) {
       // 勧めの札の上の縁に小さな金の札
-      roundBox(this, x, y - CARD.h / 2, 140, 38, 0xe3c27a, { radius: 19, shadow: false });
-      fitText(this.add.text(x, y - CARD.h / 2, t('opp.recTag'), textStyle(26, '#3b2810')).setOrigin(0.5), 128);
+      const ty = y - CARD.h / 2 + TAG.dy;
+      roundBox(this, x, ty, TAG.w, TAG.h, 0xe3c27a, { radius: TAG.h / 2, shadow: false });
+      fitText(this.add.text(x, ty, t('opp.recTag'), textStyle(TAG.size, '#3b2810')).setOrigin(0.5), TAG.w - 12);
     }
     if (c.state !== 'learned') return;
     const zone = hitZone(this, x, y, CARD.w, CARD.h);

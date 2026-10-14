@@ -6,24 +6,24 @@
 // 土俵：横に広い世界（WORLD.w）を container に入れ、触れ合う所を追って横に動かす（屋根と四房は画面に止めたまま）
 // 力士：assets/bout/<east|west>/<姿勢>.png（tools/prep_bout.py）。姿勢の選びと位置の計算は src/core/boutanim.js
 // 決まり方：突き押しの「出し」＝俵の外へ押し出して土俵の下へ／「倒し」＝俵際で倒れる／ほか＝踏ん張る勝ちと倒れる負け（技ごとの動きは後の段で1つずつ）
-import { runBout } from '../core/bout.js?v=36';
-import { makeWrestler } from '../core/wrestler.js?v=36';
-import { currentFoe } from '../core/run.js?v=36';
-import { foeArt, foePose, foeFrame, foePoseArt, stageAura, stageScale } from '../core/foeart.js?v=36';
-import { boutStats } from '../core/career.js?v=36';
-import { kumiPlan } from '../core/kumi.js?v=36';
+import { runBout } from '../core/bout.js?v=37';
+import { makeWrestler } from '../core/wrestler.js?v=37';
+import { currentFoe } from '../core/run.js?v=37';
+import { foeArt, foePose, foeFrame, foePoseArt, stageAura, stageScale } from '../core/foeart.js?v=37';
+import { boutStats } from '../core/career.js?v=37';
+import { kumiPlan } from '../core/kumi.js?v=37';
 import {
   POSE_NAMES, WORLD, OVERLAP, stepPoses, finishKind, isThrust, contactX, clampContact, viewScroll, bodyLeft, bodyScale,
-} from '../core/boutanim.js?v=36';
-import { t, techLabel, getLang, heroName, foeLabel } from '../i18n/i18n.js?v=36';
-import { session, recordNow, boutSeed } from '../state.js?v=36';
-import { boutComment } from '../core/advice.js?v=36';
-import { WORD_COLOR, wordArt } from '../data/words.js?v=36';
-import { playBout } from '../ui/sfx.js?v=36';
+} from '../core/boutanim.js?v=37';
+import { t, techLabel, getLang, heroName, foeLabel } from '../i18n/i18n.js?v=37';
+import { session, recordNow, boutSeed } from '../state.js?v=37';
+import { boutComment } from '../core/advice.js?v=37';
+import { WORD_COLOR, wordArt } from '../data/words.js?v=37';
+import { playBout } from '../ui/sfx.js?v=37';
 import {
   button, backButton, fitText, textStyle, statBars, speakerFace, speechBubble, preloadGuideArt, preloadOyakataArt,
   preloadWordsIndex, loadWordsArt, addAura, COLORS,
-} from '../ui/widgets.js?v=36';
+} from '../ui/widgets.js?v=37';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
@@ -524,7 +524,7 @@ export class BoutScene extends Phaser.Scene {
     const img = this.add.image(width + 400, KUMI.y, key).setDepth(51);
     img.setScale(Math.min((width - 40) / img.width, KUMI.h / img.height));
     const auraTween = this.kumi.aura ? addAura(this, img, this.kumi.aura) : null;
-    playBout('kumi');
+    playBout('kime');
     let closed = false;
     const close = () => {
       if (closed) return;

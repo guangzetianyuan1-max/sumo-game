@@ -1,13 +1,14 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=36';
-import { GUIDE_IDS } from '../data/guides.js?v=36';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=36';
-import { foeAt } from '../data/foes.js?v=36';
-import { inGame } from '../data/kimarite.js?v=36';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=36';
-import { startStats, growthMult, diminish } from './career.js?v=36';
-import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=36';
-import { kimeteGain } from './drills.js?v=36';
+import { TYPES } from '../data/types.js?v=37';
+import { GUIDE_IDS } from '../data/guides.js?v=37';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=37';
+import { foeAt } from '../data/foes.js?v=37';
+import { inGame } from '../data/kimarite.js?v=37';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=37';
+import { startStats, growthMult, diminish } from './career.js?v=37';
+import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=37';
+import { kimeteGain } from './drills.js?v=37';
+import { isTactic } from './tactics.js?v=37';
 
 export const RUN_VERSION = 4;
 export const TRAIN_STEPS = 3; // 1回の稽古のコマ数
@@ -23,7 +24,7 @@ export function newRun({ type, seed }) {
     stats: startStats(type),
     known: [...TYPES[type].sample], pendingLearn: null, learnKind: null,
     wins: 0, losses: 0, streak: 0, trainings: 0,
-    unlocked: [newTechIds(type)[0]], newKnown: [], kimeteProgress: {},
+    unlocked: [newTechIds(type)[0]], newKnown: [], kimeteProgress: {}, seenTactics: [],
     training: null, seed, cleared: false, seenHelp: false,
   };
 }
@@ -142,6 +143,14 @@ export function trainKimete(run, id, score) {
   return { run: step(run, { kimeteProgress: progress }), from, to: sum, learned: false };
 }
 
+// はじめて見た相手の攻め（取組で ことねが返し方を1回だけ教える・見たら記録）。知らない id・重なりは足さない
+export function markTacticSeen(run, id) {
+  if (!isTactic(id)) return run;
+  const seen = Array.isArray(run.seenTactics) ? run.seenTactics : [];
+  if (seen.includes(id)) return run;
+  return { ...run, seenTactics: [...seen, id] };
+}
+
 export const serializeRun = (run) => JSON.stringify(run);
 
 const count = (v) => Number.isInteger(v) && v >= 0;
@@ -158,7 +167,8 @@ export function deserializeRun(text) {
     if (!count(c.wins) || !count(c.losses) || !count(c.streak)) return null;
     c.cleared = c.wins >= CLEAR_AT;
     if (!count(c.trainings)) c.trainings = 0; // 稽古の回数を数える前の記録は 0 から
-    c.seenHelp = c.seenHelp === true;
+    // seenTactics の無い記録は 2つのボタンの前の記録＝遊び方が変わったので、もう一度見せる（閉じると seenTactics: [] と一緒に保存され、繰り返さない）
+    c.seenHelp = c.seenHelp === true && Array.isArray(c.seenTactics);
     if (c.training !== null && !(c.training && Number.isInteger(c.training.left) && c.training.left >= 1 && c.training.left <= TRAIN_STEPS)) return null;
     if (c.training) c.training = c.training.voluntary === true ? { left: c.training.left, voluntary: true } : { left: c.training.left }; // voluntary の無い古い記録は負けた後の稽古
     const known = Array.isArray(c.known) ? c.known.filter(inGame) : [];
@@ -174,6 +184,8 @@ export function deserializeRun(text) {
       if (typeof v === 'number' && v > 0 && v < 1 && c.unlocked.includes(id) && !c.newKnown.includes(id)) progress[id] = v;
     }
     c.kimeteProgress = progress;
+    // 見た攻め：無い古い記録は []・配列でない／知らない id／重なりは捨てる
+    c.seenTactics = Array.isArray(c.seenTactics) ? [...new Set(c.seenTactics.filter(isTactic))] : [];
     const pending = Array.isArray(c.pendingLearn) ? c.pendingLearn.filter(inGame) : [];
     c.pendingLearn = pending.length ? pending : null;
     c.learnKind = c.pendingLearn && RANK_IDS.includes(c.learnKind) ? c.learnKind : null;

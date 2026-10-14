@@ -8,24 +8,24 @@
 // 決め技モード（10/14 本人「稽古の出来で決め技を習得できるようにしてください」・data.kimete＝決め技の id）：
 //   遊びはその決め技の drill（kimete.js）。心技体は伸びず、出来で習得ゲージ（drills.kimeteGain）がたまる（drillKimeteNow を1回だけ）。
 //   結果＝点数と出来 → ゲージが前→後へたまる → 満タンなら「習得！」・決めのカットイン（kime）・kan の音／満タンでなければ「習得 75%」
-import { t } from '../i18n/i18n.js?v=36';
-import { session, drillStatNow, drillKimeteNow } from '../state.js?v=36';
-import { canLeaveTraining } from '../core/run.js?v=36';
-import { kimeteById } from '../data/kimete.js?v=36';
-import { cutinArt } from '../core/cutin.js?v=36';
+import { t } from '../i18n/i18n.js?v=37';
+import { session, drillStatNow, drillKimeteNow } from '../state.js?v=37';
+import { canLeaveTraining } from '../core/run.js?v=37';
+import { kimeteById } from '../data/kimete.js?v=37';
+import { cutinArt } from '../core/cutin.js?v=37';
 import {
   DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood,
   IPPON, ipponHitMs, ipponRadius, ipponJudge, ipponMissed, ipponScore,
   RENDA, rendaScore, NAGAOSHI, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct,
-} from '../core/drills.js?v=36';
-import { kamiArt, heroArt } from '../core/foeart.js?v=36';
-import { HERO_TYPE } from '../data/heroes.js?v=36';
-import { createBigButton } from '../ui/bigbutton.js?v=36';
-import { drawCutinBand } from '../ui/cutinband.js?v=36';
-import { playTraining, playBout } from '../ui/sfx.js?v=36';
+} from '../core/drills.js?v=37';
+import { kamiArt, heroArt } from '../core/foeart.js?v=37';
+import { HERO_TYPE } from '../data/heroes.js?v=37';
+import { createBigButton } from '../ui/bigbutton.js?v=37';
+import { drawCutinBand } from '../ui/cutinband.js?v=37';
+import { playTraining, playBout } from '../ui/sfx.js?v=37';
 import {
   button, fitText, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadHeroFigures, clearScene, COLORS,
-} from '../ui/widgets.js?v=36';
+} from '../ui/widgets.js?v=37';
 
 const BG_KEY = 'keiko-bg';
 const HERO_FILE = `hero_${HERO_TYPE}`;
