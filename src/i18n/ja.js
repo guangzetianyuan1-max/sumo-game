@@ -213,6 +213,7 @@ export default {
   'save.button': 'セーブ',
   'save.done': 'セーブしました（自動でも残ります）',
   'save.fail': 'セーブできませんでした（この端末では残せません）',
+  'save.cannot': 'この端末では記録を残せません\n閉じるまでは、つづきから遊べます', // v44：保存に失敗したら一度だけ。360幅でも2行に収まる長さ（2行目は16字まで）
   'slot.1': '記録①',
   'slot.2': '記録②',
   'slot.3': '記録③',
@@ -415,16 +416,17 @@ export default {
   'heya.one': '{name}に入門',
   'setup.hero': '主人公を選ぶ',
   'slot.count': '{n}／20体',
-  'slot.clear': '全勝ち抜き！',
+  'slot.clear': '20体 勝ち抜き！', // v44：負けがあっても出る＝「全勝」は事実と合わない
   'slot.old': '前の版の記録',
-  'slot.oldSub': '押すと新しく入門（新しい版になりました）',
+  'slot.oldSub': '2回押すと新しく入門（新しい版）',
+  'slot.oldConfirm': 'もう一度押すと、前の版の記録を消して始めます',
   'ladder.title': '勝ち抜き番付',
   'ladder.count': '20体のうち {n}体を倒した',
   'ladder.next': 'あと{n}体で{rank}',
-  'ladder.toClear': 'あと{n}体で全勝ち抜き',
+  'ladder.toClear': 'あと{n}体で20体 勝ち抜き',
   'ladder.nextFoe': '次の相手：{name}（{n}体目）',
   'ladder.go': '次の相手へ',
-  'ladder.clear': '20体 全勝ち抜き！ おめでとう',
+  'ladder.clear': '20体 勝ち抜き！ おめでとう',
   'opp.foeNo': '{n}体目',
   'bout.toAfter': '結果へ',
   'after.win': '勝ち！',
@@ -433,7 +435,7 @@ export default {
   'after.promoted': '{rank}に昇進！',
   'after.promoOyakata': 'よくやった。\n今日から{rank}だ',
   'after.unlocked': '決め技「{tech}」を稽古で覚えられる',
-  'after.cleared': '20体 全勝ち抜き！',
+  'after.cleared': '20体 勝ち抜き！',
   'after.next': '番付表へ',
   'after.learn': '技を覚える',
   'after.retry': 'もう一度',
@@ -455,7 +457,7 @@ export default {
   'learn.promo': '{rank}に昇進！ 新しい技を1つ覚えよう',
   'setup.heroLine': '{type}　{trait}',
   'train2.rec': '★{label}',
-  'ladder.toTop': '初めの画面へ',
+  'ladder.toTop': 'はじめの画面へ', // v44：クリアの画面の clear.top とそろえる
   // 紙相撲の取組（10/13）
   'kami.title': '紙相撲',
   'kami.box': '琴浪部屋',
@@ -643,6 +645,7 @@ export default {
   'terms.version': '（同意書の版：{v}）',
   'terms.check': '上の同意書を読み、同意する',
   'terms.button': '同意して はじめる',
+  'terms.needCheck': '上の『同意する』に\nチェックを入れてください', // 2行（携帯の幅で1字だけ折れない）
   // 同意書の画面が出せない時の代わり（短い文と「同意する」だけ・v42 第2段）
   'terms.plain.body': 'このゲームは画面をたたいて遊びます。強くたたきすぎないでください。端末の故障や画面の割れなどは、制作者に故意または重大な過失がある場合を除き、責任を負いません。記録はこの端末の中だけに残します。同意する時は下のボタンを押してください。',
   'terms.plain.button': '同意する',

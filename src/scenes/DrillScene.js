@@ -9,30 +9,30 @@
 // 決め技モード（10/14 本人「稽古の出来で決め技を習得できるようにしてください」・data.kimete＝決め技の id）：
 //   遊びはその決め技の drill（kimete.js）。心技体は伸びず、出来で習得ゲージ（drills.kimeteGain）がたまる（drillKimeteNow を1回だけ）。
 //   結果＝点数と出来 → ゲージが前→後へたまる → 満タンなら「習得！」・決めのカットイン（kime）・kan の音／満タンでなければ「習得 75%」
-import { t } from '../i18n/i18n.js?v=43';
-import { session, drillStatNow, drillKimeteNow } from '../state.js?v=43';
-import { canLeaveTraining, currentFoe } from '../core/run.js?v=43';
-import { kimeteById } from '../data/kimete.js?v=43';
-import { cutinArt } from '../core/cutin.js?v=43';
+import { t } from '../i18n/i18n.js?v=44';
+import { session, drillStatNow, drillKimeteNow } from '../state.js?v=44';
+import { canLeaveTraining, currentFoe } from '../core/run.js?v=44';
+import { kimeteById } from '../data/kimete.js?v=44';
+import { cutinArt } from '../core/cutin.js?v=44';
 import {
   DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood, kimeteGrade,
   IPPON, ipponHitMs, ipponJudge, ipponMissed, ipponScore,
   RENDA, COUNTDOWN, countdownAt, rendaScore, NAGAOSHI, nagaoshiHalf, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct, armStart,
-} from '../core/drills.js?v=43';
-import { kamiArt, heroArt } from '../core/foeart.js?v=43';
-import { HERO_TYPE } from '../data/heroes.js?v=43';
-import { createBigButton } from '../ui/bigbutton.js?v=43';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=43';
-import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, HOLD, BTN, holdBlocked, DRILL_MAIN, drillButtonColor } from '../ui/drillstage.js?v=43'; // 置き場所と長押しの見せ方の計算（Phaser を使わない）
-import { drawCutinBand } from '../ui/cutinband.js?v=43';
-import { edgeFade } from '../ui/backdrop.js?v=43';
-import { HUD, HUD_HIT, HIT_MARK, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=43'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
-import { playTraining, playBout, whine, whineStop } from '../ui/sfx.js?v=43';
-import { ringProgress } from '../core/whine.js?v=43';
-import { guardOpen, openGuarded } from '../ui/openguard.js?v=43';
+} from '../core/drills.js?v=44';
+import { kamiArt, heroArt } from '../core/foeart.js?v=44';
+import { HERO_TYPE } from '../data/heroes.js?v=44';
+import { createBigButton } from '../ui/bigbutton.js?v=44';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=44';
+import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, HOLD, BTN, holdBlocked, DRILL_MAIN, drillButtonColor } from '../ui/drillstage.js?v=44'; // 置き場所と長押しの見せ方の計算（Phaser を使わない）
+import { drawCutinBand } from '../ui/cutinband.js?v=44';
+import { edgeFade } from '../ui/backdrop.js?v=44';
+import { HUD, HUD_HIT, HIT_MARK, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=44'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
+import { playTraining, playBout, whine, whineStop } from '../ui/sfx.js?v=44';
+import { ringProgress } from '../core/whine.js?v=44';
+import { guardOpen, openGuarded } from '../ui/openguard.js?v=44';
 import {
   button, fitText, wrapText, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadHeroFigures, clearScene, COLORS,
-} from '../ui/widgets.js?v=43';
+} from '../ui/widgets.js?v=44';
 
 const BG_KEY = 'keiko-bg';
 const HERO_FILE = `hero_${HERO_TYPE}`;
@@ -138,8 +138,8 @@ export class DrillScene extends Phaser.Scene {
     this.drawBackdrop();
     // 上の見出しの帯（柱や輪より前・字が絵に負けない）
     this.add.rectangle(0, 0, width, HEAD_H, 0x141a2e, 0.72).setOrigin(0, 0).setDepth(4);
-    fitText(this.add.text(width / 2, 46, this.headLabel(), textStyle(56, COLORS.gold)).setOrigin(0.5).setShadow(...TXT_SHADOW).setDepth(5), width - 40);
-    wrapText(this, width / 2, 86, t(`drill.${kind}.how`), width - 40, 36, COLORS.ink).setShadow(...TXT_SHADOW).setDepth(5); // 説明は2行まで（どのボタンかも書く）
+    fitText(this.add.text(width / 2, 44, this.headLabel(), textStyle(56, COLORS.gold)).setOrigin(0.5).setShadow(...TXT_SHADOW).setDepth(5), width - 40);
+    wrapText(this, width / 2, 80, t(`drill.${kind}.how`), width - 40, 36, COLORS.ink).setShadow(...TXT_SHADOW).setDepth(5); // 説明は ja・en とも改行で2行（どのボタンかも書く）。v44：題を2・説明を6上げた＝2行目の下の端（約172）が一押しの白い的の輪（上の端 180）と回数の行（約206〜）より上（tests/drilltext.test.js）
     this.info = this.add.text(width / 2, kind === 'ippon' ? INFO_Y_IPPON : INFO_Y, '', textStyle(36, COLORS.gold)).setOrigin(0.5).setShadow(...TXT_SHADOW).setDepth(5);
 
     // 鉄砲柱（連打だけ）：型紙の後ろ

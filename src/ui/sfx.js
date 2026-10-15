@@ -1,11 +1,13 @@
 // src/ui/sfx.js — 効果音（10/11 本人「効果音付きで」）。音のファイルは使わず、Web Audio でその場で作る
 // どの音も 0.8 秒以内・重なった時も含めて音量の山は 0.35 以下。鳴らせない端末（AudioContext が無い・作ると例外）では何もしない
-import { isMuted } from './music.js?v=43'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
-import { WHINE, whineFreq } from '../core/whine.js?v=43';
+import { isMuted } from './music.js?v=44'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
+import { WHINE, whineFreq } from '../core/whine.js?v=44';
 
 let ctx = null;
 let broken = false; // 作ろうとして例外が出た端末では、2度目からは試さない
 let level = 1; // 今鳴らす音の音量の倍率（声が付く稽古では下げる・playTraining が音ごとに決める）
+let away = false; // 画面が裏へ回っている間（v44）：音を起こさない
+let pendingSuspend = null; // suspend() がまだ終わっていない間の約束（すぐ戻った時は終わるのを待ってから起こす）
 
 function audio() {
   if (ctx || broken) return ctx;
@@ -19,6 +21,50 @@ function audio() {
     ctx = null;
   }
   return ctx;
+}
+
+// 音を起こす（v44）：suspended だけでなく iPhone の 'interrupted' からも。裏へ回っている間・閉じた音は起こさない。古い端末は Promise を返さない・失敗しても投げない
+function wake(c) {
+  // suspend がまだ終わっていなければ、終わるのを待ってから起こす（先に起こすと running に見えて空振りし、後から止まったままになる）
+  if (pendingSuspend) {
+    pendingSuspend.then(() => { if (!away && !isMuted()) wake(c); }).catch(() => {});
+    return;
+  }
+  if (!c || away || c.state === 'running' || c.state === 'closed' || !c.resume) return;
+  try {
+    const p = c.resume();
+    if (p && p.catch) p.catch(() => {});
+  } catch {
+    // 起こせなくても遊びは続ける
+  }
+}
+
+// 画面が裏へ回った（true）・戻った（false）時に呼ぶ（v44・main.js の visibilitychange）：裏の間は止める（suspend）・戻ったら消音でなければ起こす。まだ鳴らしていない時は何もしない
+export function sfxHidden(hidden) {
+  away = !!hidden;
+  const c = ctx;
+  if (!c) return;
+  if (away) {
+    whineStop();
+    if (c.state === 'running' && c.suspend) {
+      try {
+        const p = c.suspend();
+        if (p && p.then) {
+          const mine = p.then(() => {}, () => {}).then(() => { if (pendingSuspend === mine) pendingSuspend = null; });
+          pendingSuspend = mine;
+        }
+      } catch { /* 止められなくても続ける */ }
+    }
+    return;
+  }
+  if (isMuted()) return;
+  wake(c);
+}
+
+// 画面に触れた時に呼ぶ（v44・main.js）：止まっている・中断された効果音の音を起こす（触れた＝画面は見えている）
+export function sfxWake() {
+  away = false;
+  if (ctx && !isMuted()) wake(ctx);
 }
 
 // 山の形の音量：attack 秒で peak まで上げ、dur 秒の終わりへ向けて消える
@@ -299,11 +345,7 @@ function play(table, kind, volume) {
   const c = audio();
   if (!c) return;
   try {
-    // スマホは押した時に起こさないと鳴らない
-    if (c.state === 'suspended' && c.resume) {
-      const p = c.resume(); // 古い端末は Promise を返さない
-      if (p && p.catch) p.catch(() => {});
-    }
+    wake(c); // スマホは押した時に起こさないと鳴らない
     level = typeof volume === 'number' && volume >= 0 && volume <= 1 ? volume : 1;
     make(c, c.currentTime + 0.01);
   } catch {
@@ -334,10 +376,7 @@ export function whine(p) {
   const c = audio();
   if (!c) return;
   try {
-    if (c.state === 'suspended' && c.resume) {
-      const r = c.resume();
-      if (r && r.catch) r.catch(() => {});
-    }
+    wake(c);
     const now = c.currentTime;
     if (!wh) {
       const gain = c.createGain();

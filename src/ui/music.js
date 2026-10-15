@@ -4,7 +4,7 @@
 // 取組の曲 nokotta（10/15 本人「のこったでもっとアップテンポの曲など」・設計書 §12）は、跳ねる拍 KAMI.BEAT（0.52秒）に拍の頭を合わせる＝beatLock。
 //   取組の画面が毎コマ musicBeat(st.t) を呼ぶ：曲の升 s が鳴る音の時刻 ＝ off ＋ g(s)（g＝その升が重なる取組の時刻・off＝音の時計 − 出口の遅れ − 取組の時刻）。
 //   拍の升（4升ごと）の g は必ず KAMI.BEAT の整数倍＝beatOffset(st) の 0 と同じ所。止め・コマ落ち・裏へ回った後のずれは、次の升を遅らせる／飛ばす（半拍以内の近い方）で直す
-import { KAMI } from '../core/kami.js?v=43';
+import { KAMI } from '../core/kami.js?v=44';
 let ctx = null;
 let broken = false;
 let master = null;
@@ -12,6 +12,9 @@ let timer = null;
 let playing = null; // { song, step, nextTime }
 let wanted = null; // 今の画面で鳴らしたい曲（消している間・まだ触れていない間も覚えておく）
 let current = null; // 今鳴っている曲
+let away = false; // 画面が裏へ回っている間（v44）：音を起こさない（戻った時・触れた時に起こす）
+let pendingSuspend = null; // suspend() がまだ終わっていない間の約束（state が変わるのは少し後＝すぐ戻ると resume が空振りする）
+let muted = null; // ♪の消音の印（v44）：まず memory に持つ。保存（localStorage）は次に開いた時に覚えておくためだけ＝保存できない端末でも効く
 
 function audio() {
   if (ctx || broken) return ctx;
@@ -32,6 +35,17 @@ function audio() {
     ctx = null;
   }
   return ctx;
+}
+
+// 音を起こす（v44）：止まっている（suspended）だけでなく、iPhone の電話・Siri の後の 'interrupted' からも起こす。裏へ回っている間・閉じた音は起こさない。失敗しても投げない
+function resumeCtx(c) {
+  if (!c || away || c.state === 'running' || c.state === 'closed' || !c.resume) return Promise.resolve();
+  try {
+    const p = c.resume(); // 古い端末は Promise を返さない
+    return p && p.then ? p.catch(() => {}) : Promise.resolve();
+  } catch {
+    return Promise.resolve();
+  }
 }
 
 const midiHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
@@ -504,7 +518,7 @@ function schedule() {
 export function playMusic(id) {
   const c = audio();
   if (!c || !SONGS[id]) return false;
-  if (c.state === 'suspended') c.resume();
+  resumeCtx(c);
   stopMusic();
   const song = SONGS[id];
   playing = { song, step: 0, nextTime: c.currentTime + 0.08, g: 0, wait: !!song.beatLock, off: NaN, level: 1, hotUntil: -Infinity, restartAt: null };
@@ -566,7 +580,7 @@ export function stopMusic() {
 export function playInstrument(name) {
   const c = audio();
   if (!c) return false;
-  if (c.state === 'suspended') c.resume();
+  resumeCtx(c);
   const t = c.currentTime + 0.05;
   if (name === 'taiko' || name === 'rim' || name === 'hyoshigi' || name === 'shime' || name === 'kane') INSTR[name](c, t, 1);
   else if (name === 'fue') INSTR.fue(c, t, 81, 1.2, 1);
@@ -613,6 +627,7 @@ function store() {
   try { return typeof localStorage !== 'undefined' ? localStorage : null; } catch { return null; }
 }
 export function isMuted() {
+  if (muted !== null) return muted;
   const s = store();
   try { return !!s && s.getItem(MUTE_KEY) === 'off'; } catch { return false; }
 }
@@ -630,22 +645,53 @@ export function setScene(key) {
   startWanted();
 }
 export function setMuted(off) {
+  muted = !!off; // まず memory（保存に失敗しても、この画面からは効く）
   const s = store();
   try { if (s) s.setItem(MUTE_KEY, off ? 'off' : 'on'); } catch { /* 覚えられなくても鳴らす・止めるはする */ }
   if (off) { stopMusic(); current = null; } else startWanted();
 }
-// 最初に画面に触れた時に音を起こす（スマホは触れるまで音を出せない）
+// 起こした後：曲が鳴っていない・今の画面の曲と違う曲が残っている時は、今の画面の曲へ（resume が終わる前に画面が変わった時）
+function settleMusic() {
+  if (!playing || current !== wanted) { current = null; startWanted(); }
+}
+// 音を起こして曲を整える。suspend がまだ終わっていなければ、終わるのを待ってから起こす（先に起こすと running に見えて空振りし、後から止まったままになる）
+function wakeMusic(c) {
+  const go = () => (away ? null : resumeCtx(c).then(settleMusic));
+  Promise.resolve(pendingSuspend ? pendingSuspend.then(go) : go()).catch(() => {});
+}
+// 最初に画面に触れた時に音を起こす（スマホは触れるまで音を出せない）。触れるたびに試す（v44）：iPhone の 'interrupted'（電話・Siri・画面ロックの後）も、次に触れた時に起こす
 export function unlockOnGesture(target) {
   const go = () => {
     const c = audio();
     if (!c) return;
-    const p = c.state === 'suspended' ? c.resume() : Promise.resolve();
-    p.then(() => { if (!playing) { current = null; startWanted(); } }).catch(() => {});
+    away = false; // 触れた＝画面は見えている
+    wakeMusic(c);
   };
   ['pointerdown', 'touchend', 'keydown'].forEach((ev) => target.addEventListener(ev, go, { passive: true }));
 }
+// 画面が裏へ回った（hidden＝true）・戻った（false）時に呼ぶ（v44・main.js の visibilitychange）：裏の間は曲の音を止める（suspend）。
+// 戻ったら消音でなければ起こす（消音なら起こさない＝♪を鳴らす時に playMusic が起こす）。まだ触れていない（音が無い）時は何もしない
+export function musicHidden(hidden) {
+  away = !!hidden;
+  const c = ctx;
+  if (!c) return;
+  if (away) {
+    if (c.state === 'running' && c.suspend) {
+      try {
+        const p = c.suspend();
+        if (p && p.then) {
+          const mine = p.then(() => {}, () => {}).then(() => { if (pendingSuspend === mine) pendingSuspend = null; });
+          pendingSuspend = mine;
+        }
+      } catch { /* 止められなくても続ける */ }
+    }
+    return;
+  }
+  if (isMuted()) return;
+  wakeMusic(c);
+}
 // 確かめ用：今の状態（鳴らしたい曲・鳴っている曲・音が起きているか）
 export function musicState() {
-  return { wanted, current, running: !!(ctx && ctx.state === 'running'), playing: !!playing, muted: isMuted(),
+  return { wanted, current, running: !!(ctx && ctx.state === 'running'), playing: !!playing, muted: isMuted(), away,
     level: playing && ctx ? levelNow(ctx) : null, waiting: !!(playing && playing.wait) };
 }

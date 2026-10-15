@@ -1,32 +1,35 @@
 // src/scenes/OpponentScene.js — 今日の相手（20体版 Task 4・10/13）：相手の絵と型・得意と苦手（系統）・心技体・決め技を選ぶ札5枚・ことねの勧め → 取組へ
 // 作戦表の頃の名残（よく使う手・技の勧めの吹き出し）は外した。シニアにも読める大きな札と、下の真ん中の「取組へ」1つだけ
 // 決め技の札：覚えた物だけ押して選べる（選んだ札が朱に光る）。最初は勧め（recommendKimete）を選んでおく。覚えていない物は灰色
-import { TYPES } from '../data/types.js?v=43';
-import { OKAMI } from '../data/heroes.js?v=43';
-import { t, foeLabel } from '../i18n/i18n.js?v=43';
-import { session, prepareOpponent } from '../state.js?v=43';
-import { playBout } from '../ui/sfx.js?v=43';
-import { kimeteCards, recommendKimete, chosenKimete, coachAdvice } from '../core/kimetepick.js?v=43';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=43';
+import { TYPES } from '../data/types.js?v=44';
+import { OKAMI } from '../data/heroes.js?v=44';
+import { t, foeLabel } from '../i18n/i18n.js?v=44';
+import { session, prepareOpponent } from '../state.js?v=44';
+import { playBout } from '../ui/sfx.js?v=44';
+import { kimeteCards, recommendKimete, chosenKimete, coachAdvice } from '../core/kimetepick.js?v=44';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=44';
 import {
   button, bindPress, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
   preloadTypeArt, preloadGuideArt, addAura, clearScene, COLORS,
-} from '../ui/widgets.js?v=43';
-import { currentFoe } from '../core/run.js?v=43';
-import { menuBgKey } from '../core/bgkey.js?v=43';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=43';
-import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=43';
+} from '../ui/widgets.js?v=44';
+import { currentFoe } from '../core/run.js?v=44';
+import { menuBgKey } from '../core/bgkey.js?v=44';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=44';
+import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=44';
 
 const INFO = { y: 286, h: 292 }; // 相手の札（140〜432）：得意・苦手は英語だと5行になるので高めに：左に絵・右に型と得意・苦手
 const ART = { x: 175, r: 100, h: 200 };
 const TEXT_X = 305; // 右の字の左端
-const STATS_Y = 462; // 心技体の見出し（棒はその下）
-const PICK_Y = 648; // 「決め技をえらぶ」
+// v44（バグ探し M3）：「おすすめ」の金の札（上の段の札の上の縁 651〜689）が、見出し「決め技をえらぶ」（前は 648＝字の下の端 668）と札の名前（前は 札の真ん中−24）に重なった。
+//   ⇒ 心技体を12上げ（字の下の端 約602）・見出しを 624 へ（字 約607〜644）・札の名前を 札の真ん中−16 へ（字の上の端 約692）。どの列の札でも重ならない（ja・en を画面で測った・tests/opponent.test.js）
+const STATS_Y = 450; // 心技体の見出し（棒はその下）
+const PICK_Y = 624; // 「決め技をえらぶ」
 const CARD = { w: 216, h: 112, gap: 12, row1: 724, row2: 852 }; // 札5枚：上に3枚・下に2枚（行の間 16）
 // ことねの顔と吹き出し：おすすめ（または稽古の案内）・この相手の攻めの名前を並べた1行（返し方はどれも「右のボタン（またはバー）を長押し・緑で離す」。踏ん張りの「来たら待ち、解けたら左を連打」は はじめての吹き出しと遊び方で教える＝ここは字を 26 以上に保つ）・この相手の必殺技の名前（10/14・10/15 ボタン2つ）。
 // 下の段の札の下 904 と「取組へ」の上 1132 の間に広げる。字は 26 以上を保つ（ja・en とも・大ボスは勧めの1行を外す）
 const COACH = { faceX: 70, size: 108, left: 138, top: 912, w: 560, h: 236, font: 30, min: 28 }; // 5行（勧め・攻め・必殺技・返し方2行）が字28で収まる高さ
 const TAG = { w: 150, h: 38, dy: 2, size: 28 }; // 勧めの金の札：札の上の縁に少しかかる（下の段の札でも上の段の札 776 に重ならない）
+const NAME_DY = -16; // 札の名前の高さ（札の真ん中から）：勧めの札の下の端より下（v44）
 const GO_H = 100;
 const GO_Y = 1206; // 「取組へ」（高さ GO_H・上の端 1156）：吹き出しの下 1148 の下
 const BAND = 130; // 見出しの帯の下の端（見出しと相手の名の行・相手の札の上 140 より上）
@@ -59,6 +62,8 @@ export class OpponentScene extends Phaser.Scene {
     }
     this.rec = recommendKimete(session.run, this.foe.type, this.foe.index); // 同じ相性が並ぶ時は相手ごとに変わる（v42）
     this.pick = this.rec; // 最初は勧めを選んでおく（覚えていなければ null）
+    this.pickTimer = null;
+    this.events.once('shutdown', () => this.stopPickTimer()); // 離れる時も「あと○体で解禁」の時計を止める（v44）
     this.draw();
   }
 
@@ -103,8 +108,8 @@ export class OpponentScene extends Phaser.Scene {
     this.drawStats(width);
 
     // 決め技の札
+    this.stopPickTimer(); // 描き直す前の「あと○体で解禁」の時計を捨てる（v44・バグ探し L7：残ると次の知らせを早く消した）
     this.pickText = fitText(this.add.text(width / 2, PICK_Y, t('opp.pick'), textStyle(34, COLORS.gold)).setOrigin(0.5), width - 80);
-    this.pickTimer = null;
     const cards = kimeteCards(session.run, opp);
     const pos = [[width / 2 - CARD.w - CARD.gap, CARD.row1], [width / 2, CARD.row1], [width / 2 + CARD.w + CARD.gap, CARD.row1],
       [width / 2 - (CARD.w + CARD.gap) / 2, CARD.row2], [width / 2 + (CARD.w + CARD.gap) / 2, CARD.row2]];
@@ -149,7 +154,7 @@ export class OpponentScene extends Phaser.Scene {
       glow.lineStyle(6, 0xfff3c4, 1).strokeRoundedRect(x - CARD.w / 2 - 4, y - CARD.h / 2 - 4, CARD.w + 8, CARD.h + 8, 26);
     }
     const nameColor = c.state === 'learned' ? COLORS.ink : COLORS.sub;
-    const name = fitText(this.add.text(x, y - 24, t(`newtech.${c.id}`), textStyle(28, nameColor)).setOrigin(0.5), CARD.w - 12);
+    const name = fitText(this.add.text(x, y + NAME_DY, t(`newtech.${c.id}`), textStyle(28, nameColor)).setOrigin(0.5), CARD.w - 12);
     if (c.state === 'locked') {
       name.setAlpha(0.6);
       const lockG = this.lock(x - 86, y + 28);
@@ -195,7 +200,7 @@ export class OpponentScene extends Phaser.Scene {
       this.tweens.add({ targets: o, x: o.baseX + 10, duration: 50, yoyo: true, repeat: 2, ease: 'Sine.InOut', onComplete: () => { o.x = o.baseX; } });
     });
     const { width } = this.scale;
-    if (this.pickTimer) this.pickTimer.remove(false);
+    this.stopPickTimer();
     this.pickText.setScale(1).setText(t('opp.lockedLeft', { n }));
     fitText(this.pickText, width - 80);
     this.pickTimer = this.time.delayedCall(1600, () => {
@@ -203,6 +208,11 @@ export class OpponentScene extends Phaser.Scene {
       this.pickText.setScale(1).setText(t('opp.pick'));
       fitText(this.pickText, width - 80);
     });
+  }
+
+  stopPickTimer() {
+    if (this.pickTimer) this.pickTimer.remove(false);
+    this.pickTimer = null;
   }
 
   go() {

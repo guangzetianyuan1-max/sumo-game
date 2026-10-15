@@ -214,6 +214,7 @@ export default {
   'save.button': 'Save',
   'save.done': 'Saved (it also saves automatically)',
   'save.fail': "Couldn't save on this device",
+  'save.cannot': "Can't save on this device.\nPlay on until you close the page.", // v44: shown once when saving fails. Two short lines fit at 360 wide
   'slot.1': 'Record 1',
   'slot.2': 'Record 2',
   'slot.3': 'Record 3',
@@ -418,7 +419,8 @@ export default {
   'slot.count': '{n} / 20',
   'slot.clear': 'All 20 beaten!',
   'slot.old': 'Old save',
-  'slot.oldSub': 'Tap to start anew (new version)',
+  'slot.oldSub': 'Tap twice to start anew (new version)',
+  'slot.oldConfirm': 'Tap again to erase the old save and start over',
   'ladder.title': 'Gauntlet Ranking',
   'ladder.count': '{n} of 20 opponents beaten',
   'ladder.next': '{n} more to {rank}',
@@ -456,7 +458,7 @@ export default {
   'learn.promo': 'Promoted to {rank}! Learn one new move',
   'setup.heroLine': '{type} · {trait}',
   'train2.rec': '★ {label}',
-  'ladder.toTop': 'To title screen',
+  'ladder.toTop': 'Back to start', // v44: same words as clear.top
   // Paper sumo bout (10/13)
   'kami.title': 'Paper Sumo',
   'kami.box': 'Kotonami Stable',
@@ -476,7 +478,7 @@ export default {
   'kami.btn.bar': 'Defend!\nHold',
   'kami.btn.again': 'Let go,\nagain',
   'kami.btn.stay': 'Wait',
-  'kami.btn.toRight': 'Right →',
+  'kami.btn.toRight': 'Use\nright →', // v44: "Right →" read like the left button's name. Two lines keep the 50px label (200 of 236 wide)
   'kami.btn.right': 'Once /\nhold',
   'kami.warn.fumbari': 'Bracing!',
   'kami.warn.hataki': 'Slap coming!',
@@ -578,9 +580,10 @@ export default {
   'drill.ippon.card': 'One-tap (tachiai)  Skill',
   'drill.renda.card': 'Mash (teppo)  Body',
   'drill.nagaoshi.card': 'Hold (shiko)  Spirit',
-  'drill.ippon.how': 'Attack! When the gold ring meets the white ring, tap the right button once',
-  'drill.renda.how': 'Attack! Mash the left button as fast as you can for 5 seconds',
-  'drill.nagaoshi.how': 'Defend! Hold the right button to raise the leg, release in the green band',
+  // v44: two lines fixed with \n like Japanese (a 3rd line ran into 'Round 1 / 3' and the white target ring). Measured in M PLUS Rounded 1c 800 at 36px: every line <= 632 of 680
+  'drill.ippon.how': 'Attack! When the gold ring meets\nthe white ring, tap right once',
+  'drill.renda.how': 'Attack! Mash the left button\nas fast as you can for 5 seconds',
+  'drill.nagaoshi.how': 'Defend! Hold right to lift your leg,\nlet go in the green band',
   'drill.round': 'Round {n} / {all}',
   'drill.ready': 'Ready',
   'drill.go': 'GO!',
@@ -588,7 +591,7 @@ export default {
   'drill.btn.ippon': 'Attack!\nTap once',
   'drill.btn.renda': 'Attack!\nMash',
   'drill.btn.nagaoshi': 'Defend!\nHold',
-  'drill.btn.toLeft': 'Left ←',
+  'drill.btn.toLeft': 'Use\n← left', // v44: same as kami.btn.toRight (a pointer to the other button, not this button's name)
   'drill.perfect': 'Perfect!',
   'drill.near': 'Close!',
   'drill.miss': 'Miss...',
@@ -644,6 +647,7 @@ export default {
   'terms.version': '(Terms version: {v})',
   'terms.check': 'I have read and agree to the terms above',
   'terms.button': 'Agree and start',
+  'terms.needCheck': 'Please tick the box above to agree first',
   // fallback when the terms screen cannot be shown (short text and one agree button, v42 round 2)
   'terms.plain.body': 'You play this game by tapping the screen. Please do not tap too hard. Except in cases of intent or gross negligence by the creator, we are not responsible for damage to your device or a cracked screen. Your records stay only on this device. Press the button below to agree.',
   'terms.plain.button': 'I agree',

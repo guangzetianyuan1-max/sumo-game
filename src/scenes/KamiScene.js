@@ -21,33 +21,33 @@
 //   帯が時間切れ・たたいて閉じた後の「まだ」の間の右も同じ（eyeBar・v42 最終点検 M1）。
 //   守り成功＝守りの漫画の絵（0.7秒・時計は止めない・ボタンに重ねない・入力を取らない・4秒以内の2回目は出さない）。絵が読めない時は今の字だけの帯（止めない）。
 //   止めるのは画面の時計だけ（kami.js の物理と careersim の数は変えない）
-import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge } from '../core/kami.js?v=43';
-import { isTactic, FOE_KIME_ID, BAR } from '../core/tactics.js?v=43';
-import { leftLook, rightLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey, attackScene, bossAlert, tipStep, eyeDeferDue } from '../core/kamibutton.js?v=43';
-import { cutinArt, eyeArt, mangaArt, EYE_HERO, MANGA_KORAE, MANGA_MS, koraeDue } from '../core/cutin.js?v=43';
-import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=43';
-import { chosenKimete } from '../core/kimetepick.js?v=43';
-import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=43';
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=43';
-import { currentFoe } from '../core/run.js?v=43';
-import { PLAY_COUNT } from '../core/ladder.js?v=43';
-import { makeRng } from '../core/rng.js?v=43';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=43';
-import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=43';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=43';
-import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=43';
-import { playBout, whine, whineStop } from '../ui/sfx.js?v=43';
-import { boutWhine } from '../core/whine.js?v=43';
-import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=43';
-import { GYOJI, tachiaiVoiceAt, tachiaiPreRoll, nokottaDue, hushVoices } from '../core/gyoji.js?v=43';
-import { ringEvent } from '../core/voice.js?v=43';
-import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=43';
-import { createBigButton } from '../ui/bigbutton.js?v=43';
-import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing, clockHold } from '../core/feel.js?v=43';
-import { createFx } from '../ui/fx.js?v=43';
-import { drawCutinBand, drawEyeBand, drawManga } from '../ui/cutinband.js?v=43';
-import { HUD, HIT_MARK, ringShape, barShape, drawRing, drawBar, hudTouch } from '../ui/hud.js?v=43';
-import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=43';
+import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge } from '../core/kami.js?v=44';
+import { isTactic, FOE_KIME_ID, BAR } from '../core/tactics.js?v=44';
+import { leftLook, rightLook, neutralLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey, attackScene, bossAlert, tipStep, eyeDeferDue } from '../core/kamibutton.js?v=44';
+import { cutinArt, eyeArt, mangaArt, EYE_HERO, MANGA_KORAE, MANGA_MS, koraeDue, cutinCloses, cutinNeutral } from '../core/cutin.js?v=44';
+import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=44';
+import { chosenKimete } from '../core/kimetepick.js?v=44';
+import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=44';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=44';
+import { currentFoe } from '../core/run.js?v=44';
+import { PLAY_COUNT } from '../core/ladder.js?v=44';
+import { makeRng } from '../core/rng.js?v=44';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=44';
+import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=44';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=44';
+import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=44';
+import { playBout, whine, whineStop } from '../ui/sfx.js?v=44';
+import { boutWhine } from '../core/whine.js?v=44';
+import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=44';
+import { GYOJI, tachiaiVoiceAt, tachiaiPreRoll, nokottaDue, hushVoices } from '../core/gyoji.js?v=44';
+import { ringEvent } from '../core/voice.js?v=44';
+import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=44';
+import { createBigButton } from '../ui/bigbutton.js?v=44';
+import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing, clockHold } from '../core/feel.js?v=44';
+import { createFx } from '../ui/fx.js?v=44';
+import { drawCutinBand, drawEyeBand, drawManga } from '../ui/cutinband.js?v=44';
+import { HUD, HIT_MARK, ringShape, barShape, drawRing, drawBar, hudTouch } from '../ui/hud.js?v=44';
+import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=44';
 
 const FIG_H = 330; // 型紙の高さ（敵は段階の倍率を掛ける）
 const VIS = FIG_H / 230; // 見た目の大きさの倍率（計算の座標は変えない・縦方向の跳ね・落ちは同じ比で描く）
@@ -215,8 +215,12 @@ export class KamiScene extends Phaser.Scene {
       onDown: () => {
         if (Date.now() < this.guardUntil) return false; // 前の画面（懸賞旗）への二度たたきが、そのまま押しにならない
         if (this.cutin) {
-          this.closeCutin();
-          if (!(this.st && this.st.tactic)) return false;
+          // 主人公の目の帯→漫画・相手の目の帯は連打では閉じない（v44・連打の人にも漫画が見える）。時計が止まっている間の連打は数えない（損は無い）
+          if (!cutinCloses(this.cutin.kind, 'left')) { if (this.cutin.held) return false; }
+          else {
+            this.closeCutin();
+            if (!(this.st && this.st.tactic)) return false;
+          }
         }
         return this.mash();
       },
@@ -227,9 +231,13 @@ export class KamiScene extends Phaser.Scene {
       onDown: () => {
         if (Date.now() < this.guardUntil) return false; // 前の画面（懸賞旗）への二度たたきが、そのまま立ち合いの〇の判定にならない
         if (this.cutin) {
-          this.closeCutin();
-          // ただ倒れている時（長押しの起き上がり）と、相手の攻めの最中（予告のバー＝返す長押しを飲み込まない）と、〇の間（判定を飲み込まない）は、そのまま押しにする
-          if (!(this.st && (this.st.f.east.down || this.st.tactic || this.st.f.east.ring))) return false;
+          // 主人公の目の帯→漫画は右でも閉じない（時計が止まっている・v44）。相手の目の帯は右で閉じて守りを始める（v42 最終点検 M1）
+          if (!cutinCloses(this.cutin.kind, 'right')) { if (this.cutin.held) return false; }
+          else {
+            this.closeCutin();
+            // ただ倒れている時（長押しの起き上がり）と、相手の攻めの最中（予告のバー＝返す長押しを飲み込まない）と、〇の間（判定を飲み込まない）は、そのまま押しにする
+            if (!(this.st && (this.st.f.east.down || this.st.tactic || this.st.f.east.ring))) return false;
+          }
         }
         // 相手の目の帯を出した予告の「まだ」の間＝そのまま長押しの守り（帯が開いていても閉じた後でも・2本目の指も。早い人も、帯を読んでから押す人も損をしない）
         if (this.deferBarPress()) return true;
@@ -276,9 +284,9 @@ export class KamiScene extends Phaser.Scene {
     this.tip = { key: null, until: -1, objs: [] }; // はじめて見る攻めの返し方（取組のどの体でも・記録の seenTactics に無い攻めの予告が出た時）
 
     // 指：触れた瞬間に1回だけ（押したままでは連打しない）。倒れている時は押している間を長押し（ボタンの部品が受ける）。ボタンと〇・バーの外は何も起きない
-    // ただカットインの帯が出ている間は、その外をたたいても帯が閉じる
+    // ただカットインの帯が出ている間は、その外をたたいても帯が閉じる。時計を止める目の帯と漫画は、その絵そのものをたたいた時だけ閉じる（v44）
     this.input.on('pointerdown', (p) => {
-      if (this.cutin && !this.lbtn.contains(p) && !this.rbtn.contains(p)) this.closeCutin();
+      if (this.cutin && !this.lbtn.contains(p) && !this.rbtn.contains(p) && cutinCloses(this.cutin.kind, this.cutinHit(p) ? 'band' : 'outside')) this.closeCutin();
       if (clockSlowing(this.clock)) clockSkip(this.clock); // スローの途中でたたいた＝残りは元の速さ（どこをたたいても）
     });
     // 画面が裏へ回ったら長押しを離す（戻った時に勝手に起き上がらない・バーをため続けない）
@@ -420,6 +428,13 @@ export class KamiScene extends Phaser.Scene {
     if (!this.korae) return;
     this.korae.destroy();
     this.korae = null;
+  }
+
+  // 指が今のカットインの絵（帯の container・漫画の絵）の上か（滑り込みの途中は今の位置で見る）
+  cutinHit(p) {
+    const cut = this.cutin;
+    if (!cut || !cut.c || !cut.c.getBounds) return false;
+    return cut.c.getBounds().contains(p.x, p.y);
   }
 
   closeCutin(now = false) {
@@ -751,14 +766,20 @@ export class KamiScene extends Phaser.Scene {
     this.barSayUntil = this.time.now + BAR_SAY.ms;
   }
 
+  // 主人公の必殺技の帯・漫画が出ている間か（約1.4秒・時計が止まって何も効かない）：案内を消し、ボタンは2つとも落ち着いた見た目
+  calmCutin() {
+    return !!this.cutin && cutinNeutral(this.cutin.kind);
+  }
+
   // 下のボタン2つ：場面で字と色が変わる（見た目は leftLook・rightLook・描くのは立体のボタンの部品）
   // 左：押し合い＝「連打！」拍で輪が太く明るく／踏ん張り中＝暗く「待て」／〇・バー・倒れ＝暗く「→右」（出番は右）
   // 右：〇＝「一押し！」ぴったりに近いほど輪が太く・脈打つ／バー＝「長押し！」ためた分の弧と赤いふち（「はなして、もう一度」も赤いふち）／倒れ＝ふちに起き上がりの弧／何も無い時＝暗い
   // 暗い時は薄く・平らに沈み（押せない見た目）・字も灰。明るいのは多くて片方（どちらを押すか迷わない）
   drawButtons() {
-    this.alert = bossAlert(this.st, this.isBoss);
-    this.paintButton(this.lbtn, leftLook(this.st));
-    this.paintButton(this.rbtn, rightLook(this.st), this.alert);
+    const calm = this.calmCutin();
+    this.alert = !calm && bossAlert(this.st, this.isBoss);
+    this.paintButton(this.lbtn, calm ? neutralLook() : leftLook(this.st));
+    this.paintButton(this.rbtn, calm ? neutralLook() : rightLook(this.st), this.alert);
     // 大ボスの守りの合図：右のボタンの上に大きく「守り！長押し」（脈に合わせて少し大きく）
     if (this.alert) this.bossSay.setScale(this.bossSayBase * (1 + 0.07 * Math.sin((this.time.now / 1000) * BOSS_SAY.throbRate)));
     this.bossSay.setVisible(this.alert);
@@ -967,7 +988,7 @@ export class KamiScene extends Phaser.Scene {
     this.drawWarn();
 
     // 下の案内（場面ごと＝hintKey・変わった時だけ書き直す）。〇と「はなして、もう一度」は金
-    const key = hintKey(st);
+    const key = this.calmCutin() ? null : hintKey(st);
     this.drawCoach();
     this.drawTip();
     if (this.coach) this.coach.objs.forEach((o) => o.setVisible(!this.cutin && !this.tip.objs.length)); // カットインの帯（220〜440）と重ねない：帯の間は吹き出しを隠す・攻めの吹き出しが出ている間も隠す

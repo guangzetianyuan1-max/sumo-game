@@ -4,11 +4,11 @@
 // 休場の場所（疲れ10で入った）は全部の行が「休」で、始めから済んでいる＝すぐ「場所の結果へ」
 // 取組が残っている間は下の段の左に「自動で取る」（10/11 本人「場所において自動モード」）：今日の相手のお勧めの作戦表で、結果だけの速さで1番取って
 // ここへ戻り、0.6秒おいて次へ（session.autoBasho）。最中は左のボタンが「止める」・取組で画面を押しても止まる。全部済んだら止まる
-import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=43';
-import { recordNote } from '../core/honors.js?v=43';
-import { session, prepareOpponent, closeBasho, decideNow } from '../state.js?v=43';
-import { nextAutoStep } from '../core/auto.js?v=43';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=43';
+import { t, techLabel, rankLabel, shikonaLabel, bashoLabel, dayLabel } from '../i18n/i18n.js?v=44';
+import { recordNote } from '../core/honors.js?v=44';
+import { session, prepareOpponent, closeBasho, decideNow } from '../state.js?v=44';
+import { nextAutoStep } from '../core/auto.js?v=44';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, COLORS } from '../ui/widgets.js?v=44';
 
 const LIST = { top: 146, bottom: 1126, w: 664 }; // 15日でも1行65（番付の字22を入れる）
 const COL = { day: 46, who: 152, type: 404, mark: 650, right: 618 }; // 左から：日／しこ名・番付／タイプ・決まり手／○●

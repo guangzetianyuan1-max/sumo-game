@@ -5,10 +5,10 @@
 //   踏ん張り中（バーに失敗して来た敵の踏ん張りの act＝左で押すと跳ね返される）stay「待て」・倒れた hold・終わり done
 // 左が明るいのは tap だけ（stay は「待て」で暗い）・〇／バー／again／倒れの時は暗く「→右」。右が明るいのは go・ring・bar・again・hold（tap・stay の時は暗い）
 // 〇とバーの絵そのものは src/ui/hud.js（中央上の〇・左端のバー）。ここはボタンの字・色・脈・満ち・暗さと、下の案内・ことねの吹き出しの鍵だけ
-import { KAMI, beatOffset, gaugeLit, barGauge } from './kami.js?v=43';
-import { gaugeTier } from './gaugetier.js?v=43';
-import { IPPON } from './drills.js?v=43';
-import { BAR } from './tactics.js?v=43';
+import { KAMI, beatOffset, gaugeLit, barGauge } from './kami.js?v=44';
+import { gaugeTier } from './gaugetier.js?v=44';
+import { IPPON } from './drills.js?v=44';
+import { BAR } from './tactics.js?v=44';
 
 export const BUTTON_COLOR = { // 遊び方の見本（HelpScene）も同じ色を使う
   wait: 0x5a5f6e, // 灰
@@ -62,6 +62,9 @@ function sceneLook(st, side) {
   if (tac && tac.side !== side && tac.id === 'fumbari' && tac.phase === 'act') return look('stay'); // 踏ん張り中は待つ（解けたら連打）
   return look('tap', Math.max(0, 1 - beatOffset(st) / (KAMI.BEAT / 2)));
 }
+
+// 主人公の必殺技の帯・漫画の間の、ボタン2つの見た目（暗い灰・「まだ…」）。案内の1行は hintKey でなく呼ぶ側が消す
+export const neutralLook = () => look('wait');
 
 // 左のボタン（連打）：押し合いの連打だけ明るい・踏ん張り中は「待て」・立ち合い前と終わりは暗い・〇／バー／はなして／倒れは暗く「→右」
 export function leftLook(st, side = 'east') {

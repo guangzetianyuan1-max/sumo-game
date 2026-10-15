@@ -3,8 +3,8 @@
 // 同意したことは 端末の中（localStorage の sumo.terms）に 版と日時で残す（src/core/terms.js）。残せない・読めない端末では 毎回 たずねる
 // 画面は Phaser でなく ふつうの HTML の上掛け（長い文を読みやすく・指でなぞって送れるように）。文は i18n の terms.*
 // 字の大きさ：遊ぶ画面（720×1280 を画面に合わせて縮めた物）の 30px 相当以上（字は28以上の決まり）。携帯の幅 375 で 約16px
-import { t } from '../i18n/i18n.js?v=43';
-import { TERMS_SECTIONS, TERMS_VERSION, OFFICIAL_URL, needTerms, saveAgreement } from '../core/terms.js?v=43';
+import { t } from '../i18n/i18n.js?v=44';
+import { TERMS_SECTIONS, TERMS_VERSION, OFFICIAL_URL, needTerms, saveAgreement } from '../core/terms.js?v=44';
 
 const FONT = "'M PLUS Rounded 1c', sans-serif";
 // 遊ぶ画面の n px 相当の CSS の大きさ（画面の幅か、高さ×720/1280 の小さい方を 720 として）。下限 min px
@@ -49,21 +49,37 @@ export function askTerms(store = localStore()) {
     check.type = 'checkbox';
     check.id = 'terms-check';
     label.append(check, el('span', '', t('terms.check')));
+    // 印が無い時に押したら、理由を出して印の所を目立たせる（v44・バグ探し M6「押しても何も起きない」＝押しても進まないボタンは理由を出す）。
+    // ⛔ disabled にすると押しても click が来ない＝理由を出せない。灰色の見た目と aria-disabled で「まだ」を示す
     const btn = el('button', `font-family:${FONT};font-weight:800;font-size:${gamePx(TERMS_FONT.button, 19)};padding:16px;border-radius:14px;border:3px solid #e3c27a;background:#3a3f4c;color:#8a8f9c;`, t('terms.button'));
     btn.id = 'terms-ok';
-    btn.disabled = true;
+    btn.setAttribute('aria-disabled', 'true');
+    const why = el('p', `margin:0 0 12px;font-size:${gamePx(TERMS_FONT.check, 17)};color:#ffb4a2;font-weight:800;text-align:center;white-space:pre-line;display:none;`, t('terms.needCheck'));
+    why.id = 'terms-why';
+    why.setAttribute('role', 'alert');
+    const mark = (on) => {
+      label.style.outline = on ? '4px solid #e3c27a' : '';
+      label.style.background = on ? 'rgba(227, 194, 122, 0.2)' : '';
+      label.style.borderRadius = on ? '10px' : '';
+    };
     check.addEventListener('change', () => {
-      btn.disabled = !check.checked;
+      btn.setAttribute('aria-disabled', check.checked ? 'false' : 'true');
       btn.style.background = check.checked ? '#c8553d' : '#3a3f4c';
       btn.style.color = check.checked ? '#ffffff' : '#8a8f9c';
+      if (check.checked) { why.style.display = 'none'; mark(false); }
     });
     btn.addEventListener('click', () => {
-      if (!check.checked) return;
+      if (!check.checked) {
+        why.style.display = 'block';
+        mark(true);
+        try { check.focus(); } catch { /* 印の所に寄せられなくても理由は出ている */ }
+        return;
+      }
       saveAgreement(store);
       wrap.remove();
       done(true);
     });
-    box.append(h, body, label, btn);
+    box.append(h, body, label, why, btn);
     wrap.appendChild(box);
     document.body.appendChild(wrap);
   });
