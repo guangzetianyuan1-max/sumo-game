@@ -1,18 +1,19 @@
 // 紙相撲の強さ：心技体→型紙の重さ・起き上がり・ゲージ・決め技／敵の順番→機械のたたき方（設計書 §4）
-import { newBout, step, press, hold, KAMI } from './kami.js?v=41';
-import { makeRng } from './rng.js?v=41';
-import { foeAt } from '../data/foes.js?v=41';
-import { kimeteById, affinity } from '../data/kimete.js?v=41';
-import { FOE_KIMETE } from '../data/foekimete.js?v=41';
-import { foeStats } from './run.js?v=41';
-import { tacticsFor, FOE_KIME_ID } from './tactics.js?v=41';
+import { newBout, step, press, hold, KAMI } from './kami.js?v=42';
+import { makeRng } from './rng.js?v=42';
+import { foeAt } from '../data/foes.js?v=42';
+import { kimeteById, affinity } from '../data/kimete.js?v=42';
+import { FOE_KIMETE } from '../data/foekimete.js?v=42';
+import { foeStats } from './run.js?v=42';
+import { tacticsFor, FOE_KIME_ID } from './tactics.js?v=42';
 
 const lerp = (a, b, k) => a + (b - a) * k;
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 // 型の重さの倍率。20体版（10/13 Task 3 直し1）：重量 1.15→1.04・四つ 1.05→1.02・小兵 0.85→1（軽さは体の低い base だけで出す）。
 // 前の幅では同じ心技体の和でも小兵は易しすぎ・重量は難しすぎ、10体目（小兵）と11体目（重量）の間に壁ができた
 // 10/14（2つのボタン Task 3）：重量がいちばん重く・小兵がいちばん軽い（試験で守る）。重量 1.04→1.06・長身 0.95→0.98・小兵 1→0.95
-export const TYPE_MASS = { heavy: 1.06, yotsu: 1.02, balance: 1, tall: 0.98, small: 0.95 };
+// v42 第2段：長身 0.98→1（大ボスの必殺技を倒さない強さに下げた分、最初の心技体の大ボスが 10% の線の上に出た＝長身の大ボスを少し重く。長身は 3・9・20体目）
+export const TYPE_MASS = { heavy: 1.06, yotsu: 1.02, balance: 1, tall: 1, small: 0.95 };
 
 export function fighterParams(stats, type) {
   const tai = clamp01(stats.tai / 100), shin = clamp01(stats.shin / 100), gi = clamp01(stats.gi / 100);
@@ -35,7 +36,9 @@ export function fighterParams(stats, type) {
 // react は紙相撲の driver ではもう使っていない（ボタン1つ Task 1 から立ち合いは〇の判定）。記録と試験の値として残す
 export const CPU_CURVE20 = {
   // 速さが一番効く（重量型ほど効く）：11体目と大ボスで一段上がる（10/14：10・11体目 0.13→0.2・大ボス 0.51→0.62／ボタン1つ Task 2：10体目 0.2→0.1・大ボス 0.62→0.5／Task 2b 直し：10体目 0.1→0.12・大ボス 0.5→0.44→0.38（直し2）＝必殺技が攻めの順番に入って、大ボスの初挑戦が下がった分）
-  rate: [[0, 0], [8, 0.07], [9, 0.12], [10, 0.2], [18, 0.27], [19, 0.38]],
+  // v42：大ボス 0.38→0.41（勧めが種で変わり、うっちゃりの届く所 edgeU を広げた分、最初の心技体で大ボスに 11.7% 勝てた＝10%以下へ戻す・kami_tune 8%）
+  // v42 第2段：大ボス 0.41→0.43（七つの海うっちゃりを倒さない強さ 0.45 倍にした分、最初の心技体の大ボスを 10% 以下に保つ・長身の重さと組み）
+  rate: [[0, 0], [8, 0.07], [9, 0.12], [10, 0.2], [18, 0.27], [19, 0.43]],
   acc: [[0, 0], [19, 0.5]], // 10/14：0.7→0.5（拍が正確すぎると高く跳ねて自分も崩れる＝少し外す方が強い。大ボスを最初の心技体で1割以下に）
   react: [[0, 0], [19, 0.6]],
 };
@@ -43,10 +46,12 @@ export const CPU_CURVE20 = {
 // FOE_KIMETE_POWER＝強さの倍率（index → 折れ線・1〜4体目は弱い＝失敗しても たいてい負けない）
 // FOE_KIME_GAP＝必殺技どうしの最短の間（秒・index → 折れ線・大ボスだけ。ほかは順番の並びが間になる）
 // FOE_KIME_POWER_MUL＝敵ごとの強さの倍率（農家のうっちゃりは大ボスでないので弱め）
+// v42 第2段（本人「海賊が勝てない」）：大ボスの七つの海うっちゃりも 0.45 倍＝FOE_KIME.downMin（0.5）の下＝決まっても倒さない（押すだけ）。
+//   決まれば ほぼ必ず負けだった＝人（返し5割）は中央の心技体で 7%。今は 15%（返し7割なら 23%）・kami_tune の初挑戦 34%→52%
 // 直し2：5〜10体目 0.5〜0.63→0.6〜0.7（返さない人が8体目で ふつうの人より勝ちやすかった）
 export const FOE_KIMETE_POWER = [[0, 0.35], [3, 0.45], [4, 0.6], [10, 0.7], [13, 1]];
 export const FOE_KIME_GAP = [[18, 0], [19, 3.5]];
-export const FOE_KIME_POWER_MUL = { farmer: 0.6 };
+export const FOE_KIME_POWER_MUL = { farmer: 0.6, pirate: 0.45 };
 
 function cpuK(c, index) {
   if (index <= c[0][0]) return c[0][1];

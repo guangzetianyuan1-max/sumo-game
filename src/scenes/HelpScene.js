@@ -3,16 +3,16 @@
 // 3枚目＝相手の攻めは赤い札で予告され、左にバーが出る・右を長押しでためて緑の帯で離すと「こらえ成功！」
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=41';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=41';
-import { kamiArt } from '../core/foeart.js?v=41';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=41';
-import { t, getLang } from '../i18n/i18n.js?v=41';
-import { session, markHelpSeen } from '../state.js?v=41';
-import { ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=41';
-import { menuBgKey } from '../core/bgkey.js?v=41';
-import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=41';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=41';
+import { KAMI } from '../core/kami.js?v=42';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=42';
+import { kamiArt } from '../core/foeart.js?v=42';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=42';
+import { t, getLang } from '../i18n/i18n.js?v=42';
+import { session, markHelpSeen } from '../state.js?v=42';
+import { ringShape, barShape, drawRing, drawBar, hitMarkFit } from '../ui/hud.js?v=42';
+import { menuBgKey } from '../core/bgkey.js?v=42';
+import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=42';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=42';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）
@@ -150,10 +150,12 @@ export class HelpScene extends Phaser.Scene {
     return btn;
   }
 
-  // 見本の〇（本番と同じ絵 drawRing を小さく）：金の輪が縮んで的に重なる → ◎ を出して少し止める → くり返す
+  // 見本の〇（本番と同じ絵 drawRing を小さく）：金の輪が縮んで的に重なる → 〇の中に「合」を出して少し止める → くり返す（本番の◎と同じ字・v42）
   miniRing() {
     const g = this.add.graphics();
-    const mark = this.add.text(MINI_RING.at.x, MINI_RING.at.y, t('kami.ring.2'), textStyle(70, COLORS.gold, { stroke: '#141a2e', strokeThickness: 8 })).setOrigin(0.5).setVisible(false);
+    const hit = hitMarkFit(MINI_RING.k); // 縮めた〇の中に収まる大きさ（28 以上）
+    const mark = this.add.text(MINI_RING.at.x, MINI_RING.at.y, t('kami.ring.hit'), textStyle(hit.size, COLORS.gold, { stroke: '#141a2e', strokeThickness: 6 })).setOrigin(0.5).setVisible(false);
+    fitText(mark, hit.w);
     const p = { v: 0 };
     const paint = () => {
       g.clear();

@@ -1,22 +1,22 @@
 // src/ui/arena.js — 紙相撲の舞台（土俵の絵の背景・段ボールの箱・紙の土俵）。取組（kami）・懸賞旗（kensho）・クリア（clear）で同じ形を描く
-import { KAMI } from '../core/kami.js?v=41';
-import { t } from '../i18n/i18n.js?v=41';
-import { textStyle, fitText } from './widgets.js?v=41';
-import { boutBgKey, boutBgPath, pickBackdrop, backdropEdge, DOHYO_BG } from '../core/bgkey.js?v=41';
+import { KAMI } from '../core/kami.js?v=42';
+import { t } from '../i18n/i18n.js?v=42';
+import { textStyle, fitText } from './widgets.js?v=42';
+import { boutBgKey, bgPath, pickBackdrop, DOHYO_BG } from '../core/bgkey.js?v=42';
+import { edgeFade } from './backdrop.js?v=42';
 
 export const GROUND = 800; // 箱の上の面（画面の y）
 export const BOX_H = 100; // 箱の前の面の高さ（下の端 900 ＝ 立体のボタンの弧の上端 947 より上・間に案内の1行。ボタンが直径300になったので140から詰めた）
 
-// foeIndex を渡すと本番の背景（5体ごと）も読む。読み込みに失敗しても止まらない（Phaser は他の絵を読み続け、無い鍵は drawBackdrop が土俵の背景に替える）
+// 背景は20体とも土俵（国技館・v42 第2段）。foeIndex は呼ぶ側を変えずに受ける（bgkey.boutBgKey が鍵を決める）。読み込みに失敗しても止まらない
 export function preloadArena(scene, foeIndex) {
-  if (!scene.textures.exists(DOHYO_BG)) scene.load.image(DOHYO_BG, 'assets/bg/dohyo.jpg');
-  if (foeIndex != null) {
-    const key = boutBgKey(foeIndex);
-    if (!scene.textures.exists(key)) scene.load.image(key, boutBgPath(key));
-  }
+  new Set([DOHYO_BG, boutBgKey(foeIndex)]).forEach((key) => { // 同じ鍵は1回だけ読む（2回読むと Phaser が「鍵が使われている」と言う）
+    if (!scene.textures.exists(key)) scene.load.image(key, bgPath(key));
+  });
 }
 
 // 一番後ろ：土俵のイラストを、画面の上から箱の上の面まで。上に夜の藍を重ねて暗くし、型紙とボタンを目立たせる
+// 絵の上と左右の端は藍へ溶かし、ページの余白も藍（v42 第2段：端の段差を消す・backdrop.edgeFade）。箱より下は藍の地のまま
 export function drawBackdrop(scene, width, foeIndex) {
   const key = pickBackdrop(foeIndex == null ? null : boutBgKey(foeIndex), (k) => scene.textures.exists(k));
   if (scene.textures.exists(key)) {
@@ -24,15 +24,7 @@ export function drawBackdrop(scene, width, foeIndex) {
     bg.setScale(width / bg.width).setCrop(0, 0, bg.width, GROUND / (width / bg.width)); // 箱の上の面より下ははみ出さず切る
   }
   scene.add.rectangle(0, 0, width, GROUND, 0x141a2e, 0.45).setOrigin(0, 0).setDepth(-19);
-  // 縦長の画面の上下（と横長の画面の左右）の余白を、今の背景の絵の一番上の色（暗くした後・bgkey の backdropEdge）にそろえる。出る時は元に戻す
-  // 上半分は絵の一番上の色・下半分は今の藍（絵は上から始まり、下は箱の下の藍へ続く）
-  if (typeof document !== 'undefined') {
-    const els = [document.documentElement, document.body].filter(Boolean);
-    const old = els.map((el) => el.style.background);
-    const edge = backdropEdge(key);
-    els.forEach((el) => { el.style.background = edge; });
-    scene.events.once('shutdown', () => els.forEach((el, i) => { el.style.background = old[i]; }));
-  }
+  edgeFade(scene, { bottom: GROUND, depth: -19 });
 }
 
 // 箱（段ボール）の前の面と上の面・紙の土俵・俵・仕切り線・箱の前の字（試作 prototype/kamizumo.html と同じ形）

@@ -4,8 +4,8 @@
 // 字は絵の上に直に置かず、墨の板（inkPanel・角の丸い・和紙の色の細い縁）の上に置く＝板の下がどんなに明るくても字は読める
 // 新しい絵は描かない：ぼかしは「小さく描いて大きく戻す」（WebGL でも Canvas でも同じ・毎フレームの重さなし）・和柄と帯と枠は図形。
 // 作った1枚は Phaser の絵の置き場に残し、次からは使い回す（多くても2枚だけ残す）。絵が読めない時は土俵・それも無ければ藍の地に和柄だけ（止めない）
-import { bgPath, pickBackdrop, DOHYO_BG, BACKDROP_NAVY, menuDim, menuEdge, PANEL_ALPHA, BAND_ALPHA, WAVE_ALPHA } from '../core/bgkey.js?v=41';
-import { roundPoints } from './widgets.js?v=41';
+import { bgPath, pickBackdrop, DOHYO_BG, BACKDROP_NAVY, menuDim, menuEdge, PANEL_ALPHA, BAND_ALPHA, WAVE_ALPHA } from '../core/bgkey.js?v=42';
+import { roundPoints } from './widgets.js?v=42';
 
 const W = 720;
 const H = 1280;
@@ -96,6 +96,28 @@ export function setPageEdge(scene, color) {
     });
   }
   els.forEach((el) => { el.style.background = color; });
+}
+
+// 自前で絵を敷く画面（取組・懸賞旗・クリアの arena・表紙・稽古の遊び）の端を、各画面の背景と同じ帯（fadeEdges）で藍へ溶かす（v42 第2段）。
+// ページの余白（藍）と絵の端の色の段差を消す。bottom＝絵の下の端（画面の y・取組は箱の上の面 GROUND＝下の帯は使わない）・depth＝絵のすぐ前。
+// 帯の1枚（透明の地に藍の帯）は一度だけ作って使い回す。作れない端末は何もしない（止めない）
+export const EDGE_FADE_KEY = 'edge-fade';
+export function edgeFade(scene, { bottom = null, depth = -19 } = {}) {
+  const { width, height } = scene.scale;
+  setPageEdge(scene, BACKDROP_NAVY);
+  try {
+    if (!scene.textures.exists(EDGE_FADE_KEY)) {
+      const ct = scene.textures.createCanvas(EDGE_FADE_KEY, W, H);
+      if (!ct) return null;
+      fadeEdges(ct.getContext());
+      ct.refresh();
+    }
+    const img = scene.add.image(0, 0, EDGE_FADE_KEY).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth);
+    if (bottom != null && bottom < height) img.setCrop(0, 0, W, bottom * (H / height));
+    return img;
+  } catch (e) {
+    return null;
+  }
 }
 
 // 背景の1枚を作る（作ってあれば使い回す）。src＝絵の鍵（null＝絵なし）・dim＝暗くする濃さ。作れなければ null

@@ -1,17 +1,17 @@
 // 一生の通し（20体版の強さ合わせと試験用・設計書 §5）。取組は紙相撲の自動（kamiai.autoBout）
 // 勝てば次の敵へ・負けたら稽古（3コマ）：解禁していて覚えていない決め技があれば、ふつうの出来（6割＝ゲージ満タン）の1コマで覚え、残りは一番低い心技体を伸ばす。
-// 取組ごとに、覚えた決め技の中から敵の型との相性（affinity）が一番良い物を持っていく（同じなら解禁の早い物）。
+// 取組ごとに、覚えた決め技の中から相手の情報の画面の勧め（kimetepick.recommendKimete：相性→敵の型に合う系統→相手ごとの種）を持っていく。
 // 最初は五月雨突きが解禁済みでも、まだ覚えていない＝最初の稽古までは決め技無しで取る
-import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=41';
-import { autoBout } from './kamiai.js?v=41';
-import { recommendKimete } from './kimetepick.js?v=41';
-import { PLAY_COUNT } from './ladder.js?v=41';
-import { drillMult, NORMAL_SCORE } from './drills.js?v=41';
+import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=42';
+import { autoBout } from './kamiai.js?v=42';
+import { recommendKimete } from './kimetepick.js?v=42';
+import { PLAY_COUNT } from './ladder.js?v=42';
+import { drillMult, NORMAL_SCORE } from './drills.js?v=42';
 
 export const MAX_BOUTS = 300;
 
-// 覚えた決め技から、相性が一番良い物（無ければ null）。相手の情報の画面の勧め（kimetepick.recommendKimete）と同じ
-export const bestKimete = (newKnown, foeType) => recommendKimete({ newKnown }, foeType);
+// 覚えた決め技から勧めの物（無ければ null）。相手の情報の画面の勧め（kimetepick.recommendKimete）と同じ（seed＝記録の種・foeIndex＝相手の番号）
+export const bestKimete = (newKnown, foeType, seed = 0, foeIndex = 0) => recommendKimete({ newKnown, seed }, foeType, foeIndex);
 
 // 稽古の遊び（20体版 Task 6）の出来は「ふつう」＝倍率 1.0 で回す（強さの目標は遊ばない人の床）。番付からの自分から入る稽古は回さない
 export const SIM_DRILL_MULT = drillMult(NORMAL_SCORE);
@@ -37,7 +37,7 @@ export function careerSim(seed, hero) {
   for (let i = 0; i < PLAY_COUNT; i++) { firstTry.push(null); firstStats.push(null); boutsAt.push(0); kimeWarnsAt.push(0); }
   let foe;
   while ((foe = currentFoe(run)) && bouts < MAX_BOUTS) {
-    const r = autoBout({ heroStats: run.stats, foeIndex: foe.index, hero, seed: seed + bouts, heroKimete: bestKimete(run.newKnown, foe.type) });
+    const r = autoBout({ heroStats: run.stats, foeIndex: foe.index, hero, seed: seed + bouts, heroKimete: bestKimete(run.newKnown, foe.type, run.seed, foe.index) });
     bouts++;
     boutsAt[foe.index]++; kimeWarnsAt[foe.index] += r.kimeWarns || 0;
     barTries += r.barTries || 0; barOks += r.barOks || 0;

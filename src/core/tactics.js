@@ -1,7 +1,7 @@
 // 相手の型ごとの攻め（設計書 2026-10-14-sumo-two-buttons-and-foe-tactics-design.md §3）
 // 攻めは敵（西）だけが持つ。どれも 予告 warn → 実行 act → 後始末 after → 間 gap → 次の予告。一度に1つ。
 // 数字は Task 3 で強さを合わせる時に動かすので、全部ここに並べる。画面の字は i18n（tactic.<id>）。
-import { makeRng } from './rng.js?v=41';
+import { makeRng } from './rng.js?v=42';
 
 export const TACTIC_IDS = ['fumbari', 'hataki', 'tsuppari', 'kumi'];
 export const TACTIC_START = 2.5;   // 押し合いが始まってから、最初の予告まで（秒）
@@ -85,7 +85,8 @@ export const TACTIC_TYPE = { fumbari: 'heavy', hataki: 'small', tsuppari: 'tall'
 export const FOE_KIME_ID = 'foeKime';
 // 強さ合わせ（Task 2b 直し・kami_tune）：next 1.5→1.2（4体目で返さない人が勝ちやすかった）・edgeU 225→205（大ボスのうっちゃりが鍛えた主人公に多すぎた）
 // wait＝順番が来て届かない時、届くのを待つ最長の秒（Ruling 12）・downMin＝これより弱い必殺技は倒さない（押すだけ・Ruling 11）
-export const FOE_KIME = { act: 0, after: 0.4, reach: 30, slack: 40, edgeU: 205, next: 1.2, wait: 1.0, downMin: 0.5 };
+// v42（決め技の勧めを相手ごとの種にした＝17体目の農家に早く勝てて、必殺技の予告が 1番 0.64 回に減った）：edgeU 205→260（農家と大ボスのうっちゃりが届く所を広げた・17体目 0.86 回）
+export const FOE_KIME = { act: 0, after: 0.4, reach: 30, slack: 40, edgeU: 260, next: 1.2, wait: 1.0, downMin: 0.5 };
 // 必殺技の系統 → そのバーの型（§4.5：重量＝突き・小兵＝はたき・長身＝投げ・四つ＝寄り。うっちゃりは四つの数）
 export const KIME_TYPE = { tsuki: 'heavy', hiki: 'small', nage: 'tall', yori: 'yotsu', utchari: 'yotsu' };
 

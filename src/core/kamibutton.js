@@ -5,10 +5,10 @@
 //   踏ん張り中（バーに失敗して来た敵の踏ん張りの act＝左で押すと跳ね返される）stay「待て」・倒れた hold・終わり done
 // 左が明るいのは tap だけ（stay は「待て」で暗い）・〇／バー／again／倒れの時は暗く「→右」。右が明るいのは go・ring・bar・again・hold（tap・stay の時は暗い）
 // 〇とバーの絵そのものは src/ui/hud.js（中央上の〇・左端のバー）。ここはボタンの字・色・脈・満ち・暗さと、下の案内・ことねの吹き出しの鍵だけ
-import { KAMI, beatOffset, gaugeLit, barGauge } from './kami.js?v=41';
-import { gaugeTier } from './gaugetier.js?v=41';
-import { IPPON } from './drills.js?v=41';
-import { BAR } from './tactics.js?v=41';
+import { KAMI, beatOffset, gaugeLit, barGauge } from './kami.js?v=42';
+import { gaugeTier } from './gaugetier.js?v=42';
+import { IPPON } from './drills.js?v=42';
+import { BAR } from './tactics.js?v=42';
 
 export const BUTTON_COLOR = { // 遊び方の見本（HelpScene）も同じ色を使う
   wait: 0x5a5f6e, // 灰
@@ -75,6 +75,12 @@ export function rightLook(st, side = 'east') {
   return l.mode === 'tap' || l.mode === 'stay' ? off('right') : l;
 }
 
+// 攻めの場面か（v42 本人「攻めの場面に『こらえ』の字を出さない」）：連打（tap）・立ち合いの〇（go）・決め技の〇（ring）。
+// 呼び方：攻め＝連打（左）と一押し（右の〇）／守り＝長押し（右・バー）。この間は「こらえ」を含む吹き出し（相手の攻めの返し方）を閉じる。
+// バーの成功の字は「守り成功！」（こらえを使わない）：成功すると相手の攻めはすぐ終わって連打（攻め）になるので、その字は攻めの場面に少し残る
+const ATTACK = { tap: true, go: true, ring: true };
+export const attackScene = (st, side = 'east') => !!ATTACK[sceneLook(st, side).mode];
+
 // 下の案内の1行の鍵（終わったら null）
 export function hintKey(st, side = 'east') {
   const l = sceneLook(st, side);
@@ -99,12 +105,13 @@ export function barSayKey(st, side = 'east') {
   return st.f[side].held ? 'kami.bar.slow' : 'kami.bar.early';
 }
 
-// 〇の判定の見せ方（st.lastRing の judge：2＝◎・1＝○・0＝×）：主人公の〇が終わってから IPPON.gapMs の間だけ。無い＝null
+// 〇の判定の見せ方（st.lastRing の judge：2＝◎→〇の中に「合」（hit）・1＝○・0＝×）：主人公の〇が終わってから IPPON.gapMs の間だけ。無い＝null
 // 押した時に相手が届かなかった（reach false・10/15）＝「届かない…」（far true・judge 0）
 export function ringFlash(st, side = 'east') {
   const r = st.lastRing;
   if (!r || r.side !== side || st.t - r.at > IPPON.gapMs / 1000) return null;
   if (r.reach === false) return { judge: 0, key: 'kami.ring.far', far: true };
+  if (r.judge === 2) return { judge: 2, key: 'kami.ring.hit', hit: true }; // ◎＝〇の中に大きく「合」（v42 本人）
   return { judge: r.judge, key: `kami.ring.${r.judge}` };
 }
 
@@ -118,4 +125,34 @@ export function tacticPlate(st, side = 'east') {
   if (tac.phase === 'act' && (tac.id === 'fumbari' || tac.id === 'hataki')) return { kind: 'act', key: `kami.act.${tac.id}` };
   if (tac.phase === 'after' && tac.id === 'fumbari') return { kind: 'now', key: 'kami.now.fumbari' };
   return null;
+}
+
+// 大ボス（20体目）の取組の守りの合図（v42 第2段・本人「海賊が勝てない」）：相手の攻めと必殺技の予告のたびに、右のボタンを脈打たせて光らせ、上に大きく「守り！長押し」。
+// 予告が終わる（バーの結果が出る・攻めが次へ）か、長押しが始まった（バーをため始めた）ら消す。機械の強さは変えない（画面だけ）
+export function bossAlert(st, isBoss, side = 'east') {
+  if (!isBoss || !st || st.phase !== 'push') return false;
+  const tac = st.tactic, b = st.bar;
+  if (!tac || tac.side === side || tac.phase !== 'warn') return false;
+  if (!b || b.side !== side || b.result !== null || b.heldFrom !== null) return false;
+  if (st.f[side].held) return false; // 押したまま数えられていない指（「まだ」・予告の前から押していた）＝ボタンは「はなして もう一度」。離せの案内を隠さない（v42 最終点検 M2）
+  return !st.f[side].down;
+}
+
+// 相手の目の帯（予告の始まりに出て画面の時計を止める）を出した予告のバー＝eyeBar の「まだ」の間（予告から BAR.react 秒より前）に右を押した：
+// 押したまま待って、その時にため始める（true）。帯が開いていても、時間切れ・たたいて閉じた後でも同じ（v42 最終点検 M1：時計は帯の間 予告の始まりで止まるので、
+// 閉じた直後の約0.3秒の押しが「まだ」で数えられず「はなして もう一度」になっていた）。2本目の指も同じ道を通す（先に数えて「はなして」にしない）
+export function eyeDeferDue(st, eyeBar, side = 'east') {
+  const b = st && st.bar;
+  if (!b || b !== eyeBar || b.side !== side || b.result !== null || b.heldFrom !== null) return false;
+  if (st.phase !== 'push' || st.f[side].down) return false;
+  return st.t < b.from + BAR.react - 1e-6; // もう ため始められる＝ふつうの押し
+}
+
+// はじめて見る攻めの返し方の吹き出し（KamiScene.drawTip）の1コマ：tip＝{ until, shown }・t＝取組の時刻・done＝取組が終わった・attack＝攻めの場面・cutin＝帯が出ている。
+// 返り値 { close（閉じる）, visible（見せる）, note（今、見たと記録する） }。記録は吹き出しが本当に見えた最初のコマだけ（v42 第2段 D2：
+// 主人公の決め技の〇が出ている間に初めての攻めが来ると、見えないまま閉じて「見た」ことになり、二度と出なかった）
+export function tipStep(tip, { t, done, attack, cutin }) {
+  if (t >= tip.until || done || attack) return { close: true, visible: false, note: false };
+  const visible = !cutin;
+  return { close: false, visible, note: visible && !tip.shown };
 }

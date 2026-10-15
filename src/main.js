@@ -1,20 +1,21 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { CautionScene } from './scenes/CautionScene.js?v=41';
-import { CoverScene } from './scenes/CoverScene.js?v=41';
-import { GuideScene } from './scenes/GuideScene.js?v=41';
-import { LadderScene } from './scenes/LadderScene.js?v=41';
-import { OpponentScene } from './scenes/OpponentScene.js?v=41';
-import { AfterScene } from './scenes/AfterScene.js?v=41';
-import { TrainingScene } from './scenes/TrainingScene.js?v=41';
-import { DrillScene } from './scenes/DrillScene.js?v=41';
-import { KamiScene } from './scenes/KamiScene.js?v=41';
-import { HelpScene } from './scenes/HelpScene.js?v=41';
-import { KenshoScene } from './scenes/KenshoScene.js?v=41';
-import { ClearScene } from './scenes/ClearScene.js?v=41';
-import { initLang } from './i18n/i18n.js?v=41';
-import { storage } from './ui/widgets.js?v=41';
-import { session, lastSlot } from './state.js?v=41';
-import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=41';
+import { CautionScene } from './scenes/CautionScene.js?v=42';
+import { CoverScene } from './scenes/CoverScene.js?v=42';
+import { GuideScene } from './scenes/GuideScene.js?v=42';
+import { LadderScene } from './scenes/LadderScene.js?v=42';
+import { OpponentScene } from './scenes/OpponentScene.js?v=42';
+import { AfterScene } from './scenes/AfterScene.js?v=42';
+import { TrainingScene } from './scenes/TrainingScene.js?v=42';
+import { DrillScene } from './scenes/DrillScene.js?v=42';
+import { KamiScene } from './scenes/KamiScene.js?v=42';
+import { HelpScene } from './scenes/HelpScene.js?v=42';
+import { KenshoScene } from './scenes/KenshoScene.js?v=42';
+import { ClearScene } from './scenes/ClearScene.js?v=42';
+import { initLang } from './i18n/i18n.js?v=42';
+import { storage } from './ui/widgets.js?v=42';
+import { session, lastSlot } from './state.js?v=42';
+import { setScene, setMuted, isMuted, unlockOnGesture } from './ui/music.js?v=42';
+import { askTerms, askTermsPlain } from './ui/terms.js?v=42';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;
@@ -66,8 +67,10 @@ function start() {
   hookMusic(game);
 }
 
-// 字体（太さ800と500）が読めてから始める（読めなくても始める）
+// 字体（太さ800と500）が読めてから、遊ぶ前の同意書（初めてと版が変わった時だけ・src/ui/terms.js）→ 同意したら始める（注意書きの札 → 表紙）。
+// 字体が読めなくても進む。同意書の画面が出せない時は、短い文と「同意する」だけの代わりの画面（askTermsPlain）＝同意なしでは始めない（v42 第2段 D1）。
+// 代わりの画面も出せない時は始めない（画面の部品が作れない端末では遊びも動かない）
 (document.fonts
   ? Promise.all([document.fonts.load('800 32px "M PLUS Rounded 1c"'), document.fonts.load('500 24px "M PLUS Rounded 1c"')])
   : Promise.resolve()
-).catch(() => {}).finally(start);
+).catch(() => {}).then(() => askTerms()).catch(() => askTermsPlain()).then(start, () => {});

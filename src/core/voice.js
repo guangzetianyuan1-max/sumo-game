@@ -15,7 +15,6 @@ export const LINES = {
   heroWin: { ja: `${H('game')}/hero_win_ja.mp3`, en: `${H('game')}/hero_en_thanks.mp3`, len: { ja: 1.0, en: 0.87 } },
   heroFinisher: { ja: `${H('ja')}/balance/train_waza.mp3`, en: `${H('en')}/balance/train_waza.mp3`, len: { ja: 3.0, en: 0.56 } },
   heroTachiai: { ja: `${H('ja')}/balance/train_butsukari.mp3`, en: `${H('en')}/balance/train_butsukari.mp3`, len: { ja: 1.32, en: 1.34 } },
-  heroLoss: { ja: `${H('ja')}/balance/train_moushiai.mp3`, en: `${H('en')}/balance/train_moushiai.mp3`, len: { ja: 2.22, en: 1.02 } },
   kotoneYatta: { ja: `${H('game')}/kotone_yatta.mp3`, len: { ja: 1.25 }, quiet: true },
   kotoneNice: { ja: `${H('game')}/kotone_nice.mp3`, len: { ja: 1.25 }, quiet: true },
   kotoneTsugi: { ja: `${H('game')}/kotone_tsugi.mp3`, len: { ja: 1.35 }, quiet: true },
@@ -24,11 +23,12 @@ export const LINES = {
 };
 
 // 出来事ごとの声（順に鳴る）。昇進＝親方の2言・負けた後＝ことねの1言（親方の「まだまだ」は使わない＝いつも同じ人が励ます）
+// 負けた瞬間は声を出さない（v42 本人：主人公の「もう一丁！」＝train_moushiai・英語の One more! は取り直しと紛らわしい）
 const EVENTS = {
   win: ['heroWin'], // 大きな勝ちは続けてことね（下の linesFor）
   finisher: ['heroFinisher'], // ◎の決め技
   tachiai: ['heroTachiai'], // 立ち合いの◎
-  loss: ['heroLoss'],
+  loss: [], // 鳴らさない（上の注）
   brace: ['kotoneNice'], // 守りのバーのこらえ成功
   promoted: ['oyakataYoku', 'oyakataBanzuke'], // 取組の後の画面・昇進
   afterLoss: ['kotoneTsugi'], // 取組の後の画面・負け

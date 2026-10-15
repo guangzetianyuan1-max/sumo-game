@@ -78,6 +78,11 @@ export function countdownAt(elapsedMs) {
   if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return COUNTDOWN.from;
   return Math.max(0, COUNTDOWN.from - Math.floor(elapsedMs / COUNTDOWN.stepMs));
 }
+// 遊びの始まりの時刻は、画面の最初のコマで決める（v42 本人「連打稽古が 3・2・1・GO から始まらない時がある」）：
+// 画面を開いた時（create）の scene.time.now は、前にこの画面を閉じた時刻のまま止まっている（Phaser の場面の時計は走っている間しか進まない）。
+// そこで startAt を決めると、2回目以降に開いた時は最初のコマで「閉じていた長さ」だけ進んだことになり、3・2・1 を飛ばしていきなり GO（一押しは「よーい」を飛ばす）。
+// startAt がまだ数でなければ（開いたばかり）、最初のコマの now ＋ lead を始まりにする。数ならそのまま
+export const armStart = (startAt, now, lead = 0) => (Number.isFinite(startAt) ? startAt : now + (Number.isFinite(lead) ? lead : 0));
 export const rendaScore = (count) => clamp01((Number.isFinite(count) ? count : 0) / RENDA.full);
 
 // ---- 長押し ----
@@ -105,11 +110,11 @@ export function shiftForHidden(kind, c, now, dur) {
   const out = { phase: c.phase, roundAt: c.roundAt, startAt: c.startAt, gapUntil: c.gapUntil, runAt: c.runAt };
   if (kind === 'ippon') {
     if (c.phase === 'ring') out.roundAt = now;
-    else if (c.phase === 'ready') out.startAt = c.startAt + d;
+    else if (c.phase === 'ready' && Number.isFinite(c.startAt)) out.startAt = c.startAt + d; // まだ始まりが決まっていない（armStart の前）なら触らない
     else if (c.phase === 'gap') out.gapUntil = c.gapUntil + d;
   } else if (kind === 'renda') {
     if (c.phase === 'run') out.runAt = c.runAt + d;
-    else if (c.phase === 'count') out.startAt = c.startAt + d; // 3・2・1・GO は裏にいた間は止まる
+    else if (c.phase === 'count' && Number.isFinite(c.startAt)) out.startAt = c.startAt + d; // 3・2・1・GO は裏にいた間は止まる（始まりが決まる前は触らない）
   } else if (c.phase === 'gap') {
     out.gapUntil = c.gapUntil + d;
   }
