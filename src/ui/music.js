@@ -1,6 +1,10 @@
 // src/ui/music.js — 音楽（2026-10-13 本人「今回の相撲のゲームは音楽にも力を入れたい」）。音のファイルは使わず、Web Audio でその場で合成して鳴らす（sfx.js と同じ流儀）
 // 楽器：太鼓（どん・縁のかっ）・拍子木・笛・三味線・低音。曲は SONGS に「1拍＝4つの升」の譜で書く。曲はくり返す
 // 音量の山は BGM 全体で 0.22 くらいに抑える（効果音 0.35 が上に乗っても割れない）。鳴らせない端末では何もしない
+// 取組の曲 nokotta（10/15 本人「のこったでもっとアップテンポの曲など」・設計書 §12）は、跳ねる拍 KAMI.BEAT（0.52秒）に拍の頭を合わせる＝beatLock。
+//   取組の画面が毎コマ musicBeat(st.t) を呼ぶ：曲の升 s が鳴る音の時刻 ＝ off ＋ g(s)（g＝その升が重なる取組の時刻・off＝音の時計 − 出口の遅れ − 取組の時刻）。
+//   拍の升（4升ごと）の g は必ず KAMI.BEAT の整数倍＝beatOffset(st) の 0 と同じ所。止め・コマ落ち・裏へ回った後のずれは、次の升を遅らせる／飛ばす（半拍以内の近い方）で直す
+import { KAMI } from '../core/kami.js?v=41';
 let ctx = null;
 let broken = false;
 let master = null;
@@ -34,6 +38,7 @@ const midiHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
 function env(c, t0, dur, peak, attack = 0.005, release = null) {
   const g = c.createGain();
+  g.gain.value = 0.0001; // 鳴り始めより前も小さく（升の時刻が1サンプルの途中だと、雑音の最初の1サンプルが音量1のまま出て「プチッ」となった・10/15 鉦で測った）
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.linearRampToValueAtTime(peak, t0 + attack);
   if (release == null) g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
@@ -209,6 +214,44 @@ const INSTR = {
     o.start(t);
     o.stop(t + dur);
   },
+  // 締太鼓（祭り囃子の細かい刻み「テンツク」）：高めに張った皮の短い「てん」＝三角波が少し下がる＋皮の当たりの雑音
+  shime(c, t, v = 1) {
+    const o = c.createOscillator();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(340, t);
+    o.frequency.exponentialRampToValueAtTime(230, t + 0.06);
+    o.connect(env(c, t, 0.09, 0.11 * v, 0.001));
+    o.start(t);
+    o.stop(t + 0.11);
+    const n = noiseSrc(c);
+    const f = c.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 1500;
+    f.Q.value = 1.4;
+    n.connect(f);
+    f.connect(env(c, t, 0.035, 0.07 * v, 0.001));
+    n.start(t);
+    n.stop(t + 0.05);
+  },
+  // 鉦（当たり鉦・チャッパの「チャン」）：倍音がずれた金属の響き（正弦波3つ）＋高い雑音・短く
+  kane(c, t, v = 1) {
+    [[1260, 0.04], [2090, 0.028], [3310, 0.02]].forEach(([hz, amp]) => {
+      const o = c.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = hz;
+      o.connect(env(c, t, 0.16, amp * v, 0.001));
+      o.start(t);
+      o.stop(t + 0.18);
+    });
+    const n = noiseSrc(c);
+    const f = c.createBiquadFilter();
+    f.type = 'highpass';
+    f.frequency.value = 5000;
+    n.connect(f);
+    f.connect(env(c, t, 0.05, 0.045 * v, 0.001));
+    n.start(t);
+    n.stop(t + 0.07);
+  },
   // 先頭の旋律（チップチューン）：細い四角い波（25%）
   lead(c, t, m, dur, v = 1) {
     const hz = midiHz(m);
@@ -300,34 +343,162 @@ export const SONGS = {
     }).filter(Boolean)).flat()
       .concat(Array.from({ length: 8 }, (_, b) => [[b * 16, 52, 2, 0.7, 0], [b * 16 + 8, 52, 2, 0.6, 0]]).flat()),   // 低い弦（ミ）を拍の頭で
   },
+  // のこった（取組の最中・10/15 本人「のこったでもっとアップテンポの曲など」）：明るい祭り囃子ふう・陽音階（レ ミ ソ ラ シ）の篠笛ふうの旋律・
+  //   締太鼓の16分の刻み（テンツク）・鉦・拍子木・大太鼓は跳ねる拍ごと。
+  //   テンポ＝跳ねる拍にぴったり：4分音符（4升）＝KAMI.BEAT＝0.52秒＝約115.4拍／1升＝0.13秒の16分の刻み。1小節＝4拍＝2.08秒・8小節＝16.64秒でくり返す
+  //   layers＝その段から鳴る（0＝立ち合い前も・1＝押し合い・2＝追い込み＝端の近く／30秒過ぎ）。テンポは変えずに重ねるだけ
+  nokotta: {
+    bpm: 60 / KAMI.BEAT,
+    beat: KAMI.BEAT,
+    beatLock: true,
+    bars: 8,
+    layers: { shime: 1, kane: 1, fue: 1, taiko2: 2, shime2: 2 },
+    rhythm: {
+      taiko: ['D...d...D...d...', 'D...d...D...d...', 'D...d...D...d...', 'D...d...D.d.DdDd',
+        'D...d...D...d...', 'D...d...D...d...', 'D...d...D...d...', 'D...d...D.d.DdDd'].map(bar),
+      shime: ['S.ssS.ssS.ssS.ss', 'S.ssS.ssS.ssS.ss', 'S.ssS.ssS.ssS.ss', 'S.ssS.ssSsSsSSSS',
+        'S.ssS.ssS.ssS.ss', 'S.ssS.ssS.ssS.ss', 'S.ssS.ssS.ssS.ss', 'S.ssS.ssSsSsSSSS'].map(bar),
+      kane: ['C.c...c...c...c.', '..c...c...c...c.', '..c...c...c...c.', '..c...c...C.C.C.',
+        'C.c...c...c...c.', '..c...c...c...c.', '..c...c...c...c.', '..c...c...C.C.C.'].map(bar),
+      hyoshigi: ['h.h.............', '................', '................', '................',
+        'h...............', '................', '................', '................'].map(bar),
+      // 追い込みの層：大太鼓の裏拍と、締太鼓の空いた升を埋めて16分を切れ目なく。元の列が鳴る升には重ねない（同じ升で2つ鳴ると山が 0.33 に出た・10/15 測定）＝4・8小節目の締めの手は後ろ半分を元の列に任せる
+      taiko2: ['..d...d...d...d.', '..d...d...d...d.', '..d...d...d...d.', '..d...d.........',
+        '..d...d...d...d.', '..d...d...d...d.', '..d...d...d...d.', '..d...d.........'].map(bar),
+      shime2: ['.S...S...S...S..', '.S...S...S...S..', '.S...S...S...S..', '.S...S..........',
+        '.S...S...S...S..', '.S...S...S...S..', '.S...S...S...S..', '.S...S..........'].map(bar),
+    },
+    fue: [
+      [0, 81, 2], [2, 83, 2], [4, 86, 2], [6, 83, 1], [7, 81, 1], [8, 79, 2], [10, 81, 2], [12, 83, 4],
+      [16, 86, 2], [18, 88, 2], [20, 86, 2], [22, 83, 2], [24, 81, 4], [28, 79, 2], [30, 76, 2],
+      [32, 79, 2], [34, 81, 2], [36, 83, 1], [37, 81, 1], [38, 79, 2], [40, 76, 2], [42, 74, 2], [44, 76, 4],
+      [48, 79, 3], [51, 81, 1], [52, 79, 2], [54, 76, 2], [56, 74, 8],
+      [64, 86, 2], [66, 86, 2], [68, 88, 2], [70, 86, 2], [72, 83, 2], [74, 86, 2], [76, 88, 4],
+      [80, 91, 2], [82, 88, 2], [84, 86, 2], [86, 83, 2], [88, 81, 2], [90, 83, 2], [92, 86, 4],
+      [96, 83, 2], [98, 81, 2], [100, 79, 2], [102, 81, 1], [103, 83, 1], [104, 81, 2], [106, 79, 2], [108, 76, 2], [110, 79, 2],
+      [112, 81, 4], [116, 79, 2], [118, 76, 2], [120, 74, 8],
+    ],
+  },
 };
 
+// 取組の終わりの短い節（nokotta と同じテンポ・1小節の中）：勝ち＝駆け上がって高いレで決める約1.8秒／負け＝静かに下りる約1.6秒
+export const ENDINGS = {
+  win: {
+    rhythm: {
+      taiko: [bar('D..dD.ddD.......')],
+      shime: [bar('S.ssSsSsS.......')],
+      kane: [bar('C.c.C.c.C.......')],
+      hyoshigi: [bar('........h.......')],
+    },
+    fue: [[0, 74, 1], [1, 76, 1], [2, 79, 1], [3, 81, 1], [4, 83, 2], [6, 81, 1], [7, 83, 1], [8, 86, 6]],
+  },
+  lose: {
+    rhythm: { taiko: [bar('d.....d.........')] },
+    fue: [[0, 79, 3, 0.7], [3, 76, 3, 0.6], [6, 74, 6, 0.5]],
+  },
+};
+// 節の長さ（秒）：最後の音の終わりまで
+export function endingSecs(kind, song = SONGS.nokotta) {
+  const e = ENDINGS[kind];
+  const stepDur = 60 / song.bpm / 4;
+  const last = Math.max(...(e.fue || []).map(([s, , len]) => s + len), ...Object.values(e.rhythm).map((r) => r[0].replace(/\.+$/, '').length));
+  return last * stepDur;
+}
+
 // ---- 1升ぶんの音を時刻 t に予約する（鳴らす時も書き出す時もこれ1つ）
-function stepNotes(c, song, s, t) {
+// level＝重ねる段（song.layers に書いた段より低いと、その列・その楽器は鳴らさない）。layers の無い曲は全部鳴る
+// 刻みの列：taiko（D＝太鼓・d＝弱め・k＝縁）・hyoshigi（h）・ほか（shime・kane など）は大文字＝強く・小文字＝弱め。列の名の後ろの数字は同じ楽器の重ねる層（taiko2）
+function stepNotes(c, song, s, t, level = 1) {
   const stepDur = 60 / song.bpm / 4, b = Math.floor(s / 16), i = s % 16;
-  const tk = song.rhythm.taiko ? song.rhythm.taiko[b][i] : '.';
-  if (tk === 'D') INSTR.taiko(c, t, 1);
-  else if (tk === 'd') INSTR.taiko(c, t, 0.55);
-  else if (tk === 'k') INSTR.rim(c, t, 1);
-  if (song.rhythm.hyoshigi && song.rhythm.hyoshigi[b][i] === 'h') INSTR.hyoshigi(c, t, 1);
+  const layers = song.layers || {};
+  const on = (name) => level >= (layers[name] || 0);
+  for (const row of Object.keys(song.rhythm)) {
+    if (!on(row)) continue;
+    const ch = song.rhythm[row][b][i];
+    if (ch === '.') continue;
+    const inst = row.replace(/\d+$/, '');
+    if (inst === 'taiko') {
+      if (ch === 'D') INSTR.taiko(c, t, 1);
+      else if (ch === 'd') INSTR.taiko(c, t, 0.55);
+      else if (ch === 'k') INSTR.rim(c, t, 1);
+    } else if (inst === 'hyoshigi') INSTR.hyoshigi(c, t, 1);
+    else if (INSTR[inst]) INSTR[inst](c, t, ch === ch.toUpperCase() ? 1 : 0.55);
+  }
   for (const part of ['fue', 'shamisen', 'tsugaru', 'bass', 'lead']) {
+    if (!on(part)) continue;
     for (const [st, m, len, v = 1, slide = 0] of song[part] || []) if (st === s) INSTR[part](c, t, m, len * stepDur, v, slide);   // 4つ目＝強さ・5つ目＝すり上げ（何半音下から）
   }
 }
 
+// ---- 拍に合わせる（純粋な計算・試験で数を確かめる）
+// p＝{ nextTime（次の升を鳴らす音の時刻）, step（次の升の番号）, g（次の升が重なる取組の時刻）}・off＝音の時刻 − 取組の時刻（出口の遅れを引いた物）
+export const LOCK = { tol: 0.012, snap: 0.06, follow: 0.15, ahead: 0.005 };
+// 出口の遅れ（予約した時刻から耳に届くまで）：outputLatency（無い端末は baseLatency・それも無い＝0）・0〜0.25秒に収める
+export function outLatency(c) {
+  const v = c && (Number.isFinite(c.outputLatency) && c.outputLatency > 0 ? c.outputLatency : c.baseLatency);
+  return Number.isFinite(v) ? Math.max(0, Math.min(0.25, v)) : 0;
+}
+// off のなだらかな見積もり：コマの揺れ（数ms〜十数ms）は少しずつ追い、止め・コマ落ちの大きな跳び（snap 秒より大きい）はすぐ合わせる
+export function lockOffset(prev, raw) {
+  if (!Number.isFinite(prev) || Math.abs(raw - prev) > LOCK.snap) return raw;
+  return prev + (raw - prev) * LOCK.follow;
+}
+// 曲の頭を置く所：音の時刻 audioNow＋margin より後の、一番早い拍の頭（取組の時刻＝beat の整数倍）。{ g, at }（at＝その音の時刻）
+export function gridStart(off, audioNow, beat, margin) {
+  const g = Math.ceil((audioNow + margin - off) / beat - 1e-9) * beat;
+  return { g, at: off + g };
+}
+// ずれを直す：次の升の正しい音の時刻 off＋g と今の予約 nextTime の差 e を、拍の整数倍を足し引きして半拍以内にする（どの拍に当たるかは変えてよい・拍の頭は拍の頭のまま）。
+// |e| が tol より大きい時だけ動かす（e＞0＝待つ・e＜0＝早める）。もう過ぎた升は飛ばす（升と g は一緒に進める＝拍の頭はずれない）
+export function beatAlign(p, off, audioNow, beat, stepDur) {
+  let e = off + p.g - p.nextTime;
+  const k = Math.round(e / beat);
+  let g = p.g - k * beat;
+  e -= k * beat;
+  let { nextTime, step } = p;
+  if (Math.abs(e) > LOCK.tol) nextTime += e;
+  const late = audioNow + LOCK.ahead - nextTime;
+  if (late > 0) { const n = Math.ceil(late / stepDur - 1e-9); nextTime += n * stepDur; step += n; g += n * stepDur; }
+  return { nextTime, step, g };
+}
+// 予約：horizon（音の時刻）より前の升を [{ s, t }] で返し、p を進める。restartAt（取組の時刻）に来たら曲の頭（升 0）から（押し合いの始まり）
+// 遅れの追いつき：予約の時刻が音の今より 1 升以上遅れた（隠れたタブで止まっていた）ら、遅れた升を一度に鳴らさず飛ばして今に合わせる
+export function catchUp(p, audioNow, stepDur) {
+  if (p.nextTime >= audioNow - stepDur) return 0;
+  const n = Math.ceil((audioNow - p.nextTime) / stepDur - 1e-9);
+  p.nextTime += n * stepDur;
+  p.step += n;
+  p.g += n * stepDur;
+  return n;
+}
+export function takeSteps(p, horizon, stepDur) {
+  const out = [];
+  while (p.nextTime < horizon) {
+    if (p.restartAt != null && p.g >= p.restartAt - 1e-6) { p.step = 0; p.restartAt = null; }
+    out.push({ s: p.step, t: p.nextTime });
+    p.step += 1;
+    p.nextTime += stepDur;
+    p.g += stepDur;
+  }
+  return out;
+}
+
 // ---- 鳴らす（少し先までの音を予約していく）
 const LOOKAHEAD = 0.15;
+// 今の重ねる段：追い込み（段2）は一度入ったら1小節は続ける（端を出たり入ったりで層がちらつかない）
+function levelNow(c) {
+  if (!playing) return 1;
+  return playing.hotUntil > c.currentTime ? Math.max(playing.level, 2) : playing.level;
+}
 function schedule() {
   const c = ctx;
-  if (!c || !playing) return;
+  if (!c || !playing || playing.wait) return; // 拍に合わせる曲は、取組の時刻が来るまで鳴らさない（musicBeat が頭を置く）
   const { song } = playing;
   const stepDur = 60 / song.bpm / 4;
   const total = song.bars * 16;
-  while (playing.nextTime < c.currentTime + LOOKAHEAD) {
-    stepNotes(c, song, playing.step % total, playing.nextTime);
-    playing.step++;
-    playing.nextTime += stepDur;
-  }
+  const lv = levelNow(c);
+  catchUp(playing, c.currentTime, stepDur);
+  for (const { s, t } of takeSteps(playing, c.currentTime + LOOKAHEAD, stepDur)) stepNotes(c, song, s % total, t, lv);
 }
 
 export function playMusic(id) {
@@ -335,9 +506,52 @@ export function playMusic(id) {
   if (!c || !SONGS[id]) return false;
   if (c.state === 'suspended') c.resume();
   stopMusic();
-  playing = { song: SONGS[id], step: 0, nextTime: c.currentTime + 0.08 };
+  const song = SONGS[id];
+  playing = { song, step: 0, nextTime: c.currentTime + 0.08, g: 0, wait: !!song.beatLock, off: NaN, level: 1, hotUntil: -Infinity, restartAt: null };
   timer = setInterval(schedule, 25);
   schedule();
+  return true;
+}
+
+// 取組の画面が毎コマ呼ぶ：gameNow＝取組の時刻 st.t。拍に合わせる曲（beatLock）が鳴っている時だけ働く（消音・音が無い・別の曲＝何もしない）
+// level＝重ねる段（0＝立ち合い前・1＝押し合い・2＝追い込み）・cue＝押し合いの始まり：次の拍の頭から曲を頭（1小節目）に戻す
+// 止め・スローの間は呼ばない（曲はそのままの速さで流れる）＝時間が動き出した時の1回で、半拍以内の近い方へ合わせ直す
+export function musicBeat(gameNow, { level = 1, cue = false } = {}) {
+  const c = ctx;
+  if (!c || !playing || !playing.song.beatLock || !Number.isFinite(gameNow)) return false;
+  const song = playing.song, beat = song.beat, stepDur = 60 / song.bpm / 4;
+  const now = c.currentTime;
+  playing.off = lockOffset(playing.off, now - outLatency(c) - gameNow);
+  playing.level = level;
+  if (level >= 2) playing.hotUntil = now + 16 * stepDur;
+  if (playing.wait) {
+    const s = gridStart(playing.off, now, beat, 0.03);
+    Object.assign(playing, { g: s.g, nextTime: s.at, step: 0, wait: false });
+  } else {
+    Object.assign(playing, beatAlign(playing, playing.off, now, beat, stepDur));
+    if (cue) playing.restartAt = Math.ceil(playing.g / beat - 1e-9) * beat; // 次の拍の頭（取組の時刻）
+  }
+  schedule();
+  return true;
+}
+
+// 取組の終わり：くり返しを次の拍の頭まで流してから、短い節（勝ち／負け）で閉じる。鳴っていない（消音・音が無い）＝何もしない。その後この画面では鳴らし直さない
+export function musicEnd(won) {
+  const c = ctx;
+  if (!c || !playing) return false;
+  if (isMuted()) { stopMusic(); wanted = null; return false; } // 消音中は終わりの節も鳴らさない
+  const song = playing.song, stepDur = 60 / song.bpm / 4, total = song.bars * 16;
+  const end = ENDINGS[won ? 'win' : 'lose'];
+  if (!playing.wait && song.beatLock) {
+    const toBeat = Math.ceil(playing.g / song.beat - 1e-9) * song.beat - playing.g; // 次の拍の頭まで（秒）
+    const lv = levelNow(c);
+    for (const { s, t } of takeSteps(playing, playing.nextTime + toBeat - 1e-6, stepDur)) stepNotes(c, song, s % total, t, lv);
+  }
+  const at = playing.wait ? c.currentTime + 0.05 : Math.max(playing.nextTime, c.currentTime + 0.02);
+  const phrase = { bpm: song.bpm, bars: 1, rhythm: end.rhythm, fue: end.fue };
+  for (let s = 0; s < 16; s++) stepNotes(c, phrase, s, at + s * stepDur, 1);
+  stopMusic();
+  wanted = null; // 節の後は無音（次の画面の setScene がその画面の曲を鳴らす）
   return true;
 }
 
@@ -354,7 +568,7 @@ export function playInstrument(name) {
   if (!c) return false;
   if (c.state === 'suspended') c.resume();
   const t = c.currentTime + 0.05;
-  if (name === 'taiko' || name === 'rim' || name === 'hyoshigi') INSTR[name](c, t, 1);
+  if (name === 'taiko' || name === 'rim' || name === 'hyoshigi' || name === 'shime' || name === 'kane') INSTR[name](c, t, 1);
   else if (name === 'fue') INSTR.fue(c, t, 81, 1.2, 1);
   else if (name === 'shamisen') INSTR.shamisen(c, t, 62, 0.6, 1);
   else if (name === 'tsugaru') INSTR.tsugaru(c, t, 64, 0.6, 1.2, 2);
@@ -363,8 +577,8 @@ export function playInstrument(name) {
   return true;
 }
 
-// 曲を裏で音に書き出す（確かめ用・OfflineAudioContext）：{ peak, rms, buffer } を返す
-export function renderSong(id, seconds) {
+// 曲を裏で音に書き出す（確かめ用・OfflineAudioContext）：{ peak, rms, buffer } を返す。level＝重ねる段（nokotta の追い込みは 2）
+export function renderSong(id, seconds, level = 1) {
   const w = typeof window !== 'undefined' ? window : null;
   const OAC = w ? w.OfflineAudioContext || w.webkitOfflineAudioContext : null;
   if (!OAC || !SONGS[id]) return Promise.resolve(null);
@@ -375,7 +589,7 @@ export function renderSong(id, seconds) {
   const comp = oc.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
   master.connect(comp); comp.connect(oc.destination);
   const song = SONGS[id], stepDur = 60 / song.bpm / 4, total = song.bars * 16;
-  for (let st = 0, t = 0.05; t < seconds - 0.5; st++, t += stepDur) stepNotes(oc, song, st % total, t);
+  for (let st = 0, t = 0.05; t < seconds - 0.5; st++, t += stepDur) stepNotes(oc, song, st % total, t, level);
   ctx = keep.ctx; master = keep.master; noiseBuf = keep.noiseBuf;
   return oc.startRendering().then((buffer) => {
     const d = buffer.getChannelData(0); let peak = 0, sum = 0;
@@ -390,7 +604,8 @@ export const SCENE_SONG = {
   caution: null, cover: 'yagura',
   guide: 'yagura', guidePick: 'yagura', setup: 'yagura', help: 'yagura', ladder: 'yagura', after: 'yagura', clear: 'yagura',
   learn: 'tsugaru', training: 'tsugaru', drill: 'tsugaru', // 10/12 夜 稽古が戻った＝津軽三味線（稽古の遊びも同じ曲を流し続ける）
-  opponent: 'torikumi', strategy: 'torikumi', bout: 'torikumi', kensho: 'torikumi', kami: 'torikumi',
+  opponent: 'torikumi', strategy: 'torikumi', bout: 'torikumi', kensho: 'torikumi',
+  kami: 'nokotta', // 10/15 本人「のこったでもっとアップテンポの曲など」＝取組の最中は明るく速い祭り囃子（暗い torikumi は相手の情報・懸賞旗に残す）
 };
 const MUTE_KEY = 'sumo.music';
 
@@ -431,5 +646,6 @@ export function unlockOnGesture(target) {
 }
 // 確かめ用：今の状態（鳴らしたい曲・鳴っている曲・音が起きているか）
 export function musicState() {
-  return { wanted, current, running: !!(ctx && ctx.state === 'running'), playing: !!playing, muted: isMuted() };
+  return { wanted, current, running: !!(ctx && ctx.state === 'running'), playing: !!playing, muted: isMuted(),
+    level: playing && ctx ? levelNow(ctx) : null, waiting: !!(playing && playing.wait) };
 }

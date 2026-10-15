@@ -1,19 +1,21 @@
 // src/scenes/OpponentScene.js — 今日の相手（20体版 Task 4・10/13）：相手の絵と型・得意と苦手（系統）・心技体・決め技を選ぶ札5枚・ことねの勧め → 取組へ
 // 作戦表の頃の名残（よく使う手・技の勧めの吹き出し）は外した。シニアにも読める大きな札と、下の真ん中の「取組へ」1つだけ
 // 決め技の札：覚えた物だけ押して選べる（選んだ札が朱に光る）。最初は勧め（recommendKimete）を選んでおく。覚えていない物は灰色
-import { TYPES } from '../data/types.js?v=40';
-import { OKAMI } from '../data/heroes.js?v=40';
-import { t, foeLabel } from '../i18n/i18n.js?v=40';
-import { session, prepareOpponent } from '../state.js?v=40';
-import { playBout } from '../ui/sfx.js?v=40';
-import { kimeteCards, recommendKimete, chosenKimete, coachAdvice } from '../core/kimetepick.js?v=40';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=40';
+import { TYPES } from '../data/types.js?v=41';
+import { OKAMI } from '../data/heroes.js?v=41';
+import { t, foeLabel } from '../i18n/i18n.js?v=41';
+import { session, prepareOpponent } from '../state.js?v=41';
+import { playBout } from '../ui/sfx.js?v=41';
+import { kimeteCards, recommendKimete, chosenKimete, coachAdvice } from '../core/kimetepick.js?v=41';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=41';
 import {
   button, bindPress, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
   preloadTypeArt, preloadGuideArt, addAura, clearScene, COLORS,
-} from '../ui/widgets.js?v=40';
-import { currentFoe } from '../core/run.js?v=40';
-import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=40';
+} from '../ui/widgets.js?v=41';
+import { currentFoe } from '../core/run.js?v=41';
+import { menuBgKey } from '../core/bgkey.js?v=41';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=41';
+import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=41';
 
 const INFO = { y: 286, h: 292 }; // 相手の札（140〜432）：得意・苦手は英語だと5行になるので高めに：左に絵・右に型と得意・苦手
 const ART = { x: 175, r: 100, h: 200 };
@@ -27,6 +29,7 @@ const COACH = { faceX: 70, size: 108, left: 138, top: 912, w: 560, h: 236, font:
 const TAG = { w: 150, h: 38, dy: 2, size: 28 }; // 勧めの金の札：札の上の縁に少しかかる（下の段の札でも上の段の札 776 に重ならない）
 const GO_H = 100;
 const GO_Y = 1206; // 「取組へ」（高さ GO_H・上の端 1156）：吹き出しの下 1148 の下
+const BAND = 130; // 見出しの帯の下の端（見出しと相手の名の行・相手の札の上 140 より上）
 const AFF_KEY = (a) => (a > 1 ? 'good' : a < 1 ? 'bad' : 'normal');
 const AFF_COLOR = { good: COLORS.gold, normal: COLORS.sub, bad: '#d9a08f' };
 
@@ -43,6 +46,7 @@ export class OpponentScene extends Phaser.Scene {
     if (foe) {
       const a = foeArt(foe);
       if (!this.textures.exists(a.key)) this.load.image(a.key, a.path);
+      preloadBackdrop(this, menuBgKey('opponent', { foeIndex: foe.index })); // 背景＝その相手の場所
     }
   }
 
@@ -69,12 +73,13 @@ export class OpponentScene extends Phaser.Scene {
     const { width } = this.scale;
     const foe = this.foe;
     const opp = foe.type;
+    drawBackdrop(this, menuBgKey('opponent', { foeIndex: foe.index }), { band: BAND });
     backButton(this, () => this.scene.start('ladder'));
     topTitle(this, 44, t('opp.title'), 50, COLORS.gold);
     fitText(this.add.text(width / 2, 104, t('career.who', { name: foeLabel(foe), rank: t('opp.foeNo', { n: foe.index + 1 }) }), textStyle(36, COLORS.ink)).setOrigin(0.5), width - 80);
 
     // 相手の札：左に絵（段階が上がるほど大きく・光る）・右に型の名と、得意・苦手の系統
-    roundBox(this, width / 2, INFO.y, 640, INFO.h, COLORS.panel, { radius: 32, stroke: COLORS.frame });
+    inkPanel(this, width / 2 - 320, INFO.y - INFO.h / 2, 640, INFO.h, { radius: 32 }); // 墨の板（後ろの場所の絵が少し透ける）
     this.add.circle(ART.x, INFO.y, ART.r, 0x2a3456);
     const fig = foeArt(foe).key;
     const key = this.textures.exists(fig) ? fig : `type-${opp}`;
@@ -94,6 +99,7 @@ export class OpponentScene extends Phaser.Scene {
     const strong = block(INFO.y - 68, t('opp.strongArch', { arch: archs(ty.strong) }), COLORS.ink);
     block(strong.y + strong.displayHeight + 10, t('opp.weakArch', { arch: archs(ty.weak ? ty.weak.arch : []) }), COLORS.gold);
 
+    inkPanel(this, 24, 436, 672, 478); // 心技体・「決め技をえらぶ」・札5枚の後ろ（436〜914・吹き出しの上の端 912 まで）
     this.drawStats(width);
 
     // 決め技の札

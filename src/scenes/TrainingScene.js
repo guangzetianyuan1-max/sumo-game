@@ -6,20 +6,24 @@
 // 親方が一番低い心技体に合う遊びを勧める（★と金の字）。
 // 負けた後の稽古は3コマ終えると同じ相手へ。番付からいつでも入る稽古（training.voluntary・10/13 本人「好きなときに稽古が出来るように」）は、
 // どのコマでも「番付へ戻る」で抜けられる（残りのコマは捨てる）・終われば番付へ
-import { t } from '../i18n/i18n.js?v=40';
-import { session, trainLeaveNow } from '../state.js?v=40';
-import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=40';
-import { kimeteById } from '../data/kimete.js?v=40';
-import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=40';
-import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=40';
-import { playBout } from '../ui/sfx.js?v=40';
+import { t } from '../i18n/i18n.js?v=41';
+import { session, trainLeaveNow } from '../state.js?v=41';
+import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=41';
+import { kimeteById } from '../data/kimete.js?v=41';
+import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=41';
+import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=41';
+import { playBout } from '../ui/sfx.js?v=41';
+import { menuBgKey } from '../core/bgkey.js?v=41';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=41';
 import {
   topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, bindPress, preloadOyakataArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=40';
+} from '../ui/widgets.js?v=41';
 
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1235 は「稽古おわり」の字・1210 は番付へ戻る）
 const CARD = { w: 640, top: 470, step: 120, bottom: 1150 };
 const LEAVE_Y = 1212;
+const BAND = 158; // 見出しと残りのコマの行の帯の下の端（心技体の棒 190 より上）
+const BG = menuBgKey('training'); // 背景＝稽古場
 
 export class TrainingScene extends Phaser.Scene {
   constructor() {
@@ -28,6 +32,7 @@ export class TrainingScene extends Phaser.Scene {
 
   preload() {
     preloadOyakataArt(this);
+    preloadBackdrop(this, BG);
   }
 
   create() {
@@ -42,6 +47,7 @@ export class TrainingScene extends Phaser.Scene {
     const r = session.run;
     const { width } = this.scale;
     const free = canLeaveTraining(r);
+    drawBackdrop(this, BG, { band: BAND });
     topTitle(this, 60, t('train2.title'), 56, COLORS.gold);
     fitText(this.add.text(width / 2, 130, t('train2.left', { n: r.training ? r.training.left : 0 }), textStyle(34, COLORS.ink)).setOrigin(0.5), width - 60);
     statBars(this, 40, 190, 640, r.stats);
@@ -59,6 +65,7 @@ export class TrainingScene extends Phaser.Scene {
     const rows = DRILLS.length + techs.length + (cards.more ? 1 : 0) + (nextAt !== undefined ? 1 : 0);
     const step = Math.min(CARD.step, Math.floor((CARD.bottom - CARD.top) / rows));
     const h = step - 16;
+    inkPanel(this, 24, 174, 672, CARD.top + rows * step + 6 - 174); // 心技体・親方・札と鍵の行の後ろ（字はみな墨の板の上）
     let i = 0;
     for (const kind of DRILLS) {
       const isRec = kind === rec;

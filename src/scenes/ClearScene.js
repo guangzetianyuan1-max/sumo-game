@@ -1,12 +1,13 @@
 // src/scenes/ClearScene.js — クリアの画面（20体版 Task 5・10/13）：横綱の土俵入り風。箱の土俵の真ん中に主人公の型紙を大きく立て、少しずつ揺らす
 // 上に「横綱 誠ノ里 誕生！」とここまでの成績（倒した数・負け・稽古の回数）・続きは近日・LINEで送る・はじめの画面へ
 // 型紙＝正面の立ち絵に白い縁（紙の切り抜き）と小さな台。露払い・太刀持ちは置かない
-import { HERO_TYPE } from '../data/heroes.js?v=40';
-import { heroArt } from '../core/foeart.js?v=40';
-import { t, heroName } from '../i18n/i18n.js?v=40';
-import { session } from '../state.js?v=40';
-import { GROUND, preloadArena, drawArena } from '../ui/arena.js?v=40';
-import { button, addAura, preloadHeroFigures, textStyle, fitText, roundBox, COLORS } from '../ui/widgets.js?v=40';
+import { HERO_TYPE } from '../data/heroes.js?v=41';
+import { heroArt } from '../core/foeart.js?v=41';
+import { t, heroName } from '../i18n/i18n.js?v=41';
+import { session } from '../state.js?v=41';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=41';
+import { drawWaUnder } from '../ui/backdrop.js?v=41';
+import { button, addAura, preloadHeroFigures, textStyle, fitText, roundBox, COLORS } from '../ui/widgets.js?v=41';
 
 // LINE の共有（src/core/share.js が無い間の置き場：遊ぶ所の URL に ?ref=line を付けて、LINE の共有の画面を開く）
 const SITE_URL = 'https://guangzetianyuan1-max.github.io/sumo-game/?ref=line';
@@ -31,7 +32,8 @@ export class ClearScene extends Phaser.Scene {
     const r = session.run;
     if (!r) { this.scene.start('guide'); return; }
     const { width } = this.scale;
-    drawArena(this);
+    drawArena(this); // 背景＝土俵（bgkey.menuBgKey('clear')）
+    drawWaUnder(this, GROUND + BOX_H); // 箱の下の藍に青海波・ふちに和紙の色の枠
     this.confetti(width);
     this.cutout(width / 2);
 

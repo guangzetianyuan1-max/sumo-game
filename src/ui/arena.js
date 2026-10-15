@@ -1,8 +1,8 @@
 // src/ui/arena.js — 紙相撲の舞台（土俵の絵の背景・段ボールの箱・紙の土俵）。取組（kami）・懸賞旗（kensho）・クリア（clear）で同じ形を描く
-import { KAMI } from '../core/kami.js?v=40';
-import { t } from '../i18n/i18n.js?v=40';
-import { textStyle, fitText } from './widgets.js?v=40';
-import { boutBgKey, boutBgPath, pickBackdrop, backdropEdge, DOHYO_BG } from '../core/bgkey.js?v=40';
+import { KAMI } from '../core/kami.js?v=41';
+import { t } from '../i18n/i18n.js?v=41';
+import { textStyle, fitText } from './widgets.js?v=41';
+import { boutBgKey, boutBgPath, pickBackdrop, backdropEdge, DOHYO_BG } from '../core/bgkey.js?v=41';
 
 export const GROUND = 800; // 箱の上の面（画面の y）
 export const BOX_H = 100; // 箱の前の面の高さ（下の端 900 ＝ 立体のボタンの弧の上端 947 より上・間に案内の1行。ボタンが直径300になったので140から詰めた）
@@ -36,6 +36,7 @@ export function drawBackdrop(scene, width, foeIndex) {
 }
 
 // 箱（段ボール）の前の面と上の面・紙の土俵・俵・仕切り線・箱の前の字（試作 prototype/kamizumo.html と同じ形）
+// 描いた物 { g, label } を返す（取組の画面は連打のたびに箱ごと沈めて戻す・10/15 手ごたえ）
 export function drawBox(scene, width) {
   const { BOX, RING } = KAMI;
   const g = scene.add.graphics();
@@ -46,10 +47,11 @@ export function drawBox(scene, width) {
   g.fillStyle(0xffffff, 0.9).fillRect(width / 2 - 40, GROUND - 4, 6, 4).fillRect(width / 2 + 34, GROUND - 4, 6, 4);
   const box = scene.add.text(width / 2, GROUND + BOX_H / 2, t('kami.box'), textStyle(56, '#3b2810')).setOrigin(0.5).setAlpha(0.6);
   fitText(box, BOX.r - BOX.l - 60);
+  return { g, label: box };
 }
 
 export function drawArena(scene, foeIndex) {
   const { width } = scene.scale;
   drawBackdrop(scene, width, foeIndex);
-  drawBox(scene, width);
+  return drawBox(scene, width);
 }

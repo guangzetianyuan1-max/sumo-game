@@ -9,28 +9,28 @@
 // 決め技モード（10/14 本人「稽古の出来で決め技を習得できるようにしてください」・data.kimete＝決め技の id）：
 //   遊びはその決め技の drill（kimete.js）。心技体は伸びず、出来で習得ゲージ（drills.kimeteGain）がたまる（drillKimeteNow を1回だけ）。
 //   結果＝点数と出来 → ゲージが前→後へたまる → 満タンなら「習得！」・決めのカットイン（kime）・kan の音／満タンでなければ「習得 75%」
-import { t } from '../i18n/i18n.js?v=40';
-import { session, drillStatNow, drillKimeteNow } from '../state.js?v=40';
-import { canLeaveTraining } from '../core/run.js?v=40';
-import { kimeteById } from '../data/kimete.js?v=40';
-import { cutinArt } from '../core/cutin.js?v=40';
+import { t } from '../i18n/i18n.js?v=41';
+import { session, drillStatNow, drillKimeteNow } from '../state.js?v=41';
+import { canLeaveTraining } from '../core/run.js?v=41';
+import { kimeteById } from '../data/kimete.js?v=41';
+import { cutinArt } from '../core/cutin.js?v=41';
 import {
   DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood, kimeteGrade,
   IPPON, ipponHitMs, ipponJudge, ipponMissed, ipponScore,
   RENDA, COUNTDOWN, countdownAt, rendaScore, NAGAOSHI, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct,
-} from '../core/drills.js?v=40';
-import { kamiArt, heroArt, foeArt, stageScale } from '../core/foeart.js?v=40';
-import { HERO_TYPE } from '../data/heroes.js?v=40';
-import { createBigButton } from '../ui/bigbutton.js?v=40';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=40';
-import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, OPP, BTN, drillFoe, oppLean, holdBlocked } from '../ui/drillstage.js?v=40'; // 置き場所と相手の見せ方の計算（Phaser を使わない）
-import { drawCutinBand } from '../ui/cutinband.js?v=40';
-import { HUD, HUD_HIT, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=40'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
-import { playTraining, playBout } from '../ui/sfx.js?v=40';
-import { guardOpen, openGuarded } from '../ui/openguard.js?v=40';
+} from '../core/drills.js?v=41';
+import { kamiArt, heroArt } from '../core/foeart.js?v=41';
+import { HERO_TYPE } from '../data/heroes.js?v=41';
+import { createBigButton } from '../ui/bigbutton.js?v=41';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=41';
+import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, OPP, BTN, PARTNER_FILE, PARTNER_FLIP, oppLean, holdBlocked } from '../ui/drillstage.js?v=41'; // 置き場所と相手の見せ方の計算（Phaser を使わない）
+import { drawCutinBand } from '../ui/cutinband.js?v=41';
+import { HUD, HUD_HIT, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=41'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
+import { playTraining, playBout } from '../ui/sfx.js?v=41';
+import { guardOpen, openGuarded } from '../ui/openguard.js?v=41';
 import {
   button, fitText, wrapText, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadHeroFigures, clearScene, COLORS,
-} from '../ui/widgets.js?v=40';
+} from '../ui/widgets.js?v=41';
 
 const BG_KEY = 'keiko-bg';
 const HERO_FILE = `hero_${HERO_TYPE}`;
@@ -74,9 +74,9 @@ export class DrillScene extends Phaser.Scene {
     if (!this.textures.exists(a.key)) this.load.image(a.key, a.path);
     preloadHeroFigures(this); // 型紙が無い時の主人公の代わり
     preloadOyakataArt(this);
-    if (drillKind(session.run, this.kimeteId, this.kind) === 'nagaoshi' && session.run) { // 長押しの相手（今の次の相手の型紙・無ければ今の立ち絵）
-      const fa = foeArt(drillFoe(session.run));
-      [kamiArt(fa.file), fa].forEach((a) => { if (!this.textures.exists(a.key)) this.load.image(a.key, a.path); });
+    if (drillKind(session.run, this.kimeteId, this.kind) === 'nagaoshi') { // 長押しの相手（小兵の力士の型紙）
+      const pa = kamiArt(PARTNER_FILE);
+      if (!this.textures.exists(pa.key)) this.load.image(pa.key, pa.path);
     }
     const kime = cutinArt('kime'); // 決め技を覚えた時のカットイン
     if (!this.textures.exists(kime.key)) this.load.image(kime.key, kime.path);
@@ -156,16 +156,15 @@ export class DrillScene extends Phaser.Scene {
     this.heroX = heroX;
     this.add.ellipse(heroX, FEET_Y + 2, 170, 22, 0x000000, 0.35);
     this.hero = this.figure(heroX);
-    // 長押しだけ：右に相手（左向き）。今の次の相手の型紙
+    // 長押しだけ：右に相手（左向き）。小兵の力士の型紙（右向きの絵を反転）
     this.opp = null;
     if (kind === 'nagaoshi') {
-      const foe = drillFoe(session.run);
-      const fa = foeArt(foe);
-      const key = this.textures.exists(kamiArt(fa.file).key) ? kamiArt(fa.file).key : this.textures.exists(fa.key) ? fa.key : null;
+      const pa = kamiArt(PARTNER_FILE);
       this.add.ellipse(OPP.x, FEET_Y + 2, 190, 22, 0x000000, 0.35);
-      if (key) {
-        const img = this.add.image(OPP.x, FEET_Y, key).setOrigin(0.5, 1); // 型紙は左向きのまま（主人公のほうを向く）
-        img.setScale((FIG_H * stageScale(foe.stage)) / img.height);
+      if (this.textures.exists(pa.key)) {
+        const img = this.add.image(OPP.x, FEET_Y, pa.key).setOrigin(0.5, 1);
+        img.setScale(FIG_H / img.height); // 主人公と同じ高さ
+        img.setFlipX(PARTNER_FLIP); // 型紙は右向き：反転して主人公のほう（左）を向く
         this.opp = img;
       }
     }

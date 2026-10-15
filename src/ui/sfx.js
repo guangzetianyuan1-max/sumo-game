@@ -1,6 +1,6 @@
 // src/ui/sfx.js — 効果音（10/11 本人「効果音付きで」）。音のファイルは使わず、Web Audio でその場で作る
 // どの音も 0.8 秒以内・重なった時も含めて音量の山は 0.35 以下。鳴らせない端末（AudioContext が無い・作ると例外）では何もしない
-import { isMuted } from './music.js?v=40'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
+import { isMuted } from './music.js?v=41'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
 
 let ctx = null;
 let broken = false; // 作ろうとして例外が出た端末では、2度目からは試さない
@@ -61,6 +61,13 @@ function noise(c, t0, { dur, peak, filter = 'bandpass', f, fEnd = f, q = 1, atta
   src.start(t0);
   src.stop(t0 + dur + 0.02);
 }
+
+// 箱から落ちる「ひゅー」（下がる風切り）と、木の底に当たる「ことん」（drop は2つを続けて鳴らす）
+const hyu = (c, t) => noise(c, t, { dur: 0.45, peak: 0.18, f: 1800, fEnd: 300, q: 1.2, attack: 0.12 });
+const koton = (c, t) => {
+  tone(c, t, { freq: 260, freqEnd: 140, dur: 0.1, peak: 0.22, type: 'triangle', attack: 0.002 });
+  noise(c, t, { dur: 0.05, peak: 0.1, f: 700, q: 2, attack: 0.001 });
+};
 
 const SOUNDS = {
   // 四股：足を土俵に踏み下ろす「どん」1つ（低い正弦波・すぐ消える）
@@ -167,9 +174,23 @@ const BOUT = {
   },
   // 箱から落ちる：「ひゅー」（下がる風切り）の後に「ことん」（木の底に当たる）
   drop: (c, t) => {
-    noise(c, t, { dur: 0.45, peak: 0.18, f: 1800, fEnd: 300, q: 1.2, attack: 0.12 });
-    tone(c, t + 0.46, { freq: 260, freqEnd: 140, dur: 0.1, peak: 0.22, type: 'triangle', attack: 0.002 });
-    noise(c, t + 0.46, { dur: 0.05, peak: 0.1, f: 700, q: 2, attack: 0.001 });
+    hyu(c, t);
+    koton(c, t + 0.46);
+  },
+  // 手ごたえ（10/15 設計書 §12）：取組では「ひゅー」と「ことん」を分けて鳴らす（スローで舞って着地した時に「ことん」）
+  hyu: (c, t) => hyu(c, t),
+  koton: (c, t) => koton(c, t),
+  // ◎の一押し・必殺技が決まった瞬間の強い「バシッ！」（乾いた平手の雑音＋低い当たり・足して 0.35 以下）
+  bashi: (c, t) => {
+    noise(c, t, { dur: 0.12, peak: 0.2, filter: 'highpass', f: 1800, q: 0.7, attack: 0.001 });
+    tone(c, t, { freq: 140, freqEnd: 60, dur: 0.2, peak: 0.13, attack: 0.002 });
+  },
+  // 座布団が舞う時の大きなどよめき：太鼓「ドドン」と、win より大きく長くふくらむ歓声（2つの高さの雑音）。足して 0.35 以下・0.8秒以内
+  roar: (c, t) => {
+    tone(c, t, { freq: 110, freqEnd: 60, dur: 0.22, peak: 0.12 });
+    tone(c, t + 0.26, { freq: 100, freqEnd: 55, dur: 0.3, peak: 0.12 });
+    noise(c, t + 0.02, { dur: 0.76, peak: 0.14, f: 1400, q: 0.5, attack: 0.35 });
+    noise(c, t + 0.06, { dur: 0.7, peak: 0.08, f: 600, q: 0.7, attack: 0.3 });
   },
   // 起き上がる：上がっていく「しゅっ」
   rise: (c, t) => noise(c, t, { dur: 0.22, peak: 0.2, f: 500, fEnd: 3500, q: 1.5, attack: 0.06 }),
@@ -295,7 +316,7 @@ export function playTraining(kind, volume = 1) {
   play(SOUNDS, kind, volume);
 }
 
-// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kime（決め技が出た）・gauge1〜4（ゲージの段）・gaugeMax（虹の確定）・press（大きなボタンの「カチッ」）・20体版 Task 6b の音（tachiai hop hopBeat land clash topple drop rise win lose promo flags pon kan bosu dosu zushin）・2つのボタンの音（warn fumbari hataki tsuppari kumi brace dud release）。volume は playTraining と同じ
+// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kime（決め技が出た）・gauge1〜4（ゲージの段）・gaugeMax（虹の確定）・press（大きなボタンの「カチッ」）・20体版 Task 6b の音（tachiai hop hopBeat land clash topple drop rise win lose promo flags pon kan bosu dosu zushin）・2つのボタンの音（warn fumbari hataki tsuppari kumi brace dud release）・手ごたえの音（bashi roar hyu koton）。volume は playTraining と同じ
 export function playBout(kind, volume = 1) {
   play(BOUT, kind, volume);
 }

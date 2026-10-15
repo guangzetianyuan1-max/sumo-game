@@ -1,14 +1,20 @@
 // src/scenes/LadderScene.js — 勝ち抜き番付（10/12 夜）：主人公の絵と名・地位・倒した数の目盛り・次の昇進・心技体・次の相手 → 相手の情報
 // 負けた後の稽古の途中なら稽古へ（つづきからと同じ）。下に「稽古する」：いつでも何度でも自分から稽古に入れる（10/13 本人「好きなときに稽古が出来るように」）
-import { t, heroName, foeLabel } from '../i18n/i18n.js?v=40';
-import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=40';
-import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=40';
-import { currentFoe, canLeaveTraining } from '../core/run.js?v=40';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=40';
+import { t, heroName, foeLabel } from '../i18n/i18n.js?v=41';
+import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=41';
+import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=41';
+import { currentFoe, canLeaveTraining } from '../core/run.js?v=41';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=41';
+import { menuBgKey } from '../core/bgkey.js?v=41';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=41';
 
 const BAR = { x: 60, y: 520, w: 600, h: 34 };
 const HELP_Y = 1062; // 「遊び方」（次の相手の行 960 と、大きなボタン 1135〜 の間）
 const TRAIN_COLOR = 0x4f8a68; // 「稽古する」のボタン（緑・次の相手へ の朱と並べて見分ける）
+const PANEL = { x: 24, w: 672 }; // 字の後ろの墨の板（画面のふちの枠 14 の内側）
+const BAND = 104; // 見出しの帯の下の端（主人公の札の上 145 より上）
+// 背景＝その時の場所（今の相手の場所・クリアした後は土俵）
+const bgKey = (r) => menuBgKey('ladder', { foeIndex: r && !r.cleared ? currentFoe(r).index : null, cleared: !!(r && r.cleared) });
 
 export class LadderScene extends Phaser.Scene {
   constructor() {
@@ -18,6 +24,7 @@ export class LadderScene extends Phaser.Scene {
   preload() {
     preloadTypeArt(this);
     preloadHeroFigures(this);
+    if (session.run) preloadBackdrop(this, bgKey(session.run));
   }
 
   create() {
@@ -26,12 +33,13 @@ export class LadderScene extends Phaser.Scene {
     // 負けた後の稽古は終えるまで抜けない。自分から入った稽古（voluntary）の途中は番付に居てよい（稽古するで続き・次の相手へで捨てる）
     if (r.training && !canLeaveTraining(r)) { this.scene.start('training'); return; }
     const { width } = this.scale;
+    drawBackdrop(this, bgKey(r), { band: BAND });
     backButton(this, () => this.scene.start('guide'));
     saveButton(this);
     topTitle(this, 52, t('ladder.title'), 52, COLORS.gold, { save: true });
 
     // 主人公の札：左に絵・右に名と地位
-    roundBox(this, width / 2, 270, 640, 250, COLORS.panel, { radius: 32, stroke: COLORS.frame });
+    inkPanel(this, 40, 145, 640, 250, { radius: 32 }); // 墨の板（後ろの場所の絵が少し透ける・字の明るさの比は板が受け持つ）
     const key = heroKey(this, r.type);
     if (this.textures.exists(key)) {
       const img = this.add.image(170, 270, key);
@@ -50,6 +58,8 @@ export class LadderScene extends Phaser.Scene {
     if (nextLine) fitText(this.add.text(width / 2, 578, nextLine, textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
 
     statBars(this, 40, 640, 640, r.stats);
+    inkPanel(this, PANEL.x, 436, PANEL.w, 354); // 倒した数・目盛り・次の昇進・心技体（436〜790）
+    inkPanel(this, PANEL.x, 922, PANEL.w, 76); // 次の相手（またはクリア）の行
 
     // 左下に小さく「遊び方」（説明を飛ばした人も、いつでも同じ3枚に入れる）
     button(this, 150, HELP_Y, 240, 72, t('ladder.help'), () => this.scene.start('help'), { size: 28, color: COLORS.buttonSub });

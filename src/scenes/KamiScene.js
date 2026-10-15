@@ -11,27 +11,35 @@
 //   踏ん張りが解けたら「ふっ」と金の札「今だ！押せ！」。敵の必殺技が決まった時（届いた時だけ）は、その技の名前のカットイン
 // 終わったら 0.8秒そのまま見せ、勝ち負け（喜び・悔しいのカットイン）を出して recordNow を1回だけ・1.8秒後に取組の後（after）へ
 // 演出（20体版 Task 5）：カットイン（気合・決め・喜び・悔しい・敵の必殺技）は上に重ねるだけ・たたくと閉じる・新しい〇や予告が出たらすぐ閉じる／決め技の〇が出た時は段の音（金の帯は〇に替えた）
-import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge } from '../core/kami.js?v=40';
-import { isTactic, FOE_KIME_ID } from '../core/tactics.js?v=40';
-import { leftLook, rightLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey } from '../core/kamibutton.js?v=40';
-import { cutinArt } from '../core/cutin.js?v=40';
-import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=40';
-import { chosenKimete } from '../core/kimetepick.js?v=40';
-import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=40';
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=40';
-import { currentFoe } from '../core/run.js?v=40';
-import { makeRng } from '../core/rng.js?v=40';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=40';
-import { t, foeLabel, kimariteLabel } from '../i18n/i18n.js?v=40';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=40';
-import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=40';
-import { playBout } from '../ui/sfx.js?v=40';
-import { isMuted } from '../ui/music.js?v=40';
-import { GYOJI, tachiaiVoiceAt, nokottaDue, hushVoices } from '../core/gyoji.js?v=40';
-import { createBigButton } from '../ui/bigbutton.js?v=40';
-import { drawCutinBand } from '../ui/cutinband.js?v=40';
-import { HUD, ringShape, barShape, drawRing, drawBar, hudTouch } from '../ui/hud.js?v=40';
-import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=40';
+// 手ごたえ（10/15 本人「勝っても気持ちよくない」・設計書 §12）：◎○の一押し・敵の必殺技が決まった瞬間＝ヒットストップ・白い光・揺れ・「バシッ」（強さは src/core/feel.js の feelFor）／
+//   箱の端を越えたらスロー（勝ち＝0.3倍で約1秒・少し寄る／負け＝短く暗く）・型紙はひらひら舞って「ことん」と着地・紙の土ぼこり／座布団とどよめき（cheerLevel）／連打で箱ごと沈んで戻る。
+//   止める・遅くするのは画面の時計（clockTick）だけ：実の秒を倍率に通した秒を、機械のたたき手と step の両方に渡す＝両方の型紙・〇・バー・攻めが一緒に止まる・遅くなる（勝ち負けの計算は同じ）。
+//   ヒットストップの間の左の連打は1回だけ預かり、時間が動き出した時に渡す（止まった時刻に何度も跳ねない）。スローの間にたたくと残りは元の速さ。足す遅れは1番で2秒まで（FEEL.budget）
+import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge } from '../core/kami.js?v=41';
+import { isTactic, FOE_KIME_ID } from '../core/tactics.js?v=41';
+import { leftLook, rightLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey } from '../core/kamibutton.js?v=41';
+import { cutinArt } from '../core/cutin.js?v=41';
+import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=41';
+import { chosenKimete } from '../core/kimetepick.js?v=41';
+import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=41';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=41';
+import { currentFoe } from '../core/run.js?v=41';
+import { makeRng } from '../core/rng.js?v=41';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=41';
+import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=41';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=41';
+import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=41';
+import { playBout } from '../ui/sfx.js?v=41';
+import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=41';
+import { GYOJI, tachiaiVoiceAt, nokottaDue, hushVoices } from '../core/gyoji.js?v=41';
+import { ringEvent } from '../core/voice.js?v=41';
+import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=41';
+import { createBigButton } from '../ui/bigbutton.js?v=41';
+import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing } from '../core/feel.js?v=41';
+import { createFx } from '../ui/fx.js?v=41';
+import { drawCutinBand } from '../ui/cutinband.js?v=41';
+import { HUD, ringShape, barShape, drawRing, drawBar, hudTouch } from '../ui/hud.js?v=41';
+import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=41';
 
 const FIG_H = 330; // 型紙の高さ（敵は段階の倍率を掛ける）
 const VIS = FIG_H / 230; // 見た目の大きさの倍率（計算の座標は変えない・縦方向の跳ね・落ちは同じ比で描く）
@@ -63,6 +71,7 @@ const OPEN_GUARD_MS = 300; // 画面が出てからボタンを受け付けな�
 const DOUBLE_MS = 60; // 同じ指の二度押しは数えない
 const SHOW_FALL = 0.8; // 落ちていく型紙をそのまま見せる長さ（秒）
 const TO_AFTER_MS = 1800; // 勝ち負けを出してから取組の後へ（カットインの帯 1秒＋勝ち負けの字を見る間）
+const ZABUTON_EXTRA_MS = 800; // 座布団が舞う勝ちは、座布団が降りきるまでその分だけ長く見せる
 const GYOJI_VOLUME = 0.9; // 行司の声：音楽の上で聞こえる大きさ（稽古の声と同じ・書き出し側でピーク −1 dBFS 以下にそろえてある）
 const GYOJI_FILES = { hakkeyoi: 'assets/voice/gyoji/hakkeyoi.mp3', nokotta: 'assets/voice/gyoji/nokotta.mp3' };
 const HERO_FILE = `hero_${HERO_TYPE}`;
@@ -81,6 +90,10 @@ const CUT = { y: 330, h: 220, ms: 1000, faceX: 125, faceH: 260, textX: 460, text
 const CUT_USED = ['kiai', 'kime', 'yorokobi', 'kuyashii']; // 取組で出す表情
 const DARK_TXT = '#3b2810';
 const LAND_GAP = 0.12; // 同じ型紙の着地の音は、この秒より詰めて鳴らさない
+const FLOOR_Y = -BOX_H / VIS; // 箱から落ちた型紙が着地する台（画面の y＝箱の下の端 GROUND+BOX_H・計算の高さに直した値）
+const FLUTTER = { term: 260, sway: 40, wobble: 1.2, freq: 9 }; // 落ちる型紙のひらひら：落ちる速さの上限（紙の空気の抵抗）・横の揺れ（px/秒）・傾きの揺れ・揺れの速さ
+const SINK = { down: 0.035, tau: 0.06, period: 0.2 }; // 連打の沈み：沈むまでの秒・戻りの減り方・ばねの周期
+const KIME_BASHI = 0.45; // 決め技の「シャキーン」と同じ瞬間の「バシッ」の大きさの上限（重ねても山 0.35 以下）
 const newPrev = () => ({ y: 0, down: false, fell: false, tap: -Infinity, landAt: -Infinity });
 
 export class KamiScene extends Phaser.Scene {
@@ -95,6 +108,7 @@ export class KamiScene extends Phaser.Scene {
     preloadArena(this, foe ? foe.index : undefined); // 本番の背景は5体ごと（無ければ土俵の背景）
     const load = (a) => { if (!this.textures.exists(a.key)) this.load.image(a.key, a.path); };
     Object.entries(GYOJI_FILES).forEach(([k, path]) => { if (!this.cache.audio.exists(`gyoji-${k}`)) this.load.audio(`gyoji-${k}`, path); }); // 行司の声（読めなくても遊びは続く）
+    preloadVoices(this, boutVoiceIds(getLang())); // 主人公・ことねの声（勝ち・負け・決め技・立ち合い・こらえ）：今の言葉の物だけ
     load(kamiArt(HERO_FILE));
     CUT_USED.forEach((c) => load(cutinArt(c)));
     if (foe) {
@@ -118,7 +132,7 @@ export class KamiScene extends Phaser.Scene {
     this.st = newBout({ east, west, seed });
     this.cpu = driver(cpuParams(foe.index), makeRng(seed ^ 0x9e3779b9), undefined, ringRngFor(seed, 'west'), barRngFor(seed, 'west'));
     this.lastDown = { left: -Infinity, right: -Infinity }; // 前に指がそれぞれのボタンに触れた時（ms）
-    this.prev = { east: newPrev(), west: newPrev(), gap: Infinity, finisherAt: -Infinity, tac: null, slapAt: -Infinity, lastBar: null, lastFoeKime: null, ring: null };
+    this.prev = { east: newPrev(), west: newPrev(), gap: Infinity, finisherAt: -Infinity, tac: null, slapAt: -Infinity, lastBar: null, lastFoeKime: null, ring: null, feelRing: null, feelFoe: null };
     this.lastThud = -Infinity;
     this.contacted = false; // 立ち合いのぶつかりを鳴らしたか（2度目からは「ばしっ」）
     this.doneT = -1; // 終わってからの秒（終わる前は −1）
@@ -131,7 +145,20 @@ export class KamiScene extends Phaser.Scene {
 
     const { width } = this.scale;
     this.cx = width / 2;
-    drawArena(this, foe.index);
+    this.box = drawArena(this, foe.index); // 箱（連打で沈める）
+    this.boxLabelY = this.box.label.y;
+    // 手ごたえ（src/core/feel.js・src/ui/fx.js）：画面の時計・光と揺れと粒・連打の沈み
+    this.clock = newClock();
+    this.fx = createFx(this);
+    this.sink = null; // 連打の沈み { t0, amp, jit, ms }
+    this.heldMash = false; // ヒットストップの間に預かった左の一押し
+    this.slowSide = null; // スローを始めた側（1番に1回）
+    this.slowOn = false;
+    this.slowDark = false;
+    const cam = this.cameras.main;
+    cam.resetFX();
+    cam.setZoom(1).setScroll(0, 0);
+    this.events.once('shutdown', () => { this.fx.destroy(); cam.resetFX(); cam.setZoom(1).setScroll(0, 0); });
 
     // 上：見出しと相手の名前
     // ことねの吹き出し（いちばん上）が出ている間は隠す（吹き出しの下から字がはみ出さない）
@@ -184,9 +211,11 @@ export class KamiScene extends Phaser.Scene {
     });
     this.events.once('shutdown', () => { this.lbtn.destroy(); this.rbtn.destroy(); });
     this.pushAt = null; // 押し合いに入った時（計算の秒）
+    this.bgm = { cued: false, ended: false }; // 取組の曲（nokotta）：押し合いの始まりで頭へ戻したか・終わりの節を出したか
     // 行司の声：立ち合い＝合図の少し前から「はっけよーい、のこった！」・押し合い＝約3.5秒ごとに「のこった、のこった！」（src/core/gyoji.js が間合いを決める）
-    this.gyoji = { startAt: tachiaiVoiceAt(this.st.signalAt), started: false, lastAt: -Infinity, landAt: -Infinity, sounds: [] };
+    this.gyoji = { startAt: tachiaiVoiceAt(this.st.signalAt), started: false, lastAt: -Infinity, landAt: -Infinity, sounds: [], until: null };
     this.events.once('shutdown', () => this.stopGyoji());
+    hushGameVoices(this); // 前の取組・取組の後の声が残っていても、新しい取組は黙った所から始める（行司の声を捨てない）
     // 相手の攻めの予告の赤い札（予告の間だけ・敵の頭の上）
     this.warnBox = this.add.rectangle(0, WARN_Y, 240, 60, 0xb3261e, 0.95).setStrokeStyle(4, 0xffe3d6, 1).setDepth(WARN_DEPTH).setVisible(false);
     this.warnText = this.add.text(0, WARN_Y, '', textStyle(36, '#ffffff', { stroke: '#4a0d08', strokeThickness: 5 })).setOrigin(0.5).setDepth(WARN_DEPTH + 0.1).setVisible(false);
@@ -215,6 +244,7 @@ export class KamiScene extends Phaser.Scene {
     // ただカットインの帯が出ている間は、その外をたたいても帯が閉じる
     this.input.on('pointerdown', (p) => {
       if (this.cutin && !this.lbtn.contains(p) && !this.rbtn.contains(p)) this.closeCutin();
+      if (clockSlowing(this.clock)) clockSkip(this.clock); // スローの途中でたたいた＝残りは元の速さ（どこをたたいても）
     });
     // 画面が裏へ回ったら長押しを離す（戻った時に勝手に起き上がらない・バーをため続けない）
     const onHidden = () => { this.release(); this.lbtn.releaseAll(); this.rbtn.releaseAll(); };
@@ -242,12 +272,24 @@ export class KamiScene extends Phaser.Scene {
   }
 
   // 左のボタン（連打）：押し合いのたたき（kami.js の mash）にしたら true。〇・バー・倒れ・立ち合いの間は効かない＝沈まず小さく横に揺れる（false）
+  // ヒットストップの間（計算の時刻が止まっている）の連打は1回だけ預かり、時間が動き出した時に渡す（止まった時刻に何度も跳ねて勢いを溜めない）
   mash() {
     const st = this.st;
     if (!st || st.phase === 'done' || !this.fresh('left')) return false;
-    if (mash(st, 'east')) return true;
+    if (clockStopped(this.clock) && st.phase === 'push' && leftLook(st).mode === 'tap') {
+      this.heldMash = true;
+      this.boxBump(beatOffset(st) < ON_BEAT);
+      return true;
+    }
+    if (mash(st, 'east')) { this.boxBump(beatOffset(st) < ON_BEAT); return true; }
     this.lbtn.shake();
     return false;
+  }
+
+  // 連打のたびに箱が「トン」と沈んで戻り、両方の型紙が小刻みに震える（拍に合うと少し強く）
+  boxBump(onBeat) {
+    const m = mashFeel(onBeat);
+    this.sink = { t0: this.time.now, amp: m.sink, jit: m.jitter, ms: m.ms };
   }
 
   // 右のボタン（一押しと長押し）：kami.js の strike＝〇（立ち合い・決め技）が出ていればその判定（跳ねない）・倒れていれば長押しで起き上がり・
@@ -284,22 +326,82 @@ export class KamiScene extends Phaser.Scene {
     if (this.st) hold(this.st, 'east', false);
   }
 
+  // 画面の時計（clockTick）が実の秒を、ヒットストップの間は 0・スローの間は 0.3倍にする。その秒を機械のたたき手と step の両方へ渡す（判定の時刻 st.t も同じだけ進む）
   update(time, delta) {
     const st = this.st;
     if (!st) return;
-    const dt = Math.min(delta / 1000, KAMI.MAX_DT);
+    this.feelEvents(); // 指で出た〇の判定（前のコマの後の押し）＝このコマから止める
+    const dt = clockTick(this.clock, Math.min(delta / 1000, KAMI.MAX_DT));
+    if (this.slowOn && !clockSlowing(this.clock)) this.endSlow();
     if (st.phase !== 'done') {
-      this.cpu.tick(st, 'west', dt);
-      step(st, dt);
+      if (dt > 0) {
+        if (this.heldMash) { this.heldMash = false; mash(st, 'east'); } // 預かった一押し（止まった時刻のまま渡す）
+        this.cpu.tick(st, 'west', dt);
+        step(st, dt);
+      }
       // 起き上がった後も指を離さなければ押したまま（立って押したままの指は何もしない＝バーをためるのは新しい押しだけ）
       this.sounds();
       this.tacticSounds();
       this.gyojiVoice();
+      this.feelEvents();
+      this.musicTick();
     } else {
       this.stopGyoji();
+      if (!this.bgm.ended) { this.bgm.ended = true; musicEnd(st.winner === 'east'); } // 次の拍の頭で、勝ち＝短い勝ちの節／負け＝静かに閉じる
       this.afterDone(dt);
     }
+    this.fx.update(dt);
     this.draw();
+  }
+
+  // 手ごたえの合図（計算は演出を知らない＝前のコマとの差で見つける）：主人公の〇の判定（st.lastRing）・敵の必殺技（st.lastFoeKime）・箱の端を越えた（pastEdge）
+  feelEvents() {
+    const st = this.st, pv = this.prev;
+    if (st.lastRing !== pv.feelRing) {
+      pv.feelRing = st.lastRing;
+      const r = st.lastRing;
+      if (r && r.side === 'east') this.applyFeel(feelFor({ type: 'ring', judge: r.judge, reach: r.reach }), r.kind === 'kime');
+      const ev = ringEvent(r); // ◎の決め技＝「えいっ！」・立ち合いの◎＝「うおおおっ！」
+      if (ev) sayVoice(this, ev);
+    }
+    if (st.lastFoeKime !== pv.feelFoe) {
+      pv.feelFoe = st.lastFoeKime;
+      const k = st.lastFoeKime;
+      if (k) this.applyFeel(feelFor({ type: 'foeKime', landed: k.landed }), true);
+    }
+    if (!this.slowSide) {
+      const e = pastEdge(st.f.east), w = pastEdge(st.f.west);
+      if (e || w) this.startSlow(e && w ? (st.f.east.y <= st.f.west.y ? 'east' : 'west') : e ? 'east' : 'west');
+    }
+  }
+
+  // 止まる・光る・揺れる・「バシッ」（決め技の「シャキーン」と同じ瞬間は小さめに重ねる）
+  applyFeel(f, withKime) {
+    if (!f) return;
+    clockHit(this.clock, f.stop);
+    this.fx.flash(f.flash);
+    if (f.shake) this.fx.shake(f.shake.px, f.shake.s);
+    if (f.sound) playBout(f.sound, withKime ? Math.min(f.vol, KIME_BASHI) : f.vol);
+  }
+
+  // 箱の端を越えた側（side）が落ちていく所をスローで見せ、少し寄る。主人公が落ちる（負け）時は短く暗く
+  startSlow(side) {
+    this.slowSide = side;
+    const s = slowFor(side === 'east');
+    clockSlow(this.clock, s.secs, s.scale);
+    if (!clockSlowing(this.clock)) return; // 足す遅れを使い切った
+    this.slowOn = true;
+    const cam = this.cameras.main;
+    cam.zoomTo(s.zoom, 220, 'Sine.easeOut', true);
+    this.slowDark = s.dark;
+    if (s.dark) this.fx.dim(0.28, 200);
+  }
+
+  endSlow() {
+    this.slowOn = false;
+    const cam = this.cameras.main;
+    cam.zoomTo(1, 200, 'Sine.easeOut', true);
+    if (this.slowDark) this.fx.dim(0, 300);
   }
 
   // 取組の音（20体版 Task 6b）：跳ねる＝トン（拍ぴったり＝カン）・着地＝ぱた・ぶつかり＝ドン（立ち合い）／ばしっ・倒れる＝ぱたん・
@@ -319,7 +421,7 @@ export class KamiScene extends Phaser.Scene {
       const toppled = f.down && !pv.down && !f.fell;
       if (toppled) playBout('topple', vol);
       if (!f.down && pv.down && !f.fell) playBout('rise', vol);
-      if (f.fell && !pv.fell) playBout('drop', vol);
+      if (f.fell && !pv.fell) playBout('hyu', vol); // 「ことん」は舞って台に着地した時（afterDone）
       if (pv.y > 0 && f.y === 0 && !f.fell && !toppled && st.t - pv.landAt >= LAND_GAP) { playBout('land', vol); pv.landAt = st.t; }
       pv.y = f.y;
       pv.down = f.down;
@@ -348,6 +450,17 @@ export class KamiScene extends Phaser.Scene {
     this.prevTier = tier;
   }
 
+  // 取組の曲（src/ui/music.js の nokotta）を取組の時刻 st.t の拍（KAMI.BEAT の整数倍＝beatOffset の 0）に合わせる。毎コマ呼ぶ・消音や音が無い時は music 側が何もしない
+  // 押し合いに入った最初のコマ（合図の「のこった」の後・2人とも立ち合った時）＝次の拍の頭から曲を1小節目へ。追い込み（端の近く・30秒過ぎ）は刻みの層を重ねる（musicLevel）
+  // 止め・スローの間は合わせない（曲は元の速さで流れ、時間が動き出したコマで半拍以内の近い方へ合わせ直す）
+  musicTick() {
+    const st = this.st;
+    if (clockStopped(this.clock) || clockSlowing(this.clock)) return;
+    const cue = st.phase === 'push' && !this.bgm.cued;
+    if (cue) this.bgm.cued = true;
+    musicBeat(st.t, { level: musicLevel(st), cue });
+  }
+
   // 行司の声：鳴らせない所（音が出ない端末・♪を消した時・声が読めていない時）は何もしない。重ならない（間合いが声より長い）・終わったら止める
   gyojiVoice() {
     const st = this.st;
@@ -358,7 +471,7 @@ export class KamiScene extends Phaser.Scene {
       if (this.playGyoji('hakkeyoi')) { g.lastAt = st.t; g.landAt = st.t + GYOJI.lead; }
       return;
     }
-    if (g.started && nokottaDue(st, g.lastAt, g.landAt)) { // 重ならない：次まで gap(3.5秒) ＞ 声の長さ（2.9秒・1.95秒）なので、鳴り終わったかを見なくてよい
+    if (g.started && !this.slowSide && nokottaDue(st, g.lastAt, g.landAt)) { // 箱の端を越えた後（スロー）は新しい「のこった」を始めない・重ならない：次まで gap(3.5秒) ＞ 声の長さ（2.9秒・1.95秒）なので、鳴り終わったかを見なくてよい
       if (this.playGyoji('nokotta')) g.lastAt = st.t;
     }
   }
@@ -368,6 +481,9 @@ export class KamiScene extends Phaser.Scene {
       if (isMuted()) return false;
       const key = `gyoji-${kind}`;
       if (!this.cache.audio.exists(key)) return false;
+      const until = claimVoiceSlot(this, kind === 'hakkeyoi' ? GYOJI.tachiaiLen : GYOJI.nokottaLen);
+      if (!until) return false;
+      this.gyoji.until = until; // 声は一度に1つ：ほかの声が鳴っている間は鳴らさない（次の「のこった」はまた来る）
       const s = this.sound.add(key, { volume: GYOJI_VOLUME });
       s.play();
       this.gyoji.sounds.push(s);
@@ -383,6 +499,7 @@ export class KamiScene extends Phaser.Scene {
     if (!g) return;
     g.started = true; // 終わった後に立ち合いの声を始めない
     g.sounds = hushVoices(g.sounds);
+    if (g.until != null) { releaseVoiceSlot(this, g.until); g.until = null; } // 止めた声の枠は空ける（勝ちの声を待たせない）
   }
 
   // 相手の攻めの音（st.tactic は計算が中身を書き換える＝id・phase・from を前のコマと比べる）：予告に入った＝「ピッ」／
@@ -402,7 +519,7 @@ export class KamiScene extends Phaser.Scene {
     if (st.lastBar !== this.prev.lastBar) { // 守りのバーの結果
       this.prev.lastBar = st.lastBar;
       const key = barSayKey(st); // こらえ成功・早い（帯の下で離した）・押すのが遅い（押したまま予告が終わった）・長すぎ（帯の上・満タン）
-      if (key === 'kami.bar.ok') { playBout('brace'); this.sayBar(key, COLORS.gold); }
+      if (key === 'kami.bar.ok') { playBout('brace'); this.sayBar(key, COLORS.gold); sayVoice(this, 'brace'); } // ことね「ナイスこらえ！」
       else if (key) this.sayBar(key, COLORS.sub);
     }
     const ring = st.f.east.ring;
@@ -441,18 +558,34 @@ export class KamiScene extends Phaser.Scene {
       this.fall = {};
       SIDES.forEach((side) => {
         const f = st.f[side];
-        if (f.fell) this.fall[side] = { x: f.x, y: f.y, vx: f.vx, vy: f.vy, a: f.a, va: (f.a >= 0 ? 1 : -1) * 2.5 };
+        if (f.fell) this.fall[side] = { x: f.x, y: f.y, vx: f.vx, vy: f.vy, a: f.a, va: (f.a >= 0 ? 1 : -1) * 2.5, ph: 0, landed: false };
         else this.fall[side] = { x: f.x, y: f.y, vx: 0, vy: Math.min(f.vy, 0), a: f.a, va: 0, settle: true }; // 勝った側は宙に浮いたままにせず、箱の面へ降りる（見た目だけ）
       });
     }
     this.doneT += dt;
     Object.keys(this.fall).forEach((side) => {
       const v = this.fall[side];
-      v.vy -= KAMI.G * dt;
-      v.x += v.vx * dt;
+      if (v.settle) {
+        v.vy -= KAMI.G * dt;
+        v.x += v.vx * dt;
+        v.y += v.vy * dt;
+        if (v.y <= 0) { v.y = 0; v.vy = 0; }
+        return;
+      }
+      if (v.landed) { v.a += ((v.a >= 0 ? 1 : -1) * Math.PI / 2 - v.a) * Math.min(1, dt * 10); return; } // 着地したら、ぱたりと寝る
+      // 紙の型紙：落ちる速さは紙の空気の抵抗で上限まで・横と傾きはひらひら揺れる・画面の端から出きらない（見た目だけ）
+      v.ph += dt * FLUTTER.freq;
+      v.vy += (-FLUTTER.term - v.vy) * Math.min(1, dt * 8);
+      v.vx *= Math.pow(0.4, dt);
+      v.x = Math.max(KAMI.BOX.l - 10, Math.min(KAMI.BOX.r + 10, v.x + v.vx * dt + Math.sin(v.ph) * FLUTTER.sway * dt));
       v.y += v.vy * dt;
-      v.a += v.va * dt;
-      if (v.settle && v.y <= 0) { v.y = 0; v.vy = 0; }
+      v.a += v.va * dt + Math.cos(v.ph) * FLUTTER.wobble * dt;
+      if (v.y <= FLOOR_Y) { // 「ことん」と台に着地・紙の土ぼこり（負けた時は暗め）
+        v.y = FLOOR_Y; v.vx = 0; v.vy = 0; v.va = 0; v.landed = true;
+        playBout('koton', side === 'east' ? 1 : 0.8);
+        const x = Math.max(30, Math.min(this.scale.width - 30, this.drawX[side]));
+        this.fx.dust(x, GROUND + BOX_H, { n: side === 'east' ? 10 : 14, dark: side === 'east' });
+      }
     });
     if (this.doneT >= SHOW_FALL && !this.recorded) {
       this.recorded = true;
@@ -464,10 +597,14 @@ export class KamiScene extends Phaser.Scene {
       this.banner.setText(word).setColor(won ? COLORS.gold : COLORS.ink).setVisible(false);
       fitText(this.kimarite.setText(how), this.scale.width - 60).setVisible(false);
       // 勝ち＝喜び・負け＝悔しいのカットイン。帯が閉じたら、いつもの勝ち負けの字を出す
-      playBout(won ? 'win' : 'lose');
+      const note = recordNow(won, kimarite);
+      // 必殺技で勝ち・10体目以降と大ボス・昇進の一番＝座布団が舞い、大きなどよめき（ふつうの勝ちは今までの歓声）
+      const cheer = cheerLevel({ won, how: st.how, foeIndex: this.foe.index, promoted: note ? note.promoted : null });
+      playBout(cheer === 'zabuton' ? 'roar' : won ? 'win' : 'lose');
+      if (cheer === 'zabuton') this.fx.zabuton();
+      sayVoice(this, won ? 'win' : 'loss', { big: cheer === 'zabuton' }, { preempt: true }); // 勝ち＝「ごっつあんです！」（大きな勝ちは続けてことね「やったー！」）・負け＝「もう一丁！」
       this.showCutin(won ? 'yorokobi' : 'kuyashii', word, how, () => { this.banner.setVisible(true); this.kimarite.setVisible(true); });
-      recordNow(won, kimarite);
-      this.time.delayedCall(TO_AFTER_MS, () => {
+      this.time.delayedCall(TO_AFTER_MS + (cheer === 'zabuton' ? ZABUTON_EXTRA_MS : 0), () => {
         if (this.leaving) return;
         this.leaving = true;
         this.scene.start('after');
@@ -620,6 +757,21 @@ export class KamiScene extends Phaser.Scene {
   draw() {
     const st = this.st;
     const nowMs = this.time.now;
+    // 連打の沈み：箱ごと「トン」と沈んでばねで戻る（少し上へ行き過ぎる）・型紙は小刻みに震える
+    let sinkY = 0, jit = 0;
+    const sn = this.sink;
+    if (sn) {
+      const tt = (nowMs - sn.t0) / 1000;
+      if (tt * 1000 >= sn.ms) this.sink = null;
+      else if (tt < SINK.down) { sinkY = sn.amp * tt / SINK.down; jit = sn.jit; } // 「トン」と沈む
+      else { // ばねで戻る（少し上へ行き過ぎる）
+        const u = tt - SINK.down, env = Math.exp(-u / SINK.tau);
+        sinkY = sn.amp * env * Math.cos(u * 2 * Math.PI / SINK.period);
+        jit = sn.jit * env;
+      }
+    }
+    this.box.g.setY(sinkY);
+    this.box.label.setY(this.boxLabelY + sinkY);
     const dtD = Math.max(0, (nowMs - this.lastDraw) / 1000);
     this.lastDraw = nowMs;
     const k = Math.min(1, dtD / SHIFT_EASE); // 0.1秒で目標へ
@@ -640,19 +792,27 @@ export class KamiScene extends Phaser.Scene {
         const xs = [-hw, hw].flatMap((x) => [0, -hh].map((y) => x * Math.cos(th) - y * Math.sin(th)));
         const dx = f.dir > 0 ? Math.max(v.x + base, 10 - Math.min(...xs)) : Math.min(v.x + base, this.scale.width - 10 - Math.max(...xs));
         target = dx - v.x;
+      } else if (img && f.fell) {
+        // 落ちていく型紙（スローで舞う所・10/15 手ごたえ）：箱の端は画面の端に近いので、絵の四隅が画面の端（10px内側）から出ない所まで見た目だけ内側へ
+        const th = -f.dir * v.a;
+        const hw = img.displayWidth / 2, hh = img.displayHeight;
+        const xs = [-hw, hw].flatMap((x) => [0, -hh].map((y) => x * Math.cos(th) - y * Math.sin(th)));
+        const lo = 10 - Math.min(...xs), hi = this.scale.width - 10 - Math.max(...xs);
+        target = Math.max(lo, Math.min(hi, v.x + this.off[side])) - v.x;
       } else if (f.fell) target = this.off[side]; // 落ちていく間はずらしを動かさない
       this.off[side] += (target - this.off[side]) * k; // なめらかに（倒れた時・起きた時に飛ばない）
       const dx = v.x + this.off[side];
       this.drawX[side] = dx;
+      const onBoxNow = !f.fell; // 箱の上の型紙だけ、箱と一緒に沈む・震える
       if (img) {
-        img.setPosition(dx, GROUND - lift);
+        img.setPosition(dx + (onBoxNow && jit ? (Math.random() * 2 - 1) * jit : 0), GROUND - lift + (onBoxNow ? sinkY : 0));
         img.setRotation(-f.dir * v.a); // 反る向き（＋）が自分の後ろになるように
       }
       // 影：箱の上にいる間だけ・高く跳ねるほど小さく薄く（型紙と同じだけずらす）
       const sh = this.shadows[side];
       const onBox = v.x >= KAMI.BOX.l && v.x <= KAMI.BOX.r && v.y > KAMI.FALL_Y;
       const sk = Math.max(0.4, 1 - Math.max(0, lift) / (200 * VIS));
-      sh.setPosition(dx, GROUND + 2).setScale(sk, 1).setAlpha(onBox ? 0.3 * sk + 0.05 : 0);
+      sh.setPosition(dx, GROUND + 2 + sinkY).setScale(sk, 1).setAlpha(onBox ? 0.3 * sk + 0.05 : 0);
     });
 
     // はっけよい：合図から、2人ともたたき終えて押し合いに入るまで。入ったら 0.3秒で消える

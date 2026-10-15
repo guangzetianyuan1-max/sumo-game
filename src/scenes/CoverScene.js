@@ -1,12 +1,12 @@
 // src/scenes/CoverScene.js — 表紙（10/14 本人「表紙を…冒頭に」）：土俵の絵の上に題名・主人公と20体目の大ボスの型紙が向き合う・「画面をたたいて はじめる」
 // 新しい絵は無し（今ある土俵の背景と型紙だけ）。たたくと音を起こし（最初の手ざわり＝main.js の unlockOnGesture が音楽を起こす）、ぽんを鳴らして記録を選ぶ画面（guide）へ
-import { t } from '../i18n/i18n.js?v=40';
-import { kamiArt, foeArt, foeAura } from '../core/foeart.js?v=40';
-import { PLAY_COUNT } from '../core/ladder.js?v=40';
-import { HERO_TYPE } from '../data/heroes.js?v=40';
-import { preloadArena } from '../ui/arena.js?v=40';
-import { addAura, fitText, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=40';
-import { playBout } from '../ui/sfx.js?v=40';
+import { t } from '../i18n/i18n.js?v=41';
+import { kamiArt, foeArt, foeAura } from '../core/foeart.js?v=41';
+import { PLAY_COUNT } from '../core/ladder.js?v=41';
+import { HERO_TYPE } from '../data/heroes.js?v=41';
+import { preloadArena } from '../ui/arena.js?v=41';
+import { addAura, fitText, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=41';
+import { playBout } from '../ui/sfx.js?v=41';
 
 const BOSS = { index: PLAY_COUNT - 1, stage: 4 }; // 20体目の大ボス（foeArt・foeAura は index と段階だけで絵と光を決める）
 const GROUND_Y = 905; // 型紙の足もと（土俵の絵の楕円の下のあたり）

@@ -3,14 +3,16 @@
 // 3枚目＝相手の攻めは赤い札で予告され、左にバーが出る・右を長押しでためて緑の帯で離すと「こらえ成功！」
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=40';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=40';
-import { kamiArt } from '../core/foeart.js?v=40';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=40';
-import { t, getLang } from '../i18n/i18n.js?v=40';
-import { session, markHelpSeen } from '../state.js?v=40';
-import { ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=40';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=40';
+import { KAMI } from '../core/kami.js?v=41';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=41';
+import { kamiArt } from '../core/foeart.js?v=41';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=41';
+import { t, getLang } from '../i18n/i18n.js?v=41';
+import { session, markHelpSeen } from '../state.js?v=41';
+import { ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=41';
+import { menuBgKey } from '../core/bgkey.js?v=41';
+import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=41';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=41';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）
@@ -23,6 +25,8 @@ const ALERT = 0xff4a4a; // 守りのバーの間のボタンのふちの赤い�
 const WARN_RED = 0xb3261e; // 予告の札の赤（KamiScene と同じ）
 const COACH = { faceX: 84, faceY: 940, size: 130, left: 160, top: 770, w: 540, h: 340 }; // 吹き出しは見本の札（〜750）の下から足もとのボタン（1132〜）の上まで＝字 32 で収める
 const FOOT_Y = 1190;
+const BAND = 156; // 見出しと何枚目かの点の帯の下の端（見本の札の上 190 より上）
+const BG = menuBgKey('help'); // 背景＝土俵
 const HERO_KAMI = kamiArt(`hero_${HERO_TYPE}`);
 const FOE_KAMI = kamiArt('foe_robot_normal'); // 1体目の相手（ロボット）
 
@@ -33,6 +37,7 @@ export class HelpScene extends Phaser.Scene {
 
   preload() {
     preloadGuideArt(this);
+    preloadBackdrop(this, BG);
     [HERO_KAMI, FOE_KAMI].forEach((a) => { if (!this.textures.exists(a.key)) this.load.image(a.key, a.path); });
   }
 
@@ -50,6 +55,7 @@ export class HelpScene extends Phaser.Scene {
     this.tweens.killAll();
     clearScene(this);
     const { width } = this.scale;
+    drawBackdrop(this, BG, { band: BAND });
     topTitle(this, 60, t('help.title'), 52, COLORS.gold);
     // 何枚目か（点3つ・今の枚は金）
     for (let i = 0; i < PAGES; i++) {

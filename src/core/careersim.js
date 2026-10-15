@@ -2,11 +2,11 @@
 // 勝てば次の敵へ・負けたら稽古（3コマ）：解禁していて覚えていない決め技があれば、ふつうの出来（6割＝ゲージ満タン）の1コマで覚え、残りは一番低い心技体を伸ばす。
 // 取組ごとに、覚えた決め技の中から敵の型との相性（affinity）が一番良い物を持っていく（同じなら解禁の早い物）。
 // 最初は五月雨突きが解禁済みでも、まだ覚えていない＝最初の稽古までは決め技無しで取る
-import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=40';
-import { autoBout } from './kamiai.js?v=40';
-import { recommendKimete } from './kimetepick.js?v=40';
-import { PLAY_COUNT } from './ladder.js?v=40';
-import { drillMult, NORMAL_SCORE } from './drills.js?v=40';
+import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=41';
+import { autoBout } from './kamiai.js?v=41';
+import { recommendKimete } from './kimetepick.js?v=41';
+import { PLAY_COUNT } from './ladder.js?v=41';
+import { drillMult, NORMAL_SCORE } from './drills.js?v=41';
 
 export const MAX_BOUTS = 300;
 
