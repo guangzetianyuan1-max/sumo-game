@@ -3,8 +3,8 @@
 // 画面（KamiScene）は毎コマ clockTick で実の秒を「計算の秒」に直し、機械のたたき手と step の両方にその秒を渡す＝
 // 両方の型紙・〇・バー・相手の攻めが同じだけ止まる／遅くなる（〇とバーの判定は計算の時刻 st.t で決まる＝止まっている間に押しても、見えている〇・バーのとおりに判定される）。
 // 強さの計算（kami.js）は何も変えない。足す遅れは1番で FEEL.budget 秒まで（ヒットストップは stopBudget まで・スローの分は残す）
-import { KAMI } from './kami.js?v=44';
-import { PLAY_COUNT } from './ladder.js?v=44';
+import { KAMI } from './kami.js?v=45';
+import { PLAY_COUNT } from './ladder.js?v=45';
 
 export const FEEL = {
   // 〇の判定ごと（2＝◎・1＝○）：stop＝止まる秒・flash＝白い光の濃さ（0.5 以下・1回）・shake＝揺れ（px・秒＝0.2 以下）・vol＝「バシッ」の大きさ
@@ -62,7 +62,7 @@ export function newClock() {
   return { stop: 0, slow: 0, scale: 1, stopSpent: 0, spent: 0, held: false };
 }
 
-// カットインの間の止め（v42 第2段：必殺技の目の帯と漫画の絵）：on の間は計算の秒を 0 にする（ヒットストップ・スローの残りは減らさない）。
+// カットインの間の止め（v42 第2段：必殺技の目の帯・v45 漫画は外した）：on の間は計算の秒を 0 にする（ヒットストップ・スローの残りは減らさない）。
 // 足す遅れの上限（budget）には数えない＝呼ぶ側（KamiScene）が見せる長さを決め、閉じたら off にする（たたけば早送りで閉じる）
 export function clockHold(c, on) {
   c.held = !!on;

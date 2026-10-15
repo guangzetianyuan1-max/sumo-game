@@ -3,16 +3,19 @@
 // 3枚目＝相手の攻めは赤い札で予告され、左にバーが出る・右を長押しでためて緑の帯で離すと「こらえ成功！」
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=44';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=44';
-import { kamiArt } from '../core/foeart.js?v=44';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=44';
-import { t, getLang } from '../i18n/i18n.js?v=44';
-import { session, markHelpSeen } from '../state.js?v=44';
-import { ringShape, barShape, drawRing, drawBar, hitMarkFit } from '../ui/hud.js?v=44';
-import { menuBgKey } from '../core/bgkey.js?v=44';
-import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=44';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=44';
+import { KAMI } from '../core/kami.js?v=45';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=45';
+import { kamiArt } from '../core/foeart.js?v=45';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=45';
+import { t, getLang } from '../i18n/i18n.js?v=45';
+import { session, markHelpSeen } from '../state.js?v=45';
+import { ringShape, barShape, drawRing, drawBar, hitMarkFit } from '../ui/hud.js?v=45';
+import { menuBgKey } from '../core/bgkey.js?v=45';
+import { newChime, demoChime } from '../core/chime.js?v=45';
+import { playBout } from '../ui/sfx.js?v=45';
+import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=45';
+import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=45';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=45';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）
@@ -48,12 +51,14 @@ export class HelpScene extends Phaser.Scene {
   }
 
   redraw() {
+    guardOpen(this); // 押した瞬間から止める（描き直しの前の 1コマに来た2度目の押しが、まだ残っている古い「次へ」に落ちない・v45b）
     this.time.delayedCall(0, () => this.draw()); // 押しの最中に部品を消さない
   }
 
   draw() {
     this.tweens.killAll();
     clearScene(this);
+    guardOpen(this, this.page === PAGES - 1 ? OPEN_GUARD_LONG_MS : OPEN_GUARD_MS); // 描くたび（次へ）に付け直す（最後の枚＝「はじめる」が「次へ」と同じ所＝0.6秒・v45 点検 m2）：直後 0.3秒の押しは受けない＝「次へ」の2度たたきで1枚飛ばない・3枚目の「はじめる」が押されない（v45b・バグ出し2 L1）
     const { width } = this.scale;
     drawBackdrop(this, BG, { band: BAND });
     topTitle(this, 60, t('help.title'), 52, COLORS.gold);
@@ -167,16 +172,22 @@ export class HelpScene extends Phaser.Scene {
   }
 
   // 見本のバー（本番と同じ絵 drawBar を小さく）：予告の札と相手の赤い光の間に、下から緑の帯の真ん中までたまる →
-  // 札と赤い光が消えて（本番と同じ＝打ち消し）「こらえ成功！」 → くり返す
+  // 札と赤い光が消えて（本番と同じ＝打ち消し）「こらえ成功！」 → くり返す。緑の帯に入った所で本番と同じ「ここだ」の音（v45）は最初の2回だけ（v45b・開き直すとまた2回）
   miniBar(foe, warn) {
     const g = this.add.graphics();
     const box = MINI_BAR.box;
     const say = this.add.text(box.x + box.w / 2 + 30, box.top + 22, t('kami.bar.ok'), textStyle(36, COLORS.gold, { stroke: '#141a2e', strokeThickness: 6 })).setOrigin(0, 0.5).setVisible(false);
     fitText(say, PANEL.w - (say.x - (this.scale.width - PANEL.w) / 2) - 20);
     const p = { v: 0 };
+    const chime = newChime();
+    let lap = 0; // 何回目のため（ゲージが下へ戻った＝くり返した＝新しい押し）
+    let lastV = 0;
     const paint = () => {
+      if (p.v < lastV - 1e-6) lap += 1;
+      lastV = p.v;
       g.clear();
       drawBar(g, barShape(MINI_BAR.spec, p.v, box));
+      if (demoChime(chime, lap, p.v >= MINI_BAR.spec.center - MINI_BAR.spec.half - 1e-9)) playBout('koko');
       const ok = p.v >= MINI_BAR.spec.center - 1e-3;
       say.setVisible(ok);
       warn.forEach((o) => o.setVisible(!ok));

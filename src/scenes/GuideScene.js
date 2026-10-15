@@ -1,14 +1,15 @@
 // src/scenes/GuideScene.js — 最初の画面：題・言葉の切り替え・記録①〜③の札（10/11 本人「昔話と同じように最大3つの四股名ですすめられるように」）。
 // 中身のある札を押す＝その記録のつづきへ（その時の画面へ）。空きの札を押す＝その記録でそのまま入門（10/13〜主人公はバランス型・案内役は若女将に固定＝選ぶ画面なし → 遊び方の3枚 → 番付表）。
 // 中身のある札の「はじめから」は2度押し（1度目は知らせるだけ・指1本の二重発火は数えない）で、その記録を消して入門へ
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=44';
-import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=44';
-import { session, startRun, SLOT_COUNT, slotView, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=44';
-import { button, bindPress, fitText, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=44';
-import { secondPress } from '../ui/press.js?v=44';
-import { menuBgKey } from '../core/bgkey.js?v=44';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=44';
-import { playBout } from '../ui/sfx.js?v=44';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=45';
+import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=45';
+import { session, startRun, SLOT_COUNT, slotView, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=45';
+import { button, bindPress, fitText, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=45';
+import { secondPress } from '../ui/press.js?v=45';
+import { menuBgKey } from '../core/bgkey.js?v=45';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=45';
+import { playBout } from '../ui/sfx.js?v=45';
+import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=45';
 
 const CARD = { w: 640, h: 300, top: 210, gap: 40 }; // 札3枚：210〜1190（下に知らせの1行）
 const NEW = { w: 200, h: 64 }; // 札の右下の「はじめから」
@@ -29,6 +30,9 @@ export class GuideScene extends Phaser.Scene {
   }
 
   create() {
+    // 表紙の「画面をたたいて はじめる」（y 1085）の真下は記録③の札（890〜1190）。表紙を2度たたく（間 0.3秒より長い）と2度目が記録③に落ち、
+    // 空きなら新しい入門・中身があればその続きへ進んでいた（v45b・バグ出し2 の「空の記録③に新しい記録」）＝開いた直後の止めを長く（取組の後と同じ 0.6秒）
+    guardOpen(this, OPEN_GUARD_LONG_MS);
     this.armed = null; // 「はじめから」の1度目 { n, at }
     this.leaving = false; // 画面を移ると決めたら、ほかの札・ボタンの押しは数えない（2本の指で2つの画面が同時に始まらない）
     this.draw();

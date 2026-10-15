@@ -9,30 +9,31 @@
 // 決め技モード（10/14 本人「稽古の出来で決め技を習得できるようにしてください」・data.kimete＝決め技の id）：
 //   遊びはその決め技の drill（kimete.js）。心技体は伸びず、出来で習得ゲージ（drills.kimeteGain）がたまる（drillKimeteNow を1回だけ）。
 //   結果＝点数と出来 → ゲージが前→後へたまる → 満タンなら「習得！」・決めのカットイン（kime）・kan の音／満タンでなければ「習得 75%」
-import { t } from '../i18n/i18n.js?v=44';
-import { session, drillStatNow, drillKimeteNow } from '../state.js?v=44';
-import { canLeaveTraining, currentFoe } from '../core/run.js?v=44';
-import { kimeteById } from '../data/kimete.js?v=44';
-import { cutinArt } from '../core/cutin.js?v=44';
+import { t } from '../i18n/i18n.js?v=45';
+import { session, drillStatNow, drillKimeteNow } from '../state.js?v=45';
+import { canLeaveTraining, currentFoe } from '../core/run.js?v=45';
+import { kimeteById } from '../data/kimete.js?v=45';
+import { cutinArt } from '../core/cutin.js?v=45';
 import {
   DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood, kimeteGrade,
   IPPON, ipponHitMs, ipponJudge, ipponMissed, ipponScore,
   RENDA, COUNTDOWN, countdownAt, rendaScore, NAGAOSHI, nagaoshiHalf, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct, armStart,
-} from '../core/drills.js?v=44';
-import { kamiArt, heroArt } from '../core/foeart.js?v=44';
-import { HERO_TYPE } from '../data/heroes.js?v=44';
-import { createBigButton } from '../ui/bigbutton.js?v=44';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=44';
-import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, HOLD, BTN, holdBlocked, DRILL_MAIN, drillButtonColor } from '../ui/drillstage.js?v=44'; // 置き場所と長押しの見せ方の計算（Phaser を使わない）
-import { drawCutinBand } from '../ui/cutinband.js?v=44';
-import { edgeFade } from '../ui/backdrop.js?v=44';
-import { HUD, HUD_HIT, HIT_MARK, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=44'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
-import { playTraining, playBout, whine, whineStop } from '../ui/sfx.js?v=44';
-import { ringProgress } from '../core/whine.js?v=44';
-import { guardOpen, openGuarded } from '../ui/openguard.js?v=44';
+} from '../core/drills.js?v=45';
+import { kamiArt, heroArt } from '../core/foeart.js?v=45';
+import { HERO_TYPE } from '../data/heroes.js?v=45';
+import { createBigButton } from '../ui/bigbutton.js?v=45';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=45';
+import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, GOAL, HOLD, BTN, holdBlocked, DRILL_MAIN, drillButtonColor } from '../ui/drillstage.js?v=45'; // 置き場所と長押しの見せ方の計算（Phaser を使わない）
+import { drawCutinBand } from '../ui/cutinband.js?v=45';
+import { edgeFade } from '../ui/backdrop.js?v=45';
+import { HUD, HUD_HIT, HIT_MARK, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=45'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
+import { playTraining, playBout, whine, whineStop } from '../ui/sfx.js?v=45';
+import { ringProgress } from '../core/whine.js?v=45';
+import { newChime, greenChime, drillGreen, rendaGoal } from '../core/chime.js?v=45';
+import { guardOpen, openGuarded } from '../ui/openguard.js?v=45';
 import {
   button, fitText, wrapText, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadHeroFigures, clearScene, COLORS,
-} from '../ui/widgets.js?v=44';
+} from '../ui/widgets.js?v=45';
 
 const BG_KEY = 'keiko-bg';
 const HERO_FILE = `hero_${HERO_TYPE}`;
@@ -95,6 +96,7 @@ export class DrillScene extends Phaser.Scene {
     this.round = 0;
     this.points = [];
     this.count = 0;
+    this.chime = newChime(); // 長押し：緑の帯に入った「ここだ」の音を押しごとに1度だけ（v45）
     this.feedbackUntil = 0;
     this.lbtn = null;
     this.rbtn = null;
@@ -167,7 +169,9 @@ export class DrillScene extends Phaser.Scene {
     if (this.hitMark) fitText(this.hitMark, HIT_MARK.w);
     this.gauge = kind === 'nagaoshi' ? this.add.graphics().setDepth(HUD_DEPTH) : null;
 
-    this.counter = kind === 'renda' ? this.add.text(COUNT.x, COUNT.y, '0', textStyle(110, COLORS.gold, { stroke: '#141a2e', strokeThickness: 10 })).setOrigin(0.5).setDepth(6) : null; // 柱の右（主人公にも柱にも重ならない）
+    // 回数は白・目標（30回）に届いたら金に光る（v45b）。目標の字は回数の真上（3・2・1 の間から見える＝何回たたけばよいか先に分かる）
+    this.counter = kind === 'renda' ? this.add.text(COUNT.x, COUNT.y, '0', textStyle(110, COLORS.ink, { stroke: '#141a2e', strokeThickness: 10 })).setOrigin(0.5).setDepth(6) : null; // 柱の右（主人公にも柱にも重ならない）
+    this.goal = kind === 'renda' ? fitText(this.add.text(GOAL.x, GOAL.y, t('drill.renda.goal', { n: RENDA.full }), textStyle(GOAL.size, COLORS.ink, { stroke: '#141a2e', strokeThickness: 6, align: 'center' })).setOrigin(0.5).setShadow(...TXT_SHADOW).setDepth(6), GOAL.w) : null;
     // 連打の前の 3・2・1・GO
     this.cd = kind === 'renda' ? this.add.text(CD.x, CD.y, '', textStyle(CD.size, COLORS.gold, { stroke: '#141a2e', strokeThickness: 16 })).setOrigin(0.5).setDepth(11).setVisible(false) : null;
     this.cdN = null; // 今出している数（3・2・1・0＝GO）
@@ -273,11 +277,15 @@ export class DrillScene extends Phaser.Scene {
     }
     if (this.kind === 'renda') {
       if (this.phase !== 'run') return false; // 3・2・1・GO の間の押しは数えない（ボタンも沈まない）
+      const prev = this.count;
       this.count += 1;
+      const goal = rendaGoal(prev, this.count);
+      if (goal) playBout('tassei'); // 目標（30回＝満点）に届いたたたきで1度だけ（v45 本人「稽古連打、目標達成で効果音」）
       if (this.counter) {
         this.tweens.killTweensOf(this.counter);
-        this.counter.setText(String(this.count)).setScale(1.25);
-        this.tweens.add({ targets: this.counter, scale: 1, duration: 120, ease: 'Quad.Out' });
+        this.counter.setText(String(this.count)).setScale(goal ? GOAL.pop : 1.25);
+        this.tweens.add({ targets: this.counter, scale: 1, duration: goal ? GOAL.ms : 120, ease: goal ? 'Back.Out' : 'Quad.Out' });
+        if (goal) this.goalGlow(); // 画面の合図（♪を消していても分かる・v45b）
       }
       this.lunge(26, 45);
       this.shakePillar();
@@ -445,6 +453,17 @@ export class DrillScene extends Phaser.Scene {
     if (left <= 0) this.finish(rendaScore(this.count));
   }
 
+  // 連打の目標に届いた：回数と目標の字を金にして、回数の後ろに金の輪を一度だけ広げる（短い動き・GOAL.ms）
+  goalGlow() {
+    this.counter.setColor(COLORS.gold);
+    if (this.goal) this.goal.setColor(COLORS.gold);
+    const ring = this.add.graphics().setPosition(COUNT.x, COUNT.y).setDepth(5);
+    const p = { r: GOAL.ring.from, a: 1 };
+    const paint = () => { ring.clear(); ring.lineStyle(10, 0xe3b23c, p.a).strokeCircle(0, 0, p.r); };
+    paint();
+    this.tweens.add({ targets: p, r: GOAL.ring.to, a: 0, duration: GOAL.ms + 140, ease: 'Quad.Out', onUpdate: paint, onComplete: () => ring.destroy() });
+  }
+
   // 連打の前：3・2・1 を1秒ずつ。GO で5秒が始まる（runAt＝GO の時刻）。数が変わった時だけ字と音を出す
   updateCountdown(now) {
     const n = countdownAt(now - this.startAt);
@@ -483,6 +502,8 @@ export class DrillScene extends Phaser.Scene {
         this.hero.angle = -FACE * 14 * gv; // 足を上げて後ろへ傾ける（右向きなら左回り）
       }
     }
+    const gg = drillGreen(this.phase, this.holdAt, gv, this.nagaHalf); // 「ここだ」（v45 本人「長押し、緑の帯に入って効果音」）：ためていて緑の帯に入ったコマで1度だけ
+    if (greenChime(this.chime, gg.key, gg.inGreen)) playBout('koko');
     const shown = Math.min(done + (this.phase === 'gap' ? 0 : 1), NAGAOSHI.rounds);
     this.info.setText(t('drill.round', { n: shown, all: NAGAOSHI.rounds }));
     this.drawGauge(gv);

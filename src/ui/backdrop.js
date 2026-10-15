@@ -4,8 +4,8 @@
 // 字は絵の上に直に置かず、墨の板（inkPanel・角の丸い・和紙の色の細い縁）の上に置く＝板の下がどんなに明るくても字は読める
 // 新しい絵は描かない：ぼかしは「小さく描いて大きく戻す」（WebGL でも Canvas でも同じ・毎フレームの重さなし）・和柄と帯と枠は図形。
 // 作った1枚は Phaser の絵の置き場に残し、次からは使い回す（多くても2枚だけ残す）。絵が読めない時は土俵・それも無ければ藍の地に和柄だけ（止めない）
-import { bgPath, pickBackdrop, DOHYO_BG, BACKDROP_NAVY, menuDim, menuEdge, PANEL_ALPHA, BAND_ALPHA, WAVE_ALPHA } from '../core/bgkey.js?v=44';
-import { roundPoints } from './widgets.js?v=44';
+import { bgPath, pickBackdrop, DOHYO_BG, BACKDROP_NAVY, menuDim, menuEdge, PANEL_ALPHA, BAND_ALPHA, WAVE_ALPHA } from '../core/bgkey.js?v=45';
+import { roundPoints } from './widgets.js?v=45';
 
 const W = 720;
 const H = 1280;

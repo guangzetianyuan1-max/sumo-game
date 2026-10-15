@@ -1,5 +1,5 @@
 // 決め技5つ（20体版・10/13 本人「A」）。系統（arch）で紙相撲の動きと相性が決まる。名前は i18n の newtech.<id>
-import { TYPES } from './types.js?v=44';
+import { TYPES } from './types.js?v=45';
 
 // drill＝覚える時の稽古の遊び（src/core/drills.js の DRILLS・10/14 本人「稽古の出来で決め技を習得」）：突き＝連打・寄り＝長押し・投げ／はたき＝一押し・うっちゃり＝長押し
 export const KIMETE = [

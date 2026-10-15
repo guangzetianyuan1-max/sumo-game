@@ -3,21 +3,21 @@
 //   一押し稽古＝技・連打稽古＝体・長押し稽古＝心（遊びは DrillScene）／決め技を覚える（解禁していて覚えていない時だけ）
 //   決め技の札（10/14 本人「稽古の出来で決め技を習得できるようにしてください」）＝その技に合った遊び（kimete.js の drill）を決め技モードで開く。
 //   出来で習得ゲージ（run.kimeteProgress）がたまり、満タンで覚える。札にゲージの％（0%は出さない）
-// 親方が一番低い心技体に合う遊びを勧める（★と金の字）。
+// 親方が一番低い心技体に合う遊びを勧める（★と金の字）。画面の数（四捨五入）で一番低いのが1つだけの時だけ（v45b：全部同じ・2つ並ぶ＝名指しせず★も付けない）
 // 負けた後の稽古は3コマ終えると同じ相手へ。番付からいつでも入る稽古（training.voluntary・10/13 本人「好きなときに稽古が出来るように」）は、
 // どのコマでも「番付へ戻る」で抜けられる（残りのコマは捨てる）・終われば番付へ
-import { t } from '../i18n/i18n.js?v=44';
-import { session, trainLeaveNow } from '../state.js?v=44';
-import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=44';
-import { kimeteById } from '../data/kimete.js?v=44';
-import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=44';
-import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=44';
-import { playBout } from '../ui/sfx.js?v=44';
-import { menuBgKey } from '../core/bgkey.js?v=44';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=44';
+import { t } from '../i18n/i18n.js?v=45';
+import { session, trainLeaveNow } from '../state.js?v=45';
+import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=45';
+import { kimeteById } from '../data/kimete.js?v=45';
+import { techCards, TECH_CARD_LIMIT, weakStat } from '../core/training.js?v=45';
+import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=45';
+import { playBout } from '../ui/sfx.js?v=45';
+import { menuBgKey } from '../core/bgkey.js?v=45';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=45';
 import {
   topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, bindPress, preloadOyakataArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=44';
+} from '../ui/widgets.js?v=45';
 
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1235 は「稽古おわり」の字・1210 は番付へ戻る）
 const CARD = { w: 640, top: 470, step: 120, bottom: 1150 };
@@ -51,13 +51,15 @@ export class TrainingScene extends Phaser.Scene {
     topTitle(this, 60, t('train2.title'), 56, COLORS.gold);
     fitText(this.add.text(width / 2, 130, t('train2.left', { n: r.training ? r.training.left : 0 }), textStyle(34, COLORS.ink)).setOrigin(0.5), width - 60);
     statBars(this, 40, 190, 640, r.stats);
-    // 親方のおすすめ＝一番低い値に合う遊び（設計書 §7）
-    const low = STATS.reduce((a, b) => (r.stats[b] < r.stats[a] ? b : a), STATS[0]);
-    const rec = STAT_DRILL[low];
+    // 親方のおすすめ＝一番低い値に合う遊び（設計書 §7）。画面の数で一番低いのが1つだけの時（weakStat）・無い＝勧めない（v45b）
+    const low = weakStat(r.stats, STATS);
+    const rec = low ? STAT_DRILL[low] : null;
     // 琴浪親方：負けた後は怒鳴る顔・自分から来た時はふつうの顔（心技体の棒と札の間）
     speakerFace(this, 'kotonami', 100, 400, 112, free ? 'normal' : 'shout');
-    const line = `${t(free ? 'train2.oyakataFree' : 'train2.oyakata')} ${t('train2.recDrill', { stat: t(`stat.${low}`), drill: t(`drill.${rec}`) })}`;
-    speechBubble(this, 180, 336, 500, 128, line, { size: 28, min: 28 });
+    // 日本語は2行（あいさつ／勧め）に分けて渡す＝言葉の途中で折れない（v45b・train2.line）。幅 510＝あいさつの1行（約 476）が字 28 で収まる
+    const rest = low ? t('train2.recDrill', { stat: t(`stat.${low}`), drill: t(`drill.${rec}`) }) : t('train2.recNone');
+    const line = t('train2.line', { a: t(free ? 'train2.oyakataFree' : 'train2.oyakata'), b: rest });
+    speechBubble(this, 180, 336, 510, 128, line, { size: 28, min: 28 });
     const cards = techCards(r, TECH_CARD_LIMIT);
     const techs = cards.show;
     const nextAt = cards.nextAt;

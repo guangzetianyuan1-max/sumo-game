@@ -4,7 +4,7 @@
 //   連打（鉄砲）＝体：5秒間の連打の回数（30回で満点）
 //   長押し（四股）＝心：押している間ゲージがたまる。緑の帯でちょうど離す。3回・帯の真ん中ほど高い
 
-import { barGreenScale } from './tactics.js?v=44';
+import { barGreenScale } from './tactics.js?v=45';
 
 export const DRILLS = ['ippon', 'renda', 'nagaoshi'];
 export const DRILL_STAT = { ippon: 'gi', renda: 'tai', nagaoshi: 'shin' };
@@ -24,13 +24,16 @@ export function drillMult(score) {
   return 1 + (MULT_MAX - 1) * ((s - NORMAL_SCORE) / (1 - NORMAL_SCORE));
 }
 
-// 親方の一言の段：great（よくやった・笑う）・good（ふつう以上・笑う）・bad（怒鳴る）
+// 親方の一言の段は伸びの倍率（drillMult）で決める（v45b・バグ出し2：59%＝伸び×0.99 で一番きつい怒鳴りだった）：
+//   great（×1.375 以上＝9割・笑う）・good（×1.0 以上＝6割＝ふつうの伸び・笑う）・ok（×0.8 以上＝約36%・ふつうの顔で「もう一息」）・bad（それ未満・怒鳴る）
+//   ＝6割前後（ok と good の境）はどちらもふつうの言葉。怒鳴るのは伸びがはっきり落ちる時だけ
 export const GREAT_SCORE = 0.9;
+export const GRADE_MULT = { great: 1.375, good: 1, ok: 0.8 };
 export function drillGrade(score) {
-  const s = clamp01(score);
-  return s >= GREAT_SCORE ? 'great' : s >= NORMAL_SCORE ? 'good' : 'bad';
+  const m = drillMult(score) + 1e-9; // 境目ちょうど（9割・6割）は上の段
+  return m >= GRADE_MULT.great ? 'great' : m >= GRADE_MULT.good ? 'good' : m >= GRADE_MULT.ok ? 'ok' : 'bad';
 }
-export const gradeMood = (grade) => (grade === 'bad' ? 'shout' : 'smile');
+export const gradeMood = (grade) => (grade === 'bad' ? 'shout' : grade === 'ok' ? 'normal' : 'smile');
 
 // ---- 決め技の習得ゲージ（10/14 本人「稽古の出来で決め技を習得できるようにしてください」→ A 習得ゲージ） ----
 // 決め技の稽古1回でたまる量＝max(0.35, 出来/0.6)。合計が1以上で習得＝6割の出来で1回・どんなに下手でも3回で必ず覚える。1回で満タンを超える分は捨てる（上限1）

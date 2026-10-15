@@ -1,7 +1,7 @@
 // src/ui/sfx.js — 効果音（10/11 本人「効果音付きで」）。音のファイルは使わず、Web Audio でその場で作る
 // どの音も 0.8 秒以内・重なった時も含めて音量の山は 0.35 以下。鳴らせない端末（AudioContext が無い・作ると例外）では何もしない
-import { isMuted } from './music.js?v=44'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
-import { WHINE, whineFreq } from '../core/whine.js?v=44';
+import { isMuted } from './music.js?v=45'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
+import { WHINE, whineFreq } from '../core/whine.js?v=45';
 
 let ctx = null;
 let broken = false; // 作ろうとして例外が出た端末では、2度目からは試さない
@@ -329,6 +329,20 @@ const BOUT = {
     tone(c, t, { freq: 120, freqEnd: 70, dur: 0.12, peak: 0.1 });
     noise(c, t, { dur: 0.08, peak: 0.06, filter: 'lowpass', f: 450, q: 0.7, attack: 0.002 });
   },
+  // ---- v45（10/16 本人）。どれも足して 0.35 以下・0.8秒以内（試験が数える）----
+  // 「ここだ」：長押しのバーが緑の帯に入った瞬間の、明るく澄んだ「ピコーン」（短い低い粒から5度上の鈴へ跳ぶ）。
+  // 予告の「ピッ」（四角の波・1760）とは音色も高さも違えて紛れないように。「ギュイーン」（山 0.06）と重ねても 0.35 以下
+  koko: (c, t) => {
+    tone(c, t, { freq: 1319, dur: 0.08, peak: 0.12, type: 'triangle', attack: 0.002 });
+    tone(c, t + 0.06, { freq: 1976, dur: 0.38, peak: 0.14, attack: 0.003 });
+  },
+  // 連打の目標に届いた：上がっていく4つの鈴（ド・ミ・ソ・ド）の短いファンファーレ。
+  // 同じたたきの「どすっ」と「カチッ」（0.12秒で消える）の後から始めて、足しすぎない
+  tassei: (c, t) => {
+    [[0.12, 1047], [0.19, 1319], [0.26, 1568]].forEach(([dt, f]) => tone(c, t + dt, { freq: f, dur: 0.15, peak: 0.09, type: 'triangle', attack: 0.004 }));
+    tone(c, t + 0.33, { freq: 2093, dur: 0.45, peak: 0.12, type: 'triangle', attack: 0.004 });
+    tone(c, t + 0.33, { freq: 3136, dur: 0.3, peak: 0.03, attack: 0.004 });
+  },
   // 確定：0.3秒の無音のあと、太鼓と笛（虹の時に gauge4 と一緒に鳴らす）
   gaugeMax: (c, t) => {
     tone(c, t + 0.3, { freq: 100, freqEnd: 55, dur: 0.45, peak: 0.16 });
@@ -359,7 +373,7 @@ export function playTraining(kind, volume = 1) {
   play(SOUNDS, kind, volume);
 }
 
-// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kime（決め技が出た）・gauge1〜4（ゲージの段）・gaugeMax（虹の確定）・press（大きなボタンの「カチッ」）・20体版 Task 6b の音（tachiai hop hopBeat land clash topple drop rise win lose promo flags pon kan bosu dosu zushin）・2つのボタンの音（warn fumbari hataki tsuppari kumi brace dud release）・手ごたえの音（bashi roar hyu koton）。volume は playTraining と同じ
+// 取組の音：thud（当たり・落ちる）・slap（突っ張り）・scrape（すり足）・kime（決め技が出た）・gauge1〜4（ゲージの段）・gaugeMax（虹の確定）・press（大きなボタンの「カチッ」）・20体版 Task 6b の音（tachiai hop hopBeat land clash topple drop rise win lose promo flags pon kan bosu dosu zushin）・2つのボタンの音（warn fumbari hataki tsuppari kumi brace dud release）・手ごたえの音（bashi roar hyu koton）・v45 の音（koko＝緑の帯に入った「ここだ」・tassei＝連打の目標に届いた）。volume は playTraining と同じ
 export function playBout(kind, volume = 1) {
   play(BOUT, kind, volume);
 }
