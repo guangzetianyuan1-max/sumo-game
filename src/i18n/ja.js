@@ -562,7 +562,6 @@ export default {
   'clear.title': '横綱 {name} 誕生！',
   'clear.stats': '倒した数 {wins}体　負け {losses}回　稽古 {trainings}回',
   'clear.next': '続きは近日',
-  'clear.share': 'LINEで送る',
   'clear.top': 'はじめの画面へ',
   'after.toClear': '横綱の土俵入りへ',
   'ladder.seeClear': '土俵入りを見る',

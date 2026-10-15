@@ -1,18 +1,14 @@
 // src/scenes/ClearScene.js — クリアの画面（20体版 Task 5・10/13）：横綱の土俵入り風。箱の土俵の真ん中に主人公の型紙を大きく立て、少しずつ揺らす
-// 上に「横綱 誠ノ里 誕生！」とここまでの成績（倒した数・負け・稽古の回数）・続きは近日・LINEで送る・はじめの画面へ
+// 上に「横綱 誠ノ里 誕生！」とここまでの成績（倒した数・負け・稽古の回数）・続きは近日・はじめの画面へ（v43 本人「全勝後のLINEで送るは無しで」＝LINEの共有は消した）
 // 型紙＝正面の立ち絵に白い縁（紙の切り抜き）と小さな台。露払い・太刀持ちは置かない
-import { HERO_TYPE } from '../data/heroes.js?v=42';
-import { heroArt } from '../core/foeart.js?v=42';
-import { t, heroName } from '../i18n/i18n.js?v=42';
-import { session } from '../state.js?v=42';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=42';
-import { drawWaUnder } from '../ui/backdrop.js?v=42';
-import { button, addAura, preloadHeroFigures, textStyle, fitText, roundBox, COLORS } from '../ui/widgets.js?v=42';
+import { HERO_TYPE } from '../data/heroes.js?v=43';
+import { heroArt } from '../core/foeart.js?v=43';
+import { t, heroName } from '../i18n/i18n.js?v=43';
+import { session } from '../state.js?v=43';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=43';
+import { drawWaUnder } from '../ui/backdrop.js?v=43';
+import { button, addAura, preloadHeroFigures, textStyle, fitText, roundBox, COLORS } from '../ui/widgets.js?v=43';
 
-// LINE の共有（src/core/share.js が無い間の置き場：遊ぶ所の URL に ?ref=line を付けて、LINE の共有の画面を開く）
-const SITE_URL = 'https://guangzetianyuan1-max.github.io/sumo-game/?ref=line';
-const LINE_SHARE = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(SITE_URL)}`;
-const LINE_GREEN = 0x06c755;
 const FIG_H = 500; // 型紙の高さ（取組の 330 より大きく）
 const EDGE = 8; // 紙の白い縁の太さ
 const SWAY = 0.045; // 揺れの角度（ラジアン）
@@ -46,10 +42,9 @@ export class ClearScene extends Phaser.Scene {
     roundBox(this, width / 2, 205, 640, 64, COLORS.panel, { radius: 32, stroke: COLORS.frame }).setAlpha(0.92).setDepth(10); // 紙吹雪より前
     fitText(this.add.text(width / 2, 205, t('clear.stats', { wins: r.wins, losses: r.losses, trainings: r.trainings || 0 }), textStyle(30, COLORS.ink)).setOrigin(0.5).setDepth(10), 600);
 
-    // 下：続きは近日・LINEで送る・はじめの画面へ
-    fitText(this.add.text(width / 2, 990, t('clear.next'), textStyle(36, COLORS.gold)).setOrigin(0.5), width - 60);
-    button(this, width / 2, 1090, 460, 100, t('clear.share'), () => this.share(), { size: 36, color: LINE_GREEN });
-    button(this, width / 2, 1210, 460, 100, t('clear.top'), () => this.scene.start('guide'), { size: 36, color: COLORS.buttonSub });
+    // 下：続きは近日・はじめの画面へ
+    fitText(this.add.text(width / 2, 1010, t('clear.next'), textStyle(36, COLORS.gold)).setOrigin(0.5), width - 60);
+    button(this, width / 2, 1130, 460, 100, t('clear.top'), () => this.scene.start('guide'), { size: 36, color: COLORS.buttonSub });
   }
 
   // 型紙1枚：白い縁（同じ絵を白で塗って一回り大きく後ろに）・足もとの台・虹の光。足もとを軸に左右へゆっくり揺らす
@@ -89,10 +84,5 @@ export class ClearScene extends Phaser.Scene {
       };
       this.tweens.add({ targets: p, y: GROUND - 10, angle: 270, duration: 1800 + Math.random() * 2600, onComplete: fall });
     }
-  }
-
-  share() {
-    if (typeof window === 'undefined' || !window.open) return;
-    window.open(LINE_SHARE, '_blank', 'noopener');
   }
 }

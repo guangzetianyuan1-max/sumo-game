@@ -11,10 +11,14 @@ export const VOICE = {
 const H = (dir) => `assets/voice/${dir}`;
 // 声の目録：id → { ja・en＝ファイル（無い言葉は鳴らさない）, len＝声の長さ（秒）, quiet＝録りが小さい声 }
 // len は ffprobe で測った長さ。ごっつあんです（ja）は稽古の声の後ろ 1 秒余りに短い雑音（約 1.95〜2.05 秒）があるので、1.0 秒で切って終わりを消した写し game/hero_win_ja.mp3 を使う（稽古の元ファイルはそのまま）
+// ⚠v43 本人「取組中の『もういっちょう』がまだ聞こえる」：主人公の日本語の稽古の声（ja/balance）は切り分けが1行ずつずれている（中身を聞き取って確かめた）＝
+//   train_chanko＝「ごっつあんです！」＋1秒後に「えいっ！」・train_waza＝「うおおおっ！」（3.0秒）・train_butsukari＝「もういっちょう！」・train_moushiai＝「ふぅ…」・train_rest＝「ぐうぐう」。
+//   立ち合いの◎で train_butsukari（＝もういっちょう）を鳴らしていた。取組の日本語は game/ の写しにした（稽古の画面の声はそのまま）：
+//   ◎の決め技＝「えいっ！」（train_chanko の後ろの 0.2秒＝hero_ei_ja.mp3）・立ち合いの◎＝「うおおっ！」（train_waza の頭 1.4秒・終わりを溶かす＝hero_tachiai_ja.mp3）。英語は合っている（Hyah!・Raaah!）
 export const LINES = {
   heroWin: { ja: `${H('game')}/hero_win_ja.mp3`, en: `${H('game')}/hero_en_thanks.mp3`, len: { ja: 1.0, en: 0.87 } },
-  heroFinisher: { ja: `${H('ja')}/balance/train_waza.mp3`, en: `${H('en')}/balance/train_waza.mp3`, len: { ja: 3.0, en: 0.56 } },
-  heroTachiai: { ja: `${H('ja')}/balance/train_butsukari.mp3`, en: `${H('en')}/balance/train_butsukari.mp3`, len: { ja: 1.32, en: 1.34 } },
+  heroFinisher: { ja: `${H('game')}/hero_ei_ja.mp3`, en: `${H('en')}/balance/train_waza.mp3`, len: { ja: 0.21, en: 0.56 } },
+  heroTachiai: { ja: `${H('game')}/hero_tachiai_ja.mp3`, en: `${H('en')}/balance/train_butsukari.mp3`, len: { ja: 1.4, en: 1.34 } },
   kotoneYatta: { ja: `${H('game')}/kotone_yatta.mp3`, len: { ja: 1.25 }, quiet: true },
   kotoneNice: { ja: `${H('game')}/kotone_nice.mp3`, len: { ja: 1.25 }, quiet: true },
   kotoneTsugi: { ja: `${H('game')}/kotone_tsugi.mp3`, len: { ja: 1.35 }, quiet: true },
@@ -23,7 +27,7 @@ export const LINES = {
 };
 
 // 出来事ごとの声（順に鳴る）。昇進＝親方の2言・負けた後＝ことねの1言（親方の「まだまだ」は使わない＝いつも同じ人が励ます）
-// 負けた瞬間は声を出さない（v42 本人：主人公の「もう一丁！」＝train_moushiai・英語の One more! は取り直しと紛らわしい）
+// 負けた瞬間は声を出さない（v42 本人：主人公の「もう一丁！」・英語の One more! は取り直しと紛らわしい。⚠日本語の「もう一丁」は実は train_butsukari に入っていた＝上の注）
 const EVENTS = {
   win: ['heroWin'], // 大きな勝ちは続けてことね（下の linesFor）
   finisher: ['heroFinisher'], // ◎の決め技

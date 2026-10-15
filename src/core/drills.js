@@ -4,6 +4,8 @@
 //   連打（鉄砲）＝体：5秒間の連打の回数（30回で満点）
 //   長押し（四股）＝心：押している間ゲージがたまる。緑の帯でちょうど離す。3回・帯の真ん中ほど高い
 
+import { barGreenScale } from './tactics.js?v=43';
+
 export const DRILLS = ['ippon', 'renda', 'nagaoshi'];
 export const DRILL_STAT = { ippon: 'gi', renda: 'tai', nagaoshi: 'shin' };
 // 一番低い心技体に合う遊び（親方の勧め）
@@ -88,13 +90,15 @@ export const rendaScore = (count) => clamp01((Number.isFinite(count) ? count : 0
 // ---- 長押し ----
 // 押している長さ held（ms）→ ゲージ 0〜1（fillMs で満タン・満タンまで上げると上げすぎ＝0点）
 // 帯は center ± half。帯の真ん中で1点・帯の端で edge 点・帯の外は0点
+// half は帯の半分の幅の基本（1体目）。稽古では次の相手の番号で狭める（nagaoshiHalf・v43：取組と同じ barGreenScale）。half を渡さない＝基本の幅
 export const NAGAOSHI = { rounds: 3, fillMs: 1600, center: 0.75, half: 0.08, edge: 0.4, gapMs: 700 };
+export const nagaoshiHalf = (foeIndex) => NAGAOSHI.half * barGreenScale(foeIndex);
 export const nagaoshiGauge = (heldMs) => clamp01(heldMs / NAGAOSHI.fillMs);
-export const nagaoshiInBand = (g) => Math.abs(g - NAGAOSHI.center) <= NAGAOSHI.half + 1e-9;
+export const nagaoshiInBand = (g, half = NAGAOSHI.half) => Math.abs(g - NAGAOSHI.center) <= half + 1e-9;
 
-export function nagaoshiPoint(g) {
-  if (!Number.isFinite(g) || g >= 1 || !nagaoshiInBand(g)) return 0;
-  const d = Math.min(1, Math.abs(g - NAGAOSHI.center) / NAGAOSHI.half);
+export function nagaoshiPoint(g, half = NAGAOSHI.half) {
+  if (!Number.isFinite(g) || g >= 1 || !nagaoshiInBand(g, half)) return 0;
+  const d = Math.min(1, Math.abs(g - NAGAOSHI.center) / half);
   return 1 - (1 - NAGAOSHI.edge) * d;
 }
 

@@ -1,7 +1,7 @@
 // 相手の型ごとの攻め（設計書 2026-10-14-sumo-two-buttons-and-foe-tactics-design.md §3）
 // 攻めは敵（西）だけが持つ。どれも 予告 warn → 実行 act → 後始末 after → 間 gap → 次の予告。一度に1つ。
 // 数字は Task 3 で強さを合わせる時に動かすので、全部ここに並べる。画面の字は i18n（tactic.<id>）。
-import { makeRng } from './rng.js?v=42';
+import { makeRng } from './rng.js?v=43';
 
 export const TACTIC_IDS = ['fumbari', 'hataki', 'tsuppari', 'kumi'];
 export const TACTIC_START = 2.5;   // 押し合いが始まってから、最初の予告まで（秒）
@@ -90,11 +90,22 @@ export const FOE_KIME = { act: 0, after: 0.4, reach: 30, slack: 40, edgeU: 260, 
 // 必殺技の系統 → そのバーの型（§4.5：重量＝突き・小兵＝はたき・長身＝投げ・四つ＝寄り。うっちゃりは四つの数）
 export const KIME_TYPE = { tsuki: 'heavy', hiki: 'small', nage: 'tall', yori: 'yotsu', utchari: 'yotsu' };
 
+// 緑の帯（合格の幅）を、進むほど少しずつ狭める倍率（v43 本人「緑の合格の幅は変更無しで、レベルが上がったら徐々に狭めてゆきます」）：
+// 1体目（番号 0）＝1.0（今の幅のまま）→ 20体目（大ボス・番号 19）＝0.75（今の幅の 3/4）・間は直線。範囲の外は端へ寄せる・数でない番号は 1体目
+// 掛けるのは帯の半分の幅（真ん中 center はそのまま＝両端から詰める）。取組（barSpec）と長押し稽古（次の相手の番号）が使う・遊び方の見本は今の幅のまま
+export const BAR_GREEN = { first: 1, last: 0.75 };
+export function barGreenScale(index) {
+  const i = Number(index);
+  const k = Number.isFinite(i) ? clamp01(i / TACTIC_LAST) : 0;
+  return lerp(BAR_GREEN.first, BAR_GREEN.last, k);
+}
+
 // 型と体の番号 → バーの数 { fillMs, center, half }（知らない型は四つの数＝真ん中）。後の新しい予告（敵の必殺技など）も型を渡せば同じバーを使える
+// half＝今までの幅（BAR.half の直線）× barGreenScale（v43）
 export function barSpec(type, index) {
   const k = clamp01((Number(index) || 0) / TACTIC_LAST);
   const base = has(BAR.fillMs, type) ? BAR.fillMs[type] : BAR.fillMs.yotsu;
-  return { fillMs: base * lerp(1, BAR.fast, k), center: BAR.center, half: lerp(BAR.half[0], BAR.half[1], k) };
+  return { fillMs: base * lerp(1, BAR.fast, k), center: BAR.center, half: lerp(BAR.half[0], BAR.half[1], k) * barGreenScale(index) };
 }
 // 押し始めてから緑の真ん中に届くまでの秒
 export const barReach = (spec) => spec.fillMs * spec.center / 1000;

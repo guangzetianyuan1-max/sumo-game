@@ -21,32 +21,33 @@
 //   帯が時間切れ・たたいて閉じた後の「まだ」の間の右も同じ（eyeBar・v42 最終点検 M1）。
 //   守り成功＝守りの漫画の絵（0.7秒・時計は止めない・ボタンに重ねない・入力を取らない・4秒以内の2回目は出さない）。絵が読めない時は今の字だけの帯（止めない）。
 //   止めるのは画面の時計だけ（kami.js の物理と careersim の数は変えない）
-import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge } from '../core/kami.js?v=42';
-import { isTactic, FOE_KIME_ID, BAR } from '../core/tactics.js?v=42';
-import { leftLook, rightLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey, attackScene, bossAlert, tipStep, eyeDeferDue } from '../core/kamibutton.js?v=42';
-import { cutinArt, eyeArt, mangaArt, EYE_HERO, MANGA_KORAE, MANGA_MS, koraeDue } from '../core/cutin.js?v=42';
-import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=42';
-import { chosenKimete } from '../core/kimetepick.js?v=42';
-import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=42';
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=42';
-import { currentFoe } from '../core/run.js?v=42';
-import { PLAY_COUNT } from '../core/ladder.js?v=42';
-import { makeRng } from '../core/rng.js?v=42';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=42';
-import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=42';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=42';
-import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=42';
-import { playBout } from '../ui/sfx.js?v=42';
-import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=42';
-import { GYOJI, tachiaiVoiceAt, nokottaDue, hushVoices } from '../core/gyoji.js?v=42';
-import { ringEvent } from '../core/voice.js?v=42';
-import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=42';
-import { createBigButton } from '../ui/bigbutton.js?v=42';
-import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing, clockHold } from '../core/feel.js?v=42';
-import { createFx } from '../ui/fx.js?v=42';
-import { drawCutinBand, drawEyeBand, drawManga } from '../ui/cutinband.js?v=42';
-import { HUD, HIT_MARK, ringShape, barShape, drawRing, drawBar, hudTouch } from '../ui/hud.js?v=42';
-import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=42';
+import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge } from '../core/kami.js?v=43';
+import { isTactic, FOE_KIME_ID, BAR } from '../core/tactics.js?v=43';
+import { leftLook, rightLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey, attackScene, bossAlert, tipStep, eyeDeferDue } from '../core/kamibutton.js?v=43';
+import { cutinArt, eyeArt, mangaArt, EYE_HERO, MANGA_KORAE, MANGA_MS, koraeDue } from '../core/cutin.js?v=43';
+import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=43';
+import { chosenKimete } from '../core/kimetepick.js?v=43';
+import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=43';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=43';
+import { currentFoe } from '../core/run.js?v=43';
+import { PLAY_COUNT } from '../core/ladder.js?v=43';
+import { makeRng } from '../core/rng.js?v=43';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=43';
+import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=43';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=43';
+import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=43';
+import { playBout, whine, whineStop } from '../ui/sfx.js?v=43';
+import { boutWhine } from '../core/whine.js?v=43';
+import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=43';
+import { GYOJI, tachiaiVoiceAt, tachiaiPreRoll, nokottaDue, hushVoices } from '../core/gyoji.js?v=43';
+import { ringEvent } from '../core/voice.js?v=43';
+import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=43';
+import { createBigButton } from '../ui/bigbutton.js?v=43';
+import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing, clockHold } from '../core/feel.js?v=43';
+import { createFx } from '../ui/fx.js?v=43';
+import { drawCutinBand, drawEyeBand, drawManga } from '../ui/cutinband.js?v=43';
+import { HUD, HIT_MARK, ringShape, barShape, drawRing, drawBar, hudTouch } from '../ui/hud.js?v=43';
+import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=43';
 
 const FIG_H = 330; // 型紙の高さ（敵は段階の倍率を掛ける）
 const VIS = FIG_H / 230; // 見た目の大きさの倍率（計算の座標は変えない・縦方向の跳ね・落ちは同じ比で描く）
@@ -241,6 +242,8 @@ export class KamiScene extends Phaser.Scene {
     this.bgm = { cued: false, ended: false }; // 取組の曲（nokotta）：押し合いの始まりで頭へ戻したか・終わりの節を出したか
     // 行司の声：立ち合い＝合図の少し前から「はっけよーい、のこった！」・押し合い＝約3.5秒ごとに「のこった、のこった！」（src/core/gyoji.js が間合いを決める）
     this.gyoji = { startAt: tachiaiVoiceAt(this.st.signalAt), started: false, lastAt: -Infinity, landAt: -Infinity, sounds: [], until: null };
+    // v43 本人「『のこった』の直前に少し間がある」：合図が声の「のこった」の位置（GYOJI.lead）より早い取組は、取組の時計を動かす前にその分だけ待って声を先に鳴らす（のこった＝合図ちょうど）
+    this.preRoll = tachiaiPreRoll(this.st.signalAt);
     this.events.once('shutdown', () => this.stopGyoji());
     hushGameVoices(this); // 前の取組・取組の後の声が残っていても、新しい取組は黙った所から始める（行司の声を捨てない）
     // 相手の攻めの予告の赤い札（予告の間だけ・敵の頭の上）
@@ -279,9 +282,10 @@ export class KamiScene extends Phaser.Scene {
       if (clockSlowing(this.clock)) clockSkip(this.clock); // スローの途中でたたいた＝残りは元の速さ（どこをたたいても）
     });
     // 画面が裏へ回ったら長押しを離す（戻った時に勝手に起き上がらない・バーをため続けない）
-    const onHidden = () => { this.release(); this.lbtn.releaseAll(); this.rbtn.releaseAll(); };
+    const onHidden = () => { this.release(); this.lbtn.releaseAll(); this.rbtn.releaseAll(); whineStop(); };
     this.game.events.on('hidden', onHidden);
     this.events.once('shutdown', () => this.game.events.off('hidden', onHidden));
+    this.events.once('shutdown', () => whineStop()); // 画面を離れる＝「ギュイーン」は必ず止める
 
     this.draw();
   }
@@ -437,6 +441,13 @@ export class KamiScene extends Phaser.Scene {
   update(time, delta) {
     const st = this.st;
     if (!st) return;
+    if (this.preRoll > 0) { // 取組の時計を動かす前の待ち（実の秒）：行司の「はっけよーい」だけ先に鳴らす・型紙も〇も動かない
+      this.preRoll -= delta / 1000;
+      this.gyojiVoice();
+      this.draw();
+      whine(null);
+      return;
+    }
     this.feelEvents(); // 指で出た〇の判定（前のコマの後の押し）＝このコマから止める
     const dt = clockTick(this.clock, Math.min(delta / 1000, KAMI.MAX_DT));
     if (this.slowOn && !clockSlowing(this.clock)) this.endSlow();
@@ -460,6 +471,14 @@ export class KamiScene extends Phaser.Scene {
     }
     this.fx.update(dt);
     this.draw();
+    whine(this.whineLevel());
+  }
+
+  // 「ギュイーン」の進み（v43・src/core/whine.js）：〇が縮む間＝縮みに合わせて・守りのバーを長押しでためる間＝バーの高さに合わせて。
+  // 終わった・倒れた・画面の時計が止まっている（ヒットストップ・カットイン）間は鳴らさない＝null
+  whineLevel() {
+    if (clockStopped(this.clock)) return null;
+    return boutWhine(this.st, barGauge);
   }
 
   // 手ごたえの合図（計算は演出を知らない＝前のコマとの差で見つける）：主人公の〇の判定（st.lastRing）・敵の必殺技（st.lastFoeKime）・箱の端を越えた（pastEdge）
@@ -579,7 +598,7 @@ export class KamiScene extends Phaser.Scene {
       if (this.playGyoji('hakkeyoi')) { g.lastAt = st.t; g.landAt = st.t + GYOJI.lead; }
       return;
     }
-    if (g.started && !this.slowSide && nokottaDue(st, g.lastAt, g.landAt)) { // 箱の端を越えた後（スロー）は新しい「のこった」を始めない・重ならない：次まで gap(3.5秒) ＞ 声の長さ（2.9秒・1.95秒）なので、鳴り終わったかを見なくてよい
+    if (g.started && !this.slowSide && nokottaDue(st, g.lastAt, g.landAt)) { // 箱の端を越えた後（スロー）は新しい「のこった」を始めない・重ならない：次まで gap(3.5秒) ＞ 声の長さ（2.51秒・1.87秒）なので、鳴り終わったかを見なくてよい
       if (this.playGyoji('nokotta')) g.lastAt = st.t;
     }
   }
@@ -776,7 +795,7 @@ export class KamiScene extends Phaser.Scene {
       const b = st.bar && st.bar.side === 'east' ? st.bar : null;
       drawBar(g, barShape(b, b ? barGauge(st) : 0));
     }
-    const fl = ringFlash(st);
+    const fl = ringFlash(st, 'east', this.recorded); // 勝ち負けの札を出したら「合」は必ず消す（v43）
     if (fl) {
       const age = st.t - st.lastRing.at;
       if (fl.key !== this.ringMarkKey) { // 「届かない…」は字が長いので小さく・幅に収める／◎の「合」は〇の中に収める（HIT_MARK）／○× は大きく

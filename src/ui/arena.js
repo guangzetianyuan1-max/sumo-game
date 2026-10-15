@@ -1,9 +1,9 @@
 // src/ui/arena.js — 紙相撲の舞台（土俵の絵の背景・段ボールの箱・紙の土俵）。取組（kami）・懸賞旗（kensho）・クリア（clear）で同じ形を描く
-import { KAMI } from '../core/kami.js?v=42';
-import { t } from '../i18n/i18n.js?v=42';
-import { textStyle, fitText } from './widgets.js?v=42';
-import { boutBgKey, bgPath, pickBackdrop, DOHYO_BG } from '../core/bgkey.js?v=42';
-import { edgeFade } from './backdrop.js?v=42';
+import { KAMI } from '../core/kami.js?v=43';
+import { t } from '../i18n/i18n.js?v=43';
+import { textStyle, fitText } from './widgets.js?v=43';
+import { boutBgKey, bgPath, pickBackdrop, DOHYO_BG } from '../core/bgkey.js?v=43';
+import { edgeFade } from './backdrop.js?v=43';
 
 export const GROUND = 800; // 箱の上の面（画面の y）
 export const BOX_H = 100; // 箱の前の面の高さ（下の端 900 ＝ 立体のボタンの弧の上端 947 より上・間に案内の1行。ボタンが直径300になったので140から詰めた）

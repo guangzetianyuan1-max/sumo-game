@@ -563,7 +563,6 @@ export default {
   'clear.title': 'Yokozuna {name} is born!',
   'clear.stats': 'Beaten {wins}   Losses {losses}   Training {trainings}',
   'clear.next': 'More coming soon',
-  'clear.share': 'Send on LINE',
   'clear.top': 'Back to start',
   'after.toClear': 'Yokozuna ceremony',
   'ladder.seeClear': 'Watch the ceremony',

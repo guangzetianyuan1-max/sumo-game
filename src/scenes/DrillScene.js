@@ -9,29 +9,30 @@
 // 決め技モード（10/14 本人「稽古の出来で決め技を習得できるようにしてください」・data.kimete＝決め技の id）：
 //   遊びはその決め技の drill（kimete.js）。心技体は伸びず、出来で習得ゲージ（drills.kimeteGain）がたまる（drillKimeteNow を1回だけ）。
 //   結果＝点数と出来 → ゲージが前→後へたまる → 満タンなら「習得！」・決めのカットイン（kime）・kan の音／満タンでなければ「習得 75%」
-import { t } from '../i18n/i18n.js?v=42';
-import { session, drillStatNow, drillKimeteNow } from '../state.js?v=42';
-import { canLeaveTraining } from '../core/run.js?v=42';
-import { kimeteById } from '../data/kimete.js?v=42';
-import { cutinArt } from '../core/cutin.js?v=42';
+import { t } from '../i18n/i18n.js?v=43';
+import { session, drillStatNow, drillKimeteNow } from '../state.js?v=43';
+import { canLeaveTraining, currentFoe } from '../core/run.js?v=43';
+import { kimeteById } from '../data/kimete.js?v=43';
+import { cutinArt } from '../core/cutin.js?v=43';
 import {
   DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood, kimeteGrade,
   IPPON, ipponHitMs, ipponJudge, ipponMissed, ipponScore,
-  RENDA, COUNTDOWN, countdownAt, rendaScore, NAGAOSHI, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct, armStart,
-} from '../core/drills.js?v=42';
-import { kamiArt, heroArt } from '../core/foeart.js?v=42';
-import { HERO_TYPE } from '../data/heroes.js?v=42';
-import { createBigButton } from '../ui/bigbutton.js?v=42';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=42';
-import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, HOLD, BTN, holdBlocked, DRILL_MAIN, drillButtonColor } from '../ui/drillstage.js?v=42'; // 置き場所と長押しの見せ方の計算（Phaser を使わない）
-import { drawCutinBand } from '../ui/cutinband.js?v=42';
-import { edgeFade } from '../ui/backdrop.js?v=42';
-import { HUD, HUD_HIT, HIT_MARK, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=42'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
-import { playTraining, playBout } from '../ui/sfx.js?v=42';
-import { guardOpen, openGuarded } from '../ui/openguard.js?v=42';
+  RENDA, COUNTDOWN, countdownAt, rendaScore, NAGAOSHI, nagaoshiHalf, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct, armStart,
+} from '../core/drills.js?v=43';
+import { kamiArt, heroArt } from '../core/foeart.js?v=43';
+import { HERO_TYPE } from '../data/heroes.js?v=43';
+import { createBigButton } from '../ui/bigbutton.js?v=43';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=43';
+import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, HOLD, BTN, holdBlocked, DRILL_MAIN, drillButtonColor } from '../ui/drillstage.js?v=43'; // 置き場所と長押しの見せ方の計算（Phaser を使わない）
+import { drawCutinBand } from '../ui/cutinband.js?v=43';
+import { edgeFade } from '../ui/backdrop.js?v=43';
+import { HUD, HUD_HIT, HIT_MARK, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=43'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
+import { playTraining, playBout, whine, whineStop } from '../ui/sfx.js?v=43';
+import { ringProgress } from '../core/whine.js?v=43';
+import { guardOpen, openGuarded } from '../ui/openguard.js?v=43';
 import {
   button, fitText, wrapText, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadHeroFigures, clearScene, COLORS,
-} from '../ui/widgets.js?v=42';
+} from '../ui/widgets.js?v=43';
 
 const BG_KEY = 'keiko-bg';
 const HERO_FILE = `hero_${HERO_TYPE}`;
@@ -88,6 +89,9 @@ export class DrillScene extends Phaser.Scene {
     if (!k || this.kind !== k.drill || !kimeteOk(session.run, k)) this.kimeteId = null;
     this.phase = 'ready';
     this.finished = false;
+    // 長押しの緑の帯（v43）：次の相手の番号で取組と同じだけ狭める（1体目＝今の幅・大ボス＝3/4）
+    const nextFoe = currentFoe(session.run);
+    this.nagaHalf = nagaoshiHalf(nextFoe ? nextFoe.index : 0);
     this.round = 0;
     this.points = [];
     this.count = 0;
@@ -95,6 +99,7 @@ export class DrillScene extends Phaser.Scene {
     this.lbtn = null;
     this.rbtn = null;
     this.events.once('shutdown', () => this.dropButton());
+    this.events.once('shutdown', () => whineStop()); // 画面を離れる＝「ギュイーン」は必ず止める
     const onHidden = () => this.onHidden();
     this.game.events.on('hidden', onHidden);
     this.events.once('shutdown', () => this.game.events.off('hidden', onHidden));
@@ -294,6 +299,7 @@ export class DrillScene extends Phaser.Scene {
 
   // 画面が裏へ回った：長押しの途中ならその回はやり直し（点にしない）
   onHidden() {
+    whineStop();
     if (this.hiddenAt === null) this.hiddenAt = this.time.now;
     if (this.lbtn) this.lbtn.releaseAll();
     if (this.rbtn) this.rbtn.releaseAll();
@@ -338,7 +344,7 @@ export class DrillScene extends Phaser.Scene {
   }
 
   scoreNagaoshi(g) {
-    const p = nagaoshiPoint(g);
+    const p = nagaoshiPoint(g, this.nagaHalf);
     this.points.push(p);
     this.phase = 'gap';
     this.gapUntil = this.time.now + NAGAOSHI.gapMs;
@@ -370,7 +376,7 @@ export class DrillScene extends Phaser.Scene {
   }
 
   update() {
-    if (!this.main || this.finished) return;
+    if (!this.main || this.finished) { whine(null); return; } // 終わった（結果の画面）＝「ギュイーン」は止める
     const now = this.time.now;
     const kind = this.kind;
     if (this.resumed) this.resumeClocks(now);
@@ -383,6 +389,14 @@ export class DrillScene extends Phaser.Scene {
       if (now > this.feedbackUntil + 200) this.feedbackUntil = 0;
     }
     if (!this.finished && this.main) { this.lbtn.update(); this.rbtn.update(); }
+    whine(this.finished ? null : this.whineLevel(now));
+  }
+
+  // 「ギュイーン」の進み（v43・src/core/whine.js）：一押し＝金の輪が縮む間（出てから重なるまで 0→1）・長押し＝足を上げてゲージをためる間（ゲージの高さ）。ほかは null
+  whineLevel(now) {
+    if (this.kind === 'ippon' && this.phase === 'ring') return ringProgress(0, this.hitMs, now - this.roundAt);
+    if (this.kind === 'nagaoshi' && this.phase === 'hold') return nagaoshiGauge(now - this.holdAt);
+    return null;
   }
 
   updateIppon(now) {
@@ -479,7 +493,7 @@ export class DrillScene extends Phaser.Scene {
   drawGauge(v) {
     const g = this.gauge;
     g.clear();
-    drawBar(g, barShape({ center: NAGAOSHI.center, half: NAGAOSHI.half }, v));
+    drawBar(g, barShape({ center: NAGAOSHI.center, half: this.nagaHalf }, v));
   }
 
   // ---- 終わり：伸ばして保存（1回だけ）→ 結果 ----

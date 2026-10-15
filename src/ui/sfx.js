@@ -1,6 +1,7 @@
 // src/ui/sfx.js — 効果音（10/11 本人「効果音付きで」）。音のファイルは使わず、Web Audio でその場で作る
 // どの音も 0.8 秒以内・重なった時も含めて音量の山は 0.35 以下。鳴らせない端末（AudioContext が無い・作ると例外）では何もしない
-import { isMuted } from './music.js?v=42'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
+import { isMuted } from './music.js?v=43'; // 右下の ♪ 札で消した時は、効果音も鳴らさない
+import { WHINE, whineFreq } from '../core/whine.js?v=43';
 
 let ctx = null;
 let broken = false; // 作ろうとして例外が出た端末では、2度目からは試さない
@@ -320,3 +321,80 @@ export function playTraining(kind, volume = 1) {
 export function playBout(kind, volume = 1) {
   play(BOUT, kind, volume);
 }
+
+// ---- 「ギュイーン」（v43 本人「一押しの〇が小さくなる時、長押しのゲージが上がる時に『ギュイーン』の音」）----
+// 上がっていく機械の唸り：のこぎりの波（基の高さ）と、少しずらした四角の波（唸りのうなり）を低い所だけ通して、1つの音量の弁で鳴らす。1つだけ（重ならない）
+// 画面は毎コマ whine(p) を呼ぶ（p＝src/core/whine.js の進み 0〜over・null＝止める）。高さは p に合わせて滑らかに動く。
+// 鳴り残らない決まり：①毎回「今の音量へ上げ、WHINE.hang 秒後に消える」を書き直す＝呼ばれなくなったら（画面が止まった・裏へ回った・画面を離れた）自然に消える
+// ②null・♪を消した・鳴らせない端末＝すぐ止めて片付ける（whineStop）。山は WHINE.peak（0.35 よりずっと小さく・声やほかの効果音より小さい）
+let wh = null; // { osc, osc2, filt, gain }
+
+export function whine(p) {
+  if (p === null || p === undefined || !Number.isFinite(p) || isMuted()) { whineStop(); return; }
+  const c = audio();
+  if (!c) return;
+  try {
+    if (c.state === 'suspended' && c.resume) {
+      const r = c.resume();
+      if (r && r.catch) r.catch(() => {});
+    }
+    const now = c.currentTime;
+    if (!wh) {
+      const gain = c.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.connect(c.destination);
+      const filt = c.createBiquadFilter();
+      filt.type = 'lowpass';
+      filt.Q.value = 4;
+      filt.connect(gain);
+      const osc = c.createOscillator();
+      osc.type = 'sawtooth';
+      const osc2 = c.createOscillator();
+      osc2.type = 'square';
+      const g2 = c.createGain();
+      g2.gain.setValueAtTime(0.35, now); // 四角の波は小さく混ぜる
+      osc.connect(filt);
+      osc2.connect(g2);
+      g2.connect(filt);
+      const f0 = whineFreq(p);
+      osc.frequency.setValueAtTime(f0, now);
+      osc2.frequency.setValueAtTime(f0 * 1.012, now);
+      filt.frequency.setValueAtTime(f0 * 3, now);
+      osc.start(now);
+      osc2.start(now);
+      wh = { osc, osc2, filt, gain };
+    }
+    const f = whineFreq(p);
+    wh.osc.frequency.setTargetAtTime(f, now, 0.02);
+    wh.osc2.frequency.setTargetAtTime(f * 1.012, now, 0.02);
+    wh.filt.frequency.setTargetAtTime(f * 3, now, 0.02);
+    const g = wh.gain.gain;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(Math.max(0.0001, Math.min(WHINE.peak, g.value || 0.0001)), now);
+    g.linearRampToValueAtTime(WHINE.peak, now + 0.03);
+    g.setValueAtTime(WHINE.peak, now + WHINE.hang);
+    g.linearRampToValueAtTime(0.0001, now + WHINE.hang + 0.08); // 呼ばれ続ければ、この前に書き直される
+  } catch {
+    whineStop(); // 鳴らせなくても遊びは続ける
+  }
+}
+
+// すぐ止めて片付ける（短く消してから止める＝ぷつっと鳴らない）。鳴っていなければ何もしない
+export function whineStop() {
+  const w = wh;
+  if (!w) return;
+  wh = null;
+  try {
+    const now = ctx ? ctx.currentTime : 0;
+    w.gain.gain.cancelScheduledValues(now);
+    w.gain.gain.setValueAtTime(Math.max(0.0001, Math.min(WHINE.peak, w.gain.gain.value || 0.0001)), now);
+    w.gain.gain.linearRampToValueAtTime(0.0001, now + 0.04);
+    w.osc.stop(now + 0.06);
+    w.osc2.stop(now + 0.06);
+  } catch {
+    // 止められなくても続ける（音量は hang 秒で消えている）
+  }
+}
+
+// 鳴っているか（試験と画面の確かめ用）
+export const whineOn = () => !!wh;
