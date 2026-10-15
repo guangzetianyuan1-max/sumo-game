@@ -1,11 +1,11 @@
 // src/scenes/GuidePickScene.js — 新しい勝ち抜きの1歩目：部屋は1つ（10/12 夜 本人「相撲部屋は1つとする」）。親方の娘3人から案内役を選ぶ → 主人公へ
 // 部屋の名・親方・娘の名と紹介は i18n（heya.tsurumai.* と guide.<id>.*）。部屋の id は ONE_HEYA
-import { GUIDE_IDS } from '../data/guides.js?v=39';
-import { t } from '../i18n/i18n.js?v=39';
-import { session } from '../state.js?v=39';
+import { GUIDE_IDS } from '../data/guides.js?v=40';
+import { t } from '../i18n/i18n.js?v=40';
+import { session } from '../state.js?v=40';
 import {
   button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, preloadGuideArt, preloadOyakataArt, speakerFace, clearScene, COLORS,
-} from '../ui/widgets.js?v=39';
+} from '../ui/widgets.js?v=40';
 
 const ONE_HEYA = 'tsurumai'; // 仮（本人が名前を決める）
 const HEAD = { y: 175, face: 120 }; // 親方の段

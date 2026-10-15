@@ -6,16 +6,16 @@
 // 親方が一番低い心技体に合う遊びを勧める（★と金の字）。
 // 負けた後の稽古は3コマ終えると同じ相手へ。番付からいつでも入る稽古（training.voluntary・10/13 本人「好きなときに稽古が出来るように」）は、
 // どのコマでも「番付へ戻る」で抜けられる（残りのコマは捨てる）・終われば番付へ
-import { t } from '../i18n/i18n.js?v=39';
-import { session, trainLeaveNow } from '../state.js?v=39';
-import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=39';
-import { kimeteById } from '../data/kimete.js?v=39';
-import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=39';
-import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=39';
-import { playBout } from '../ui/sfx.js?v=39';
+import { t } from '../i18n/i18n.js?v=40';
+import { session, trainLeaveNow } from '../state.js?v=40';
+import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=40';
+import { kimeteById } from '../data/kimete.js?v=40';
+import { techCards, TECH_CARD_LIMIT } from '../core/training.js?v=40';
+import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=40';
+import { playBout } from '../ui/sfx.js?v=40';
 import {
-  topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, preloadOyakataArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=39';
+  topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, bindPress, preloadOyakataArt, clearScene, COLORS,
+} from '../ui/widgets.js?v=40';
 
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1235 は「稽古おわり」の字・1210 は番付へ戻る）
 const CARD = { w: 640, top: 470, step: 120, bottom: 1150 };
@@ -98,13 +98,7 @@ export class TrainingScene extends Phaser.Scene {
     fitText(this.add.text(width / 2, y - lift, label, textStyle(sub ? 30 : 32, color)).setOrigin(0.5), CARD.w - 40);
     if (sub) fitText(this.add.text(width / 2, y + h * 0.28, sub, textStyle(28, COLORS.ink, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 40);
     const zone = hitZone(this, width / 2, y, CARD.w, h);
-    let down = false; // 押しはこの札の上で始まったものだけ数える（widgets.button と同じ）
-    zone.on('pointerdown', () => { down = true; gfx.setAlpha(0.8); });
-    zone.on('pointerout', () => { down = false; gfx.setAlpha(1); });
-    zone.on('pointerup', () => {
-      gfx.setAlpha(1);
-      if (!down) return;
-      down = false;
+    bindPress(this, zone, gfx, () => { // 押しはこの札の上で始まったものだけ・開いた直後の押しは数えない（widgets.button と同じ）
       if (pon) playBout('pon');
       onTap();
     });

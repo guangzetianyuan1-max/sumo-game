@@ -11,27 +11,27 @@
 //   踏ん張りが解けたら「ふっ」と金の札「今だ！押せ！」。敵の必殺技が決まった時（届いた時だけ）は、その技の名前のカットイン
 // 終わったら 0.8秒そのまま見せ、勝ち負け（喜び・悔しいのカットイン）を出して recordNow を1回だけ・1.8秒後に取組の後（after）へ
 // 演出（20体版 Task 5）：カットイン（気合・決め・喜び・悔しい・敵の必殺技）は上に重ねるだけ・たたくと閉じる・新しい〇や予告が出たらすぐ閉じる／決め技の〇が出た時は段の音（金の帯は〇に替えた）
-import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge } from '../core/kami.js?v=39';
-import { isTactic, FOE_KIME_ID } from '../core/tactics.js?v=39';
-import { leftLook, rightLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey } from '../core/kamibutton.js?v=39';
-import { cutinArt } from '../core/cutin.js?v=39';
-import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=39';
-import { chosenKimete } from '../core/kimetepick.js?v=39';
-import { kimariteOf } from '../core/kamiresult.js?v=39';
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=39';
-import { currentFoe } from '../core/run.js?v=39';
-import { makeRng } from '../core/rng.js?v=39';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=39';
-import { t, foeLabel, kimariteLabel } from '../i18n/i18n.js?v=39';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=39';
-import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=39';
-import { playBout } from '../ui/sfx.js?v=39';
-import { isMuted } from '../ui/music.js?v=39';
-import { GYOJI, tachiaiVoiceAt, nokottaDue } from '../core/gyoji.js?v=39';
-import { createBigButton } from '../ui/bigbutton.js?v=39';
-import { drawCutinBand } from '../ui/cutinband.js?v=39';
-import { HUD, ringShape, barShape, drawRing, drawBar, hudTouch } from '../ui/hud.js?v=39';
-import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=39';
+import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge } from '../core/kami.js?v=40';
+import { isTactic, FOE_KIME_ID } from '../core/tactics.js?v=40';
+import { leftLook, rightLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey } from '../core/kamibutton.js?v=40';
+import { cutinArt } from '../core/cutin.js?v=40';
+import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=40';
+import { chosenKimete } from '../core/kimetepick.js?v=40';
+import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=40';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=40';
+import { currentFoe } from '../core/run.js?v=40';
+import { makeRng } from '../core/rng.js?v=40';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=40';
+import { t, foeLabel, kimariteLabel } from '../i18n/i18n.js?v=40';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=40';
+import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=40';
+import { playBout } from '../ui/sfx.js?v=40';
+import { isMuted } from '../ui/music.js?v=40';
+import { GYOJI, tachiaiVoiceAt, nokottaDue, hushVoices } from '../core/gyoji.js?v=40';
+import { createBigButton } from '../ui/bigbutton.js?v=40';
+import { drawCutinBand } from '../ui/cutinband.js?v=40';
+import { HUD, ringShape, barShape, drawRing, drawBar, hudTouch } from '../ui/hud.js?v=40';
+import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=40';
 
 const FIG_H = 330; // 型紙の高さ（敵は段階の倍率を掛ける）
 const VIS = FIG_H / 230; // 見た目の大きさの倍率（計算の座標は変えない・縦方向の跳ね・落ちは同じ比で描く）
@@ -194,6 +194,7 @@ export class KamiScene extends Phaser.Scene {
     // 中央上の〇・左端のバー（src/ui/hud.js の場所と絵）と、〇の判定の ◎○×・バーの「こらえ成功！」
     this.hud = this.add.graphics().setDepth(HUD_DEPTH);
     this.ringMark = this.add.text(HUD.ring.x, HUD.ring.y, '', textStyle(130, COLORS.gold, { stroke: '#141a2e', strokeThickness: 10 })).setOrigin(0.5).setDepth(HUD_DEPTH + 0.1).setVisible(false);
+    this.ringMarkKey = null; // 今出している判定の字の鍵（字と大きさを変えるのは鍵が変わった時だけ）
     this.barSay = this.add.text(BAR_SAY.x, BAR_SAY.y, '', textStyle(52, COLORS.gold, { stroke: '#141a2e', strokeThickness: 8 })).setOrigin(0, 0.5).setDepth(HUD_DEPTH + 0.1).setVisible(false);
     this.barSayUntil = 0;
     this.plateKey = null; // 今の札の字の鍵
@@ -351,6 +352,7 @@ export class KamiScene extends Phaser.Scene {
   gyojiVoice() {
     const st = this.st;
     const g = this.gyoji;
+    if (g.sounds.length && isMuted()) g.sounds = hushVoices(g.sounds); // 鳴っている途中で♪を消した＝その声も止める
     if (!g.started && st.t >= g.startAt) {
       g.started = true;
       if (this.playGyoji('hakkeyoi')) { g.lastAt = st.t; g.landAt = st.t + GYOJI.lead; }
@@ -380,8 +382,7 @@ export class KamiScene extends Phaser.Scene {
     const g = this.gyoji;
     if (!g) return;
     g.started = true; // 終わった後に立ち合いの声を始めない
-    g.sounds.forEach((s) => { try { s.stop(); s.destroy(); } catch { /* 止められなくても遊びは続ける */ } });
-    g.sounds = [];
+    g.sounds = hushVoices(g.sounds);
   }
 
   // 相手の攻めの音（st.tactic は計算が中身を書き換える＝id・phase・from を前のコマと比べる）：予告に入った＝「ピッ」／
@@ -458,7 +459,8 @@ export class KamiScene extends Phaser.Scene {
       const won = st.winner === 'east';
       const kimarite = kimariteOf(st);
       const word = t(won ? 'kami.win' : 'kami.lose');
-      const how = t('bout.kimarite', { tech: kimariteLabel(kimarite) }); // 決め技で決まった＝その決め技の名前
+      const foeKime = foeKimeOf(st); // 相手の必殺技で決まった＝その必殺技の名前（主人公の同じ系統の技の名前にしない）
+      const how = t('bout.kimarite', { tech: foeKime ? t(`foekime.${foeKime}`) : kimariteLabel(kimarite) }); // 決め技で決まった＝その決め技の名前
       this.banner.setText(word).setColor(won ? COLORS.gold : COLORS.ink).setVisible(false);
       fitText(this.kimarite.setText(how), this.scale.width - 60).setVisible(false);
       // 勝ち＝喜び・負け＝悔しいのカットイン。帯が閉じたら、いつもの勝ち負けの字を出す
@@ -525,8 +527,13 @@ export class KamiScene extends Phaser.Scene {
     const fl = ringFlash(st);
     if (fl) {
       const age = st.t - st.lastRing.at;
-      this.ringMark.setText(t(fl.key)).setColor(RING_INK[fl.judge]).setAlpha(Math.max(0, 1 - age / 0.7)).setVisible(true);
-    } else this.ringMark.setVisible(false);
+      if (fl.key !== this.ringMarkKey) { // 「届かない…」は字が長いので小さく・幅に収める（◎○× は大きく）
+        this.ringMarkKey = fl.key;
+        this.ringMark.setScale(1).setFontSize(fl.far ? 56 : 130).setText(t(fl.key));
+        if (fl.far) fitText(this.ringMark, this.scale.width - 120);
+      }
+      this.ringMark.setColor(RING_INK[fl.judge]).setAlpha(Math.max(0, 1 - age / 0.7)).setVisible(true);
+    } else { this.ringMark.setVisible(false); this.ringMarkKey = null; }
     if (this.barSay.visible && this.time.now > this.barSayUntil) {
       this.barSay.setAlpha(Math.max(0, 1 - (this.time.now - this.barSayUntil) / 200));
       if (this.time.now > this.barSayUntil + 200) this.barSay.setVisible(false);

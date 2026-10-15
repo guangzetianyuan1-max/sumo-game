@@ -1,19 +1,19 @@
 // src/scenes/OpponentScene.js — 今日の相手（20体版 Task 4・10/13）：相手の絵と型・得意と苦手（系統）・心技体・決め技を選ぶ札5枚・ことねの勧め → 取組へ
 // 作戦表の頃の名残（よく使う手・技の勧めの吹き出し）は外した。シニアにも読める大きな札と、下の真ん中の「取組へ」1つだけ
 // 決め技の札：覚えた物だけ押して選べる（選んだ札が朱に光る）。最初は勧め（recommendKimete）を選んでおく。覚えていない物は灰色
-import { TYPES } from '../data/types.js?v=39';
-import { OKAMI } from '../data/heroes.js?v=39';
-import { t, foeLabel } from '../i18n/i18n.js?v=39';
-import { session, prepareOpponent } from '../state.js?v=39';
-import { playBout } from '../ui/sfx.js?v=39';
-import { kimeteCards, recommendKimete, chosenKimete } from '../core/kimetepick.js?v=39';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=39';
+import { TYPES } from '../data/types.js?v=40';
+import { OKAMI } from '../data/heroes.js?v=40';
+import { t, foeLabel } from '../i18n/i18n.js?v=40';
+import { session, prepareOpponent } from '../state.js?v=40';
+import { playBout } from '../ui/sfx.js?v=40';
+import { kimeteCards, recommendKimete, chosenKimete, coachAdvice } from '../core/kimetepick.js?v=40';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=40';
 import {
-  button, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
+  button, bindPress, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
   preloadTypeArt, preloadGuideArt, addAura, clearScene, COLORS,
-} from '../ui/widgets.js?v=39';
-import { currentFoe } from '../core/run.js?v=39';
-import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=39';
+} from '../ui/widgets.js?v=40';
+import { currentFoe } from '../core/run.js?v=40';
+import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=40';
 
 const INFO = { y: 286, h: 292 }; // 相手の札（140〜432）：得意・苦手は英語だと5行になるので高めに：左に絵・右に型と得意・苦手
 const ART = { x: 175, r: 100, h: 200 };
@@ -23,9 +23,10 @@ const PICK_Y = 648; // 「決め技をえらぶ」
 const CARD = { w: 216, h: 112, gap: 12, row1: 724, row2: 852 }; // 札5枚：上に3枚・下に2枚（行の間 16）
 // ことねの顔と吹き出し：おすすめ（または稽古の案内）・この相手の攻めの名前を並べた1行（返し方はどれも「右のボタン（またはバー）を長押し・緑で離す」。踏ん張りの「来たら待ち、解けたら左を連打」は はじめての吹き出しと遊び方で教える＝ここは字を 26 以上に保つ）・この相手の必殺技の名前（10/14・10/15 ボタン2つ）。
 // 下の段の札の下 904 と「取組へ」の上 1132 の間に広げる。字は 26 以上を保つ（ja・en とも・大ボスは勧めの1行を外す）
-const COACH = { faceX: 70, size: 108, left: 138, top: 912, w: 560, h: 212, font: 30, min: 28 };
+const COACH = { faceX: 70, size: 108, left: 138, top: 912, w: 560, h: 236, font: 30, min: 28 }; // 5行（勧め・攻め・必殺技・返し方2行）が字28で収まる高さ
 const TAG = { w: 150, h: 38, dy: 2, size: 28 }; // 勧めの金の札：札の上の縁に少しかかる（下の段の札でも上の段の札 776 に重ならない）
-const GO_Y = 1190;
+const GO_H = 100;
+const GO_Y = 1206; // 「取組へ」（高さ GO_H・上の端 1156）：吹き出しの下 1148 の下
 const AFF_KEY = (a) => (a > 1 ? 'good' : a < 1 ? 'bad' : 'normal');
 const AFF_COLOR = { good: COLORS.gold, normal: COLORS.sub, bad: '#d9a08f' };
 
@@ -96,22 +97,30 @@ export class OpponentScene extends Phaser.Scene {
     this.drawStats(width);
 
     // 決め技の札
-    fitText(this.add.text(width / 2, PICK_Y, t('opp.pick'), textStyle(34, COLORS.gold)).setOrigin(0.5), width - 80);
+    this.pickText = fitText(this.add.text(width / 2, PICK_Y, t('opp.pick'), textStyle(34, COLORS.gold)).setOrigin(0.5), width - 80);
+    this.pickTimer = null;
     const cards = kimeteCards(session.run, opp);
     const pos = [[width / 2 - CARD.w - CARD.gap, CARD.row1], [width / 2, CARD.row1], [width / 2 + CARD.w + CARD.gap, CARD.row1],
       [width / 2 - (CARD.w + CARD.gap) / 2, CARD.row2], [width / 2 + (CARD.w + CARD.gap) / 2, CARD.row2]];
     cards.forEach((c, i) => this.card(c, pos[i][0], pos[i][1]));
 
     // ことねの一言（勧め・覚えた技が無ければ稽古の案内）
-    const advice = this.rec ? t('opp.recommend', { tech: t(`newtech.${this.rec}`) }) : t('opp.noKimete');
+    // 選んだ札が勧めと違う時は、選んだ技の名前（勧めの技を語り続けない）
+    const adv = coachAdvice(this.rec, this.pick);
+    const advice = t(adv.key, adv.tech ? { tech: t(`newtech.${adv.tech}`) } : {});
     const ids = foeTacticsAt(foe.index); // 取組で この相手が使う攻め（取組の予告と同じ種）
-    const lines = [t('opp.attacks', { list: ids.map((id) => t(`tactic.name.${id}`)).join(t('arch.join')) }),
-      t('opp.foeKime', { name: t(`foekime.${foeKimeteAt(foe.index).id}`) })]; // この相手の必殺技（予告の札と同じ名前）
+    // 1行ずつ言い切る（10/15 バグ出し：「必殺技「…」もバーで」が言いさしに見えた・語の途中で折れた）：攻めの名前／必殺技の名前／返し方（2行・切れ目は字で決める）
+    // 攻めが3つ以上（大ボス）は2つ目の後で行を替える（名前の途中で折れない）
+    const names = ids.map((id) => t(`tactic.name.${id}`));
+    const list = names.length > 2 ? `${names.slice(0, 2).join(t('arch.join'))}${t('arch.join').replace(/\s+$/, '')}\n${names.slice(2).join(t('arch.join'))}` : names.join(t('arch.join'));
+    const lines = [t('opp.attackList', { list }),
+      t('opp.foeKime', { name: t(`foekime.${foeKimeteAt(foe.index).id}`) }), // この相手の必殺技（予告の札と同じ名前）
+      t('opp.attacks')];
     if (ids.length < 3) lines.unshift(advice); // 大ボス（攻め4つ）は勧めの1行を外す（勧めは札の「おすすめ」で分かる）
     speakerFace(this, OKAMI, COACH.faceX, COACH.top + COACH.h / 2, COACH.size);
     this.coachText = speechBubble(this, COACH.left, COACH.top, COACH.w, COACH.h, lines.join('\n'), { size: COACH.font, min: COACH.min })[2];
 
-    button(this, width / 2, GO_Y, 520, 116, t('opp.go'), () => this.go(), { size: 44 });
+    button(this, width / 2, GO_Y, 520, GO_H, t('opp.go'), () => this.go(), { size: 44 });
   }
 
   // 心・技・体：左があなた・右が相手
@@ -137,8 +146,10 @@ export class OpponentScene extends Phaser.Scene {
     const name = fitText(this.add.text(x, y - 24, t(`newtech.${c.id}`), textStyle(28, nameColor)).setOrigin(0.5), CARD.w - 12);
     if (c.state === 'locked') {
       name.setAlpha(0.6);
-      this.lock(x - 86, y + 28);
-      fitText(this.add.text(x + 14, y + 28, t('opp.locked', { n: c.at }), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5).setAlpha(0.8), CARD.w - 60);
+      const lockG = this.lock(x - 86, y + 28);
+      const at = fitText(this.add.text(x + 14, y + 28, t('opp.locked', { n: c.at }), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5).setAlpha(0.8), CARD.w - 60);
+      // 鍵の札を押した：小さく横に揺れて、見出しの所に「あと○体で解禁」（10/15 バグ出し：押しても何も起きなかった）
+      bindPress(this, hitZone(this, x, y, CARD.w, CARD.h), g, () => this.lockedTap([g, name, lockG, at], Math.max(1, c.at - session.run.wins)));
     } else if (c.state === 'learnable') {
       fitText(this.add.text(x, y + 28, t('opp.canLearn'), textStyle(28, COLORS.gold, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 12);
     } else {
@@ -153,13 +164,7 @@ export class OpponentScene extends Phaser.Scene {
     }
     if (c.state !== 'learned') return;
     const zone = hitZone(this, x, y, CARD.w, CARD.h);
-    let down = false; // 押しはこの札の上で始まったものだけ数える（widgets.button と同じ）
-    zone.on('pointerdown', () => { down = true; g.setAlpha(0.8); });
-    zone.on('pointerout', () => { down = false; g.setAlpha(1); });
-    zone.on('pointerup', () => {
-      g.setAlpha(1);
-      if (!down) return;
-      down = false;
+    bindPress(this, zone, g, () => { // 押しはこの札の上で始まったものだけ・開いた直後の押しは数えない（widgets.button と同じ）
       if (this.pick === c.id) return;
       playBout('pon');
       this.pick = c.id;
@@ -172,6 +177,26 @@ export class OpponentScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.lineStyle(4, 0x8a8f9e, 1).beginPath().arc(x, y - 6, 8, Math.PI, 0, false).strokePath();
     g.fillStyle(0x8a8f9e, 1).fillRoundedRect(x - 12, y - 6, 24, 18, 4);
+    return g;
+  }
+
+  // 鍵の札を押した：札が小さく横に揺れ、「決め技をえらぶ」の所に「あと○体で解禁」を1.6秒出す
+  lockedTap(objs, n) {
+    objs.forEach((o) => {
+      if (o.baseX === undefined) o.baseX = o.x;
+      this.tweens.killTweensOf(o);
+      o.x = o.baseX;
+      this.tweens.add({ targets: o, x: o.baseX + 10, duration: 50, yoyo: true, repeat: 2, ease: 'Sine.InOut', onComplete: () => { o.x = o.baseX; } });
+    });
+    const { width } = this.scale;
+    if (this.pickTimer) this.pickTimer.remove(false);
+    this.pickText.setScale(1).setText(t('opp.lockedLeft', { n }));
+    fitText(this.pickText, width - 80);
+    this.pickTimer = this.time.delayedCall(1600, () => {
+      this.pickTimer = null;
+      this.pickText.setScale(1).setText(t('opp.pick'));
+      fitText(this.pickText, width - 80);
+    });
   }
 
   go() {

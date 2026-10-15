@@ -1,14 +1,14 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=39';
-import { GUIDE_IDS } from '../data/guides.js?v=39';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=39';
-import { foeAt } from '../data/foes.js?v=39';
-import { inGame } from '../data/kimarite.js?v=39';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=39';
-import { startStats, growthMult, diminish } from './career.js?v=39';
-import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=39';
-import { kimeteGain } from './drills.js?v=39';
-import { isTactic, FOE_KIME_ID } from './tactics.js?v=39';
+import { TYPES } from '../data/types.js?v=40';
+import { GUIDE_IDS } from '../data/guides.js?v=40';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=40';
+import { foeAt } from '../data/foes.js?v=40';
+import { inGame } from '../data/kimarite.js?v=40';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=40';
+import { startStats, growthMult, diminish } from './career.js?v=40';
+import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=40';
+import { kimeteGain } from './drills.js?v=40';
+import { isTactic, FOE_KIME_ID } from './tactics.js?v=40';
 
 // はじめて見た時に ことねが返し方を教える攻め：相手の攻め4つと、敵の必殺技（foeKime・ボタン1つ Task 3）。記録の seenTactics はこれだけを残す
 const seenable = (id) => isTactic(id) || id === FOE_KIME_ID;
@@ -16,7 +16,8 @@ const seenable = (id) => isTactic(id) || id === FOE_KIME_ID;
 export const RUN_VERSION = 4;
 // 遊び方の版（Ruling 15・10/14 ボタン1つ）：これより古い版の遊び方を見た記録は、読み込みで「まだ見ていない」に戻し、見た攻めも空にする（古い返し方を教えていた）。
 // 遊び方を閉じた時に今の版を書く（state.markHelpSeen）。記録の版 RUN_VERSION は変えない
-export const HELP_VER = 2;
+// 3＝ボタン2つ（v39・左＝連打・右＝一押しと長押し）の遊び方と吹き出し。v38（ボタン1つ・版2）を見た人にももう一度見せる
+export const HELP_VER = 3;
 export const TRAIN_STEPS = 3; // 1回の稽古のコマ数
 export const STATS = ['shin', 'gi', 'tai'];
 const r1 = (v) => Math.round(v * 10) / 10;

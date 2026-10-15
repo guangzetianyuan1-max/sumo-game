@@ -1,8 +1,8 @@
 // src/ui/cutinband.js — カットインの帯の絵（20体版 Task 5 の KamiScene から切り出した・10/14 稽古の決め技の習得でも使う）
 // 横長の帯：左に主人公の顔（src/core/cutin.js の表情）・右に大きな字（と小さな2行目）。左から滑り込む。
 // 消す時間・たたいて閉じるは呼ぶ側（取組＝KamiScene・稽古の結果＝DrillScene）が持つ。返すのは帯の container
-import { cutinArt } from '../core/cutin.js?v=39';
-import { textStyle, fitText, COLORS } from './widgets.js?v=39';
+import { cutinArt } from '../core/cutin.js?v=40';
+import { textStyle, fitText, COLORS } from './widgets.js?v=40';
 
 // box＝{ y, h, faceX, faceH, textX, textW }（帯の真ん中の高さ・帯の高さ・顔の x と高さ・字の真ん中の x と幅）
 export function drawCutinBand(scene, box, name, line1, line2 = '', depth = 20) {
@@ -19,6 +19,7 @@ export function drawCutinBand(scene, box, name, line1, line2 = '', depth = 20) {
   if (scene.textures.exists(art.key)) {
     const img = scene.add.image(box.faceX, top + box.h, art.key).setOrigin(0.5, 1);
     img.setScale(box.faceH / img.height);
+    if (box.keepFace) img.x = Math.max(box.faceX, img.displayWidth / 2); // 顔の絵の左の端を画面の中に（稽古の習得）
     c.add(img);
   }
   const big = scene.add.text(box.textX, line2 ? box.y - 30 : box.y, line1, textStyle(line2 ? 76 : 84, COLORS.gold, { stroke: '#141a2e', strokeThickness: 10 })).setOrigin(0.5);

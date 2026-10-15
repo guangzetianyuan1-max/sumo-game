@@ -1,12 +1,12 @@
 // src/scenes/GuideScene.js — 最初の画面：題・言葉の切り替え・記録①〜③の札（10/11 本人「昔話と同じように最大3つの四股名ですすめられるように」）。
 // 中身のある札を押す＝その記録のつづきへ（その時の画面へ）。空きの札を押す＝その記録でそのまま入門（10/13〜主人公はバランス型・案内役は若女将に固定＝選ぶ画面なし → 遊び方の3枚 → 番付表）。
 // 中身のある札の「はじめから」は2度押し（1度目は知らせるだけ・指1本の二重発火は数えない）で、その記録を消して入門へ
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=39';
-import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=39';
-import { session, startRun, SLOT_COUNT, slotState, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=39';
-import { button, fitText, roundBox, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=39';
-import { secondPress } from '../ui/press.js?v=39';
-import { playBout } from '../ui/sfx.js?v=39';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=40';
+import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=40';
+import { session, startRun, SLOT_COUNT, slotState, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=40';
+import { button, bindPress, fitText, roundBox, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=40';
+import { secondPress } from '../ui/press.js?v=40';
+import { playBout } from '../ui/sfx.js?v=40';
 
 const CARD = { w: 640, h: 300, top: 210, gap: 40 }; // 札3枚：210〜1190（下に知らせの1行）
 const NEW = { w: 200, h: 64 }; // 札の右下の「はじめから」
@@ -25,6 +25,7 @@ export class GuideScene extends Phaser.Scene {
 
   create() {
     this.armed = null; // 「はじめから」の1度目 { n, at }
+    this.leaving = false; // 画面を移ると決めたら、ほかの札・ボタンの押しは数えない（2本の指で2つの画面が同時に始まらない）
     this.draw();
   }
 
@@ -37,6 +38,7 @@ export class GuideScene extends Phaser.Scene {
     const { width } = this.scale;
     fitText(this.add.text(40, 55, t('title'), textStyle(56, COLORS.gold)).setOrigin(0, 0.5), width - 280);
     button(this, width - 105, 55, 170, 70, t('lang.toggle'), () => {
+      if (!this.leave()) return;
       setLang(getLang() === 'ja' ? 'en' : 'ja', storage());
       document.documentElement.lang = getLang();
       this.scene.restart();
@@ -63,18 +65,14 @@ export class GuideScene extends Phaser.Scene {
     const gfx = roundBox(this, x, y, CARD.w, CARD.h, sum ? COLORS.panel : COLORS.empty, { radius: 32, stroke: COLORS.frame });
     this.add.text(left + PAD, top + 38, t(`slot.${n}`), textStyle(30, COLORS.gold)).setOrigin(0, 0.5);
     const zone = hitZone(this, x, y, CARD.w, CARD.h);
-    let down = false; // 押しはこの札の上で始まったものだけ数える（widgets.button と同じ・外で押して滑り込んだ離しは無視）
-    zone.on('pointerdown', () => { down = true; gfx.setAlpha(0.8); });
-    zone.on('pointerout', () => { down = false; gfx.setAlpha(1); });
+    // 押しはこの札の上で始まったものだけ・開いた直後の押しは数えない（widgets.bindPress・button と同じ）
 
     if (!sum) {
       const old = !!(saved && saved.old);
       fitText(this.add.text(x, y - 6, t(old ? 'slot.old' : 'slot.empty'), textStyle(56, COLORS.sub)).setOrigin(0.5), CARD.w - 60);
       fitText(this.add.text(x, y + 60, t(old ? 'slot.oldSub' : 'slot.emptySub'), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 60);
-      zone.on('pointerup', () => {
-        gfx.setAlpha(1);
-        if (!down) return;
-        down = false;
+      bindPress(this, zone, gfx, () => {
+        if (this.leaving) return;
         playBout('pon');
         if (old) clearSlot(n); // 古い版の記録は読めない＝消して新しく入門
         session.slot = n; // 入門を終えた時にこの記録へ書き、前回として覚える
@@ -100,10 +98,8 @@ export class GuideScene extends Phaser.Scene {
     fitText(this.add.text(tx, top + 172, t(`div.${sum.rank}`), textStyle(30, COLORS.ink)).setOrigin(0, 0.5), room);
     fitText(this.add.text(tx, top + 222, sum.cleared ? t('slot.clear') : t('slot.count', { n: sum.wins }), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), right - PAD - NEW.w - 16 - tx);
 
-    zone.on('pointerup', () => {
-      gfx.setAlpha(1);
-      if (!down) return;
-      down = false;
+    bindPress(this, zone, gfx, () => {
+      if (!this.leave()) return;
       playBout('pon');
       // つづきから：記録の案内役・主人公のまま、その時の画面へ
       rememberSlot(n);
@@ -118,7 +114,15 @@ export class GuideScene extends Phaser.Scene {
     });
   }
 
+  // 画面を移る：1回目だけ true（同じフレームの2本目の指・札と言葉の切り替えの同時押しは数えない）
+  leave() {
+    if (this.leaving) return false;
+    this.leaving = true;
+    return true;
+  }
+
   pressNew(n) {
+    if (this.leaving) return;
     const now = Date.now();
     if (this.armed && this.armed.n === n) {
       if (!secondPress(this.armed.at, now)) return; // 同じ押しの二重発火は数えない（1度目のまま）
@@ -133,6 +137,7 @@ export class GuideScene extends Phaser.Scene {
 
   // 新しい一代記の流れへ（記録は入門を終えた時に session.slot へ書く）
   startNew() {
+    this.leaving = true;
     session.run = null;
     session.guide = null;
     session.lastBout = null;

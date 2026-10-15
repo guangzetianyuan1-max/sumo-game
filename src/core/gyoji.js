@@ -23,3 +23,12 @@ export function nokottaDue(st, lastAt = -Infinity, landAt = -Infinity) {
   if (st.t - landAt < GYOJI.afterTachiai) return false;
   return true;
 }
+
+// 鳴っている声を止めて片付ける（♪を消した時・取組の終わり）。声の物＝stop と destroy を持つ物（片付けられない物があっても続ける）。空の並びを返す
+export function hushVoices(sounds) {
+  (Array.isArray(sounds) ? sounds : []).forEach((s) => {
+    try { s.stop(); } catch (e) { void e; } // 止められなくても続ける
+    try { s.destroy(); } catch (e) { void e; } // 片付けられなくても続ける
+  });
+  return [];
+}

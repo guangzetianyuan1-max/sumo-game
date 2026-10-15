@@ -3,14 +3,14 @@
 // 3枚目＝相手の攻めは赤い札で予告され、左にバーが出る・右を長押しでためて緑の帯で離すと「こらえ成功！」
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=39';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=39';
-import { kamiArt } from '../core/foeart.js?v=39';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=39';
-import { t, getLang } from '../i18n/i18n.js?v=39';
-import { session, markHelpSeen } from '../state.js?v=39';
-import { ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=39';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=39';
+import { KAMI } from '../core/kami.js?v=40';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=40';
+import { kamiArt } from '../core/foeart.js?v=40';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=40';
+import { t, getLang } from '../i18n/i18n.js?v=40';
+import { session, markHelpSeen } from '../state.js?v=40';
+import { ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=40';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=40';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）

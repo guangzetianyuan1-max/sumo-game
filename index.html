@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-title" content="トントン紙相撲">
 <meta name="theme-color" content="#141a2e">
 <script>
-(function(){var mine="39",done=false,timer=null;
+(function(){var mine="40",done=false,timer=null;
 function load(){if(done)return;done=true;clearTimeout(timer);var go=function(){var s=document.createElement("script");s.type="module";s.src="src/main.js?v="+encodeURIComponent(mine);document.body.appendChild(s);};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",go);else go();}
 timer=setTimeout(load,1500);
@@ -35,8 +35,11 @@ try{fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){retu
 <button id="music" aria-label="music" style="display:none;position:fixed;z-index:8;border:0;border-radius:50%;background:#20285a;color:#e8c46a;font-family:sans-serif;padding:0;cursor:pointer;line-height:1"></button>
 <div id="err" style="display:none;position:fixed;left:0;right:0;bottom:0;padding:8px 12px;background:#b3261e;color:#fff;font:13px/1.4 sans-serif;z-index:9;white-space:pre-wrap"></div>
 <script>
-// テスト中だけ：スマホで起きたエラーを画面の下に赤で出す（写真で送ってもらえるように）
+// テスト中だけ：スマホで起きたエラーを画面の下に赤で出す（写真で送ってもらえるように）。
+// 公開版（GitHub Pages）では出さない＝手もとの確かめ（localhost・127.0.0.1・ファイル）か、URL に ?debug がある時だけ（10/15 バグ出し：赤い帯がボタンの下の縁を隠した）
 (function () {
+  var h = location.hostname, local = location.protocol === 'file:' || h === 'localhost' || h === '127.0.0.1' || h === '[::1]' || /(^|[?&])debug(=|&|$)/.test(location.search.slice(1));
+  if (!local) return;
   var box = document.getElementById('err'), seen = {};
   function show(msg) {
     if (seen[msg]) return; seen[msg] = 1;

@@ -5,10 +5,10 @@
 //   踏ん張り中（バーに失敗して来た敵の踏ん張りの act＝左で押すと跳ね返される）stay「待て」・倒れた hold・終わり done
 // 左が明るいのは tap だけ（stay は「待て」で暗い）・〇／バー／again／倒れの時は暗く「→右」。右が明るいのは go・ring・bar・again・hold（tap・stay の時は暗い）
 // 〇とバーの絵そのものは src/ui/hud.js（中央上の〇・左端のバー）。ここはボタンの字・色・脈・満ち・暗さと、下の案内・ことねの吹き出しの鍵だけ
-import { KAMI, beatOffset, gaugeLit, barGauge } from './kami.js?v=39';
-import { gaugeTier } from './gaugetier.js?v=39';
-import { IPPON } from './drills.js?v=39';
-import { BAR } from './tactics.js?v=39';
+import { KAMI, beatOffset, gaugeLit, barGauge } from './kami.js?v=40';
+import { gaugeTier } from './gaugetier.js?v=40';
+import { IPPON } from './drills.js?v=40';
+import { BAR } from './tactics.js?v=40';
 
 export const BUTTON_COLOR = { // 遊び方の見本（HelpScene）も同じ色を使う
   wait: 0x5a5f6e, // 灰
@@ -100,9 +100,11 @@ export function barSayKey(st, side = 'east') {
 }
 
 // 〇の判定の見せ方（st.lastRing の judge：2＝◎・1＝○・0＝×）：主人公の〇が終わってから IPPON.gapMs の間だけ。無い＝null
+// 押した時に相手が届かなかった（reach false・10/15）＝「届かない…」（far true・judge 0）
 export function ringFlash(st, side = 'east') {
   const r = st.lastRing;
   if (!r || r.side !== side || st.t - r.at > IPPON.gapMs / 1000) return null;
+  if (r.reach === false) return { judge: 0, key: 'kami.ring.far', far: true };
   return { judge: r.judge, key: `kami.ring.${r.judge}` };
 }
 

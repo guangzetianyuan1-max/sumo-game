@@ -1,15 +1,16 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=39';
-import { HERO_IDS } from '../data/heroes.js?v=39';
-import { heroArt } from '../core/foeart.js?v=39';
-import { GUIDE_IDS } from '../data/guides.js?v=39';
-import { HEYA_IDS } from '../data/heya.js?v=39';
-import { t, getLang } from '../i18n/i18n.js?v=39';
-import { jaWrap, jaWrapBalanced } from '../data/wrap.js?v=39';
-import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=39';
-import { TRAININGS } from '../core/career.js?v=39';
-import { saveNow } from '../state.js?v=39';
-import { playBout } from './sfx.js?v=39';
+import { TYPE_IDS } from '../data/types.js?v=40';
+import { HERO_IDS } from '../data/heroes.js?v=40';
+import { heroArt } from '../core/foeart.js?v=40';
+import { GUIDE_IDS } from '../data/guides.js?v=40';
+import { HEYA_IDS } from '../data/heya.js?v=40';
+import { t, getLang } from '../i18n/i18n.js?v=40';
+import { jaWrap, jaWrapBalanced } from '../data/wrap.js?v=40';
+import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=40';
+import { TRAININGS } from '../core/career.js?v=40';
+import { saveNow } from '../state.js?v=40';
+import { playBout } from './sfx.js?v=40';
+import { armOpenGuard, openGuarded } from './openguard.js?v=40';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -288,9 +289,24 @@ export function button(scene, x, y, w, h, label, onTap, { color = COLORS.button,
     const subText = scene.add.text(x, y + h * 0.22, sub, textStyle(subSize, COLORS.sub, { align: 'center', fontStyle: '500' })).setOrigin(0.5);
     fitText(subText, w - 36);
   }
-  // 押しはこのボタンの上で始まったものだけ数える（外で押して滑り込んだ離しは無視）
+  bindPress(scene, zone, gfx, () => {
+    const prev = lastTap.get(scene), at = scene.time.now;
+    if (prev && prev.zone !== zone && at - prev.at < MULTI_TAP_MS) return; // 別のボタンが今 押されたばかり
+    lastTap.set(scene, { at, zone });
+    playBout('pon'); // 画面を選ぶ小さな「ぽん」
+    onTap();
+  });
+  return { box: zone, text };
+}
+
+// ボタンと札の押し（button と各画面の札が同じ物を使う）：
+//   押しはこの当たりの上で始まったものだけ数える（外で押して滑り込んだ離しは無視）。
+//   画面が開いた直後（openguard.js・ふつう 0.3秒）に始まった押しも数えない（前の画面の連打が、ここのボタンに落ちない・10/15 バグ出し）
+export function bindPress(scene, zone, gfx, onUp) {
+  armOpenGuard(scene);
   let down = false;
   zone.on('pointerdown', () => {
+    if (openGuarded(scene)) return;
     down = true;
     gfx.setAlpha(0.8);
   });
@@ -302,13 +318,8 @@ export function button(scene, x, y, w, h, label, onTap, { color = COLORS.button,
     gfx.setAlpha(1);
     if (!down) return;
     down = false;
-    const prev = lastTap.get(scene), at = scene.time.now;
-    if (prev && prev.zone !== zone && at - prev.at < MULTI_TAP_MS) return; // 別のボタンが今 押されたばかり
-    lastTap.set(scene, { at, zone });
-    playBout('pon'); // 画面を選ぶ小さな「ぽん」
-    onTap();
+    onUp();
   });
-  return { box: zone, text };
 }
 
 // 左上の「もどる」（10/11 本人「初め以外の画面に『戻る』を入れて、前の画面に戻ることができるように」）。
@@ -342,7 +353,7 @@ function showSaveToast(scene, ok) {
     old.objs.forEach((o) => o.destroy());
   }
   const D = 900;
-  const cy = 1100;
+  const cy = SAVE.y + SAVE.h + 36; // 「セーブ」のすぐ下（10/15 バグ出し：画面の下 1100 では番付の「遊び方」を隠した）
   const text = scene.add.text(width / 2, cy, t(ok ? 'save.done' : 'save.fail'), textStyle(28, ok ? COLORS.gold : COLORS.ink, { fontStyle: '500' }))
     .setOrigin(0.5).setDepth(D + 1);
   fitText(text, width - 2 * SAVE.right - 36);

@@ -1,9 +1,10 @@
 // src/scenes/AfterScene.js — 取組の後（10/12 夜）：勝ち＝倒した相手・心技体の伸び・昇進・新技の解禁・クリア → 番付表
 // 負け＝心技体の伸び（少し）・「もう一度」（相手の情報へ）か「稽古へ」。同じ相手に3連敗したら案内役が稽古を勧める（選ぶのは本人）
-import { t, foeLabel } from '../i18n/i18n.js?v=39';
-import { session, suggestTraining, trainBegin } from '../state.js?v=39';
-import { playBout } from '../ui/sfx.js?v=39';
-import { button, topTitle, fitText, wrapText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=39';
+import { t, foeLabel } from '../i18n/i18n.js?v=40';
+import { session, suggestTraining, trainBegin } from '../state.js?v=40';
+import { playBout } from '../ui/sfx.js?v=40';
+import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=40';
+import { button, topTitle, fitText, wrapText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=40';
 
 const STATS = ['shin', 'gi', 'tai'];
 
@@ -18,6 +19,8 @@ export class AfterScene extends Phaser.Scene {
   }
 
   create() {
+    // 下のボタンは取組の大きなボタンの真下＝取組の終わりの連打がそのまま落ちないよう、開いてから 0.6秒は押しを受けない
+    guardOpen(this, OPEN_GUARD_LONG_MS);
     const lb = session.lastBout;
     const r = session.run;
     if (!r) { this.scene.start('guide'); return; }

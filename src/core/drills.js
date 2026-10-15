@@ -35,6 +35,14 @@ export const gradeMood = (grade) => (grade === 'bad' ? 'shout' : 'smile');
 export const KIMETE_MIN_GAIN = 0.35;
 export const kimeteGain = (score) => Math.min(1, Math.max(KIMETE_MIN_GAIN, clamp01(score) / NORMAL_SCORE));
 // ゲージ（0〜1）→ 画面の％。切り捨て（満タン前に100%と出さない・0.58 が 57 にならないよう少しだけ足す）
+// 決め技モードの親方の一言の段（10/15 バグ出し：53% で「なんだそれは！」・同じ 53% で習得なら「見事！」とずれた）：
+// 点数でなく、ゲージがどれだけ進んだかで決める。覚えた＝great・ゲージが満タンの KIMETE_GOOD_GAIN 以上進んだ＝good・ほか＝bad
+export const KIMETE_GOOD_GAIN = 0.6;
+export function kimeteGrade({ learned, from, to }) {
+  if (learned) return 'great';
+  const gain = (Number.isFinite(to) ? to : 0) - (Number.isFinite(from) ? from : 0);
+  return gain >= KIMETE_GOOD_GAIN - 1e-9 ? 'good' : 'bad';
+}
 export const kimetePct = (v) => (Number.isFinite(v) ? Math.min(100, Math.max(0, Math.floor(v * 100 + 1e-6))) : 0);
 
 // ---- 一押し ----

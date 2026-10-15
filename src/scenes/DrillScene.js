@@ -9,27 +9,28 @@
 // 決め技モード（10/14 本人「稽古の出来で決め技を習得できるようにしてください」・data.kimete＝決め技の id）：
 //   遊びはその決め技の drill（kimete.js）。心技体は伸びず、出来で習得ゲージ（drills.kimeteGain）がたまる（drillKimeteNow を1回だけ）。
 //   結果＝点数と出来 → ゲージが前→後へたまる → 満タンなら「習得！」・決めのカットイン（kime）・kan の音／満タンでなければ「習得 75%」
-import { t } from '../i18n/i18n.js?v=39';
-import { session, drillStatNow, drillKimeteNow } from '../state.js?v=39';
-import { canLeaveTraining } from '../core/run.js?v=39';
-import { kimeteById } from '../data/kimete.js?v=39';
-import { cutinArt } from '../core/cutin.js?v=39';
+import { t } from '../i18n/i18n.js?v=40';
+import { session, drillStatNow, drillKimeteNow } from '../state.js?v=40';
+import { canLeaveTraining } from '../core/run.js?v=40';
+import { kimeteById } from '../data/kimete.js?v=40';
+import { cutinArt } from '../core/cutin.js?v=40';
 import {
-  DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood,
+  DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood, kimeteGrade,
   IPPON, ipponHitMs, ipponJudge, ipponMissed, ipponScore,
   RENDA, COUNTDOWN, countdownAt, rendaScore, NAGAOSHI, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct,
-} from '../core/drills.js?v=39';
-import { kamiArt, heroArt, foeArt, stageScale } from '../core/foeart.js?v=39';
-import { HERO_TYPE } from '../data/heroes.js?v=39';
-import { createBigButton } from '../ui/bigbutton.js?v=39';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=39';
-import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, OPP, BTN, drillFoe, oppLean, holdBlocked } from '../ui/drillstage.js?v=39'; // 置き場所と相手の見せ方の計算（Phaser を使わない）
-import { drawCutinBand } from '../ui/cutinband.js?v=39';
-import { HUD, HUD_HIT, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=39'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
-import { playTraining, playBout } from '../ui/sfx.js?v=39';
+} from '../core/drills.js?v=40';
+import { kamiArt, heroArt, foeArt, stageScale } from '../core/foeart.js?v=40';
+import { HERO_TYPE } from '../data/heroes.js?v=40';
+import { createBigButton } from '../ui/bigbutton.js?v=40';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=40';
+import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, OPP, BTN, drillFoe, oppLean, holdBlocked } from '../ui/drillstage.js?v=40'; // 置き場所と相手の見せ方の計算（Phaser を使わない）
+import { drawCutinBand } from '../ui/cutinband.js?v=40';
+import { HUD, HUD_HIT, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=40'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
+import { playTraining, playBout } from '../ui/sfx.js?v=40';
+import { guardOpen, openGuarded } from '../ui/openguard.js?v=40';
 import {
   button, fitText, wrapText, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadHeroFigures, clearScene, COLORS,
-} from '../ui/widgets.js?v=39';
+} from '../ui/widgets.js?v=40';
 
 const BG_KEY = 'keiko-bg';
 const HERO_FILE = `hero_${HERO_TYPE}`;
@@ -48,7 +49,7 @@ const LIVE_LOOK = { dim: false, raise: 1, ink: { color: COLORS.ink, stroke: '#14
 const TXT_SHADOW = [0, 3, '#0a0f20', 6, false, true];
 // 決め技モードの結果：習得ゲージ（字と横の棒）とたまる動き・習得のカットイン（取組の帯と同じ形・親方の吹き出しの上に重ねる）
 const KGAUGE = { labelY: 352, barY: 405, w: 560, h: 30, delay: 250, ms: 700 };
-const KCUT = { y: 560, h: 220, faceX: 125, faceH: 260, textX: 460, textW: 470, ms: 1800 };
+const KCUT = { y: 560, h: 220, faceX: 125, faceH: 260, textX: 460, textW: 470, ms: 1800, keepFace: true };
 
 // 決め技モードにできる決め技か（解禁していて、まだ覚えていない）／今回の遊びの種類（決め技モードならその決め技の遊び・それ以外は渡された kind）
 const kimeteOk = (run, k) => !!(run && k && run.unlocked.indexOf(k.id) >= 0 && run.newKnown.indexOf(k.id) < 0);
@@ -205,6 +206,7 @@ export class DrillScene extends Phaser.Scene {
     if (kind === 'ippon') this.startAt = this.time.now + READY_MS;
     if (kind === 'renda') this.startAt = this.time.now; // 連打：入ってすぐ 3・2・1・GO（押しは数えない）
     this.phase = kind === 'ippon' ? 'ready' : kind === 'renda' ? 'count' : 'wait';
+    guardOpen(this); // 開いてから 0.3秒は長押しを始めない（札の二度たたき）
   }
 
   // 見出し：決め技モードは「決め技「○○」の稽古」・ふつうは遊びの名前
@@ -288,8 +290,8 @@ export class DrillScene extends Phaser.Scene {
       playBout('dosu');
       return true;
     }
-    // 長押し：帯の外で待っている時だけ始まる
-    if (this.phase !== 'wait') return false;
+    // 長押し：帯の外で待っている時だけ始まる。開いた直後（稽古の札への二度たたき）の押しは数えない（その回が「早い」で無駄にならない）
+    if (this.phase !== 'wait' || openGuarded(this)) return false;
     this.phase = 'hold';
     this.holdAt = now;
     return true;
@@ -564,10 +566,10 @@ export class DrillScene extends Phaser.Scene {
       fitText(this.add.text(width / 2, 375, t('drill.gain', { stat: t(`stat.${r.stat}`), from: fmt(r.from), to: fmt(r.to) }), textStyle(40, COLORS.ink)).setOrigin(0.5), width - 60);
     }
     // 親方：上手＝笑う・下手＝怒鳴る
-    // 決め技を覚えた時（learned）は出来が低くても『great』（笑う顔）＝習得の場面で怒鳴らない
-    const grade = r.kimete && r.learned ? 'great' : drillGrade(r.score);
-    speakerFace(this, 'kotonami', 110, 540, 150, gradeMood(grade));
-    speechBubble(this, 210, 440, 480, 220, t(`drill.line.${grade}`), { size: 36, min: 28 });
+    // 決め技モードは点数でなくゲージの進み（kimeteGrade）：覚えた＝great・満タンの6割以上進んだ＝good・ほか＝bad
+    const grade = r.kimete ? kimeteGrade(r) : drillGrade(r.score);
+    // 親方の顔と吹き出し：習得のカットインの帯の間は隠し、帯が閉じたら出す（10/15 バグ出し：帯の下で字が透けて重なった）
+    this.oyakata = [...speakerFace(this, 'kotonami', 110, 540, 150, gradeMood(grade)), ...speechBubble(this, 210, 440, 480, 220, t(`drill.line.${grade}`), { size: 36, min: 28 })];
     statBars(this, 40, 700, 640, session.run.stats);
     if (r.left <= 0) fitText(this.add.text(width / 2, 1080, t(r.voluntary ? 'train2.doneFree' : 'train2.done'), textStyle(34, COLORS.gold)).setOrigin(0.5), width - 60);
     this.time.delayedCall(RESULT_GUARD_MS, () => this.resultButtons());
@@ -614,11 +616,13 @@ export class DrillScene extends Phaser.Scene {
   // 習得のカットイン（決めの表情 kime）：親方の吹き出しの上に重ね、少しして消える・たたくと閉じる
   showLearnedCutin(id) {
     const c = drawCutinBand(this, KCUT, 'kime', t(`newtech.${id}`), t('drill.learnedSub'));
+    const hide = (on) => (this.oyakata || []).forEach((o) => { if (o.active) o.setVisible(on); });
+    hide(false);
     let closed = false;
     const close = () => {
       if (closed) return;
       closed = true;
-      this.tweens.add({ targets: c, alpha: 0, duration: 150, onComplete: () => c.destroy() });
+      this.tweens.add({ targets: c, alpha: 0, duration: 150, onComplete: () => { c.destroy(); hide(true); } }); // 帯が消えきってから親方を出す
     };
     this.time.delayedCall(KCUT.ms, close);
     this.input.once('pointerdown', close);

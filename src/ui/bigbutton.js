@@ -3,9 +3,9 @@
 // 形：地面の影 → 側面（厚み THICK px・面の色を暗くした円柱）→ 上の面（上が明るく下が暗い）＋つやの白い弧。押すと面が SINK px 沈み、側面が薄くなり、影が縮む
 // 押し：触れた瞬間に onDown → 音「カチッ」と振動 → 沈む／離すと SPRING_MS で少し行き過ぎて戻る。長押しの間は沈んだまま・連打は押すたびに沈んで戻る
 // 深さの計算は src/core/pressdepth.js（node で試験できる純粋な関数）
-import { pressDepth, SINK, MIN_HOLD_MS } from '../core/pressdepth.js?v=39';
-import { playBout } from './sfx.js?v=39';
-import { textStyle, fitText, COLORS } from './widgets.js?v=39';
+import { pressDepth, SINK, MIN_HOLD_MS } from '../core/pressdepth.js?v=40';
+import { playBout } from './sfx.js?v=40';
+import { textStyle, fitText, COLORS } from './widgets.js?v=40';
 
 export const THICK = 18; // 側面の厚み（押していない時）
 const FACE_TEX = 'bigbtn-face'; // 上の面の下地（白→灰の縦のグラデーション・色は tint で掛ける）

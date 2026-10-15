@@ -4,8 +4,8 @@
 //   連打：主人公は左・鉄砲柱は右・回数は柱のさらに右（主人公にも柱にも重ならない）
 //   長押し：主人公は左・相手は右（左向き・今の次の相手の型紙）。左端のバー（HUD.bar）にかからない
 // ボタン2つは本番（KamiScene）と同じ場所と大きさ：左（連打）・右（一押しと長押し）
-import { currentFoe } from '../core/run.js?v=39';
-import { foeAt } from '../data/foes.js?v=39';
+import { currentFoe } from '../core/run.js?v=40';
+import { foeAt } from '../data/foes.js?v=40';
 
 export const FACE = 1;
 export const FIG_H = 330; // 型紙の高さ（取組と同じ）

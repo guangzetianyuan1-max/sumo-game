@@ -1,10 +1,10 @@
 // 紙相撲の計算（10/13 本人「紙相撲に切り替える」・設計書 2026-10-13-sumo-kamizumo-design.md）
 // 画面から切り離した、型紙2枚の動き。単位＝画面の px と秒。x＝足もとの真ん中・y＝箱の面からの高さ（上が＋）
 // a＝傾き（＋＝自分の後ろへ反る）。東＝主人公＝左から右へ（dir +1）・西＝敵＝右から左へ（dir -1）
-import { makeRng } from './rng.js?v=39';
-import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=39';
-import { ON_BEAT } from './beat.js?v=39';
-import { IPPON, ipponJudge } from './drills.js?v=39';
+import { makeRng } from './rng.js?v=40';
+import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=40';
+import { ON_BEAT } from './beat.js?v=40';
+import { IPPON, ipponJudge } from './drills.js?v=40';
 
 export { ON_BEAT };
 
@@ -50,8 +50,12 @@ const ARCHS = Object.keys(KIMETE_FX);
 // 一発の〇（10/14 ボタン1つ・設計書 2026-10-14-sumo-one-button-ring-bar-design.md §3）。判定は稽古の一押しと同じ ipponJudge（±70ms＝2・±170ms＝1・外＝0）
 // tachiaiHit＝合図から的に重なるまで（秒）・kimeHit＝光ってから重なるまで＝max(kimeMin, gaugeTime×kimeHit)（技が高いほど ゆっくり・稽古の 0.8〜1.3 秒に近く）
 // 10/14 Task 2（Ruling 3）：kimeHit 0.6→0.9・最短 kimeMin 0.8 秒（0.36 秒では見てから押せなかった）
+// 10/15（〇が押すか時間切れまで消えない）：kimeHit 0.9→0.7（〇の間は跳ねない＝長い〇は鍛えた主人公ほど損。大ボスの初挑戦が 20% に落ちた・kami_tune で 31%／最初の心技体 6%）
 // charge＝立ち合いの当たりの強さ（判定 0・1・2 ごと。合図の前の早押しも 0.5）・kimeK＝決め技の強さ（判定 1・2・0 は出ない）・missStun＝決め技の外れの すき
-export const RING = { tachiaiHit: 0.9, kimeHit: 0.9, kimeMin: 0.8, charge: [0.5, 1.0, 1.6], kimeK: [0, 0.6, 1], missStun: 0.3 };
+// cool＝決め技の〇が通り過ぎてから（hitAt＋0.17）次に光るまでの秒
+// reachSlack＝押した時の届く距離の余裕（px・10/15）：主人公の〇は相手が離れても消えない（押すか時間切れまで）。押した時に相手が
+// KIMETE_REACH＋reachSlack の外（うっちゃりは自分の背中側の端から EDGE_SELF＋reachSlack の外も）なら「届かない」＝決め技無し・すき無し
+export const RING = { tachiaiHit: 0.9, kimeHit: 0.7, kimeMin: 0.8, charge: [0.5, 1.0, 1.6], kimeK: [0, 0.6, 1], missStun: 0.3, cool: 1.5, reachSlack: 40 };
 const RING_NEAR = IPPON.nearMs / 1000; // 押さないまま hitAt からこれを過ぎたら外れ（〇が消える）
 
 const SIDES = ['east', 'west'];
@@ -156,18 +160,33 @@ function ringBlocked(st, side) {
 // id の無い決め技は、どちらの側でも今までのゲージと〇（本番では主人公だけ。西の〇の道は試験が型紙を直接作る時に使う）
 const warnKime = (f) => !!(f.kimete && f.kimete.id);
 
+// 主人公の決め技の〇（10/15 本人「押す前に〇が飛ばされ、連打に切り替えられてしまう」）：場所を外れても消えない＝押すか時間切れまで残る（倒れたら消える）。
+// 西の〇は本番に無い（敵の必殺技は予告で来る）＝試験が id の無い決め技で作る西の〇は今まで通り（場所を外れたら消える）
+const keepsRing = (side, r) => side === 'east' && !!r && r.kind === 'kime';
+
+// 押した時に届くか（主人公の〇）：相手との間が KIMETE_REACH＋余裕の内。うっちゃりは自分の背中側の端の条件にも同じ余裕
+function inReach(me, op) {
+  if (!me.kimete || op.fell || me.fell) return false;
+  const arch = me.kimete.arch;
+  if (Math.abs(op.x - me.x) > KIMETE_REACH[arch] + RING.reachSlack) return false;
+  if (arch !== 'utchari') return true;
+  const back = me.dir > 0 ? me.x - KAMI.BOX.l : KAMI.BOX.r - me.x;
+  return back <= KAMI.EDGE_SELF + RING.reachSlack;
+}
+
 // 決め技のゲージを点ける・消す（1コマごと）
 // 光ると同時に決め技の〇が出る。ゲージ（gaugeLit）は〇の間だけ光る＝litUntil は〇が通り過ぎる時刻（hitAt＋0.17）
 function updateGauge(st, side) {
   const me = st.f[side], op = st.f[other(side)];
   if (warnKime(me)) return; // 敵の必殺技はゲージも〇も使わない＝攻めの順番で来る（updateTactic）
   const ok = !me.down && inZone(me, op) && !ringBlocked(st, side); // 光ってよい形か（間の時間 cool とは分けて見る）
+  const keep = keepsRing(side, me.ring) && !me.down && !me.fell; // 主人公の〇は、倒れない限り押すか時間切れまで残る
   if (ok && st.t >= me.cool && st.t >= me.litUntil) {
     const hitAt = st.t + Math.max(RING.kimeMin, me.gaugeTime * RING.kimeHit);
-    me.litFrom = st.t; me.litUntil = hitAt + RING_NEAR; me.cool = me.litUntil + 1.5;
+    me.litFrom = st.t; me.litUntil = hitAt + RING_NEAR; me.cool = me.litUntil + RING.cool;
     me.ring = { side, kind: 'kime', from: st.t, hitAt };
   }
-  if (!ok && st.t < me.litUntil) { me.litUntil = st.t; if (me.ring && me.ring.kind === 'kime') me.ring = null; } // 倒れた・相手が場所を外れた＝消す（次に光るのは cool の後）
+  if (!ok && !keep && st.t < me.litUntil) { me.litUntil = st.t; if (me.ring && me.ring.kind === 'kime') me.ring = null; } // 倒れた・相手が場所を外れた＝消す（次に光るのは cool の後）
 }
 
 // 〇の判定：今押したら 0・1・2（〇は消さない）。〇が無ければ 0
@@ -176,10 +195,10 @@ export function ringJudge(st, side) {
   return r ? ipponJudge((st.t - r.hitAt) * 1000) : 0;
 }
 
-const endRing = (st, side, judge) => {
+const endRing = (st, side, judge, far) => {
   const r = st.f[side].ring;
   st.f[side].ring = null;
-  st.lastRing = { side, kind: r.kind, judge, at: st.t };
+  st.lastRing = far ? { side, kind: r.kind, judge, at: st.t, reach: false } : { side, kind: r.kind, judge, at: st.t }; // reach false＝届かない（画面の「届かない…」）
 };
 
 // 立ち合いの当たり（power＝RING.charge の値）
@@ -200,7 +219,9 @@ function pressRing(st, side) {
     return j;
   }
   if (me.down || me.fell || me.stun > 0) return null;
-  if (!inZone(me, op)) { me.ring = null; me.litUntil = st.t; tap(st, side); return null; } // 場所を外れた〇は消える＝ふつうのたたき
+  if (keepsRing(side, r)) {
+    if (!inReach(me, op)) { endRing(st, side, 0, true); me.litUntil = st.t; return 0; } // 届かない＝決め技は出ない・すき無し・跳ねない
+  } else if (!inZone(me, op)) { me.ring = null; me.litUntil = st.t; tap(st, side); return null; } // 西の〇（試験だけ）：場所を外れた〇は消える＝ふつうのたたき
   const j = ringJudge(st, side);
   endRing(st, side, j);
   me.litUntil = st.t;

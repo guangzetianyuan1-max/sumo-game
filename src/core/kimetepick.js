@@ -1,7 +1,7 @@
 // 決め技を選ぶ（相手の情報の画面・20体版 Task 4）。画面から切り離した純粋な関数
 // 覚えた決め技＝run.newKnown のうち KIMETE にある物。勧め＝その中で敵の型との相性（affinity）が一番良い物・同じなら解禁の早い物
 // 一生の通し（careersim.bestKimete）も同じ勧めを使う＝試しと本番で同じ物を持っていく
-import { KIMETE, affinity } from '../data/kimete.js?v=39';
+import { KIMETE, affinity } from '../data/kimete.js?v=40';
 
 const known = (run) => (run && Array.isArray(run.newKnown) ? run.newKnown : []);
 
@@ -36,4 +36,12 @@ export function kimeteCards(run, foeType) {
 // 取組で使う決め技：覚えている決め技の id ならそのまま・ほか（覚えていない・決め技でない・空）は null
 export function chosenKimete(run, id) {
   return id && learnedKimete(run).indexOf(id) >= 0 ? id : null;
+}
+
+// 相手の画面のことねの一言（i18n の鍵と技の id）：選んだ札が勧めと違う＝選んだ技の名前（opp.picked）・勧めがある＝勧め（opp.recommend）・
+// 覚えた技が無い＝稽古の案内（opp.noKimete）。10/15 バグ出し：別の札を選んでも勧めの技を語り続けた
+export function coachAdvice(rec, pick) {
+  if (pick && pick !== rec) return { key: 'opp.picked', tech: pick };
+  if (rec) return { key: 'opp.recommend', tech: rec };
+  return { key: 'opp.noKimete', tech: null };
 }
