@@ -3,19 +3,20 @@
 // 3枚目＝相手の攻めは赤い札で予告され、左にバーが出る・右を長押しでためて緑の帯で離すと「こらえ成功！」
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=45';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=45';
-import { kamiArt } from '../core/foeart.js?v=45';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=45';
-import { t, getLang } from '../i18n/i18n.js?v=45';
-import { session, markHelpSeen } from '../state.js?v=45';
-import { ringShape, barShape, drawRing, drawBar, hitMarkFit } from '../ui/hud.js?v=45';
-import { menuBgKey } from '../core/bgkey.js?v=45';
-import { newChime, demoChime } from '../core/chime.js?v=45';
-import { playBout } from '../ui/sfx.js?v=45';
-import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=45';
-import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=45';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=45';
+import { KAMI } from '../core/kami.js?v=46';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=46';
+import { kamiArt, foeArt } from '../core/foeart.js?v=46';
+import { foeAt } from '../data/foes.js?v=46';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=46';
+import { t, getLang } from '../i18n/i18n.js?v=46';
+import { session, markHelpSeen } from '../state.js?v=46';
+import { ringShape, barShape, drawRing, drawBar, hitMarkFit } from '../ui/hud.js?v=46';
+import { menuBgKey } from '../core/bgkey.js?v=46';
+import { newChime, demoChime } from '../core/chime.js?v=46';
+import { playBout } from '../ui/sfx.js?v=46';
+import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=46';
+import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=46';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=46';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）
@@ -31,7 +32,7 @@ const FOOT_Y = 1190;
 const BAND = 156; // 見出しと何枚目かの点の帯の下の端（見本の札の上 190 より上）
 const BG = menuBgKey('help'); // 背景＝土俵
 const HERO_KAMI = kamiArt(`hero_${HERO_TYPE}`);
-const FOE_KAMI = kamiArt('foe_robot_normal'); // 1体目の相手（ロボット）
+const FOE_KAMI = kamiArt(foeArt(foeAt(0)).file); // 1体目の相手（50体版：力士の楓里）
 
 export class HelpScene extends Phaser.Scene {
   constructor() {

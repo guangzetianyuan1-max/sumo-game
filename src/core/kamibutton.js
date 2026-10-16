@@ -4,11 +4,12 @@
 //   バーが出た時に右の指が押したまま（ためていない）again（「はなして、もう一度」・ledger Ruling 6/7 の後始末）・
 //   踏ん張り中（バーに失敗して来た敵の踏ん張りの act＝左で押すと跳ね返される）stay「待て」・倒れた hold・終わり done
 // 左が明るいのは tap だけ（stay は「待て」で暗い）・〇／バー／again／倒れの時は暗く「→右」。右が明るいのは go・ring・bar・again・hold（tap・stay の時は暗い）
+// 50体版（設計書 2026-10-16 §6）：決め技の〇は技ごとの出し方で見た目を分ける＝連打の技 kimeMash（左だけ明るい）・長押しの技 kimeHold（右だけ明るい）・一押しの技は今の ring
 // 〇とバーの絵そのものは src/ui/hud.js（中央上の〇・左端のバー）。ここはボタンの字・色・脈・満ち・暗さと、下の案内・ことねの吹き出しの鍵だけ
-import { KAMI, beatOffset, gaugeLit, barGauge } from './kami.js?v=45';
-import { gaugeTier } from './gaugetier.js?v=45';
-import { IPPON } from './drills.js?v=45';
-import { BAR } from './tactics.js?v=45';
+import { KAMI, beatOffset, gaugeLit, barGauge, kimeHoldGauge } from './kami.js?v=46';
+import { gaugeTier } from './gaugetier.js?v=46';
+import { IPPON } from './drills.js?v=46';
+import { BAR } from './tactics.js?v=46';
 
 export const BUTTON_COLOR = { // 遊び方の見本（HelpScene）も同じ色を使う
   wait: 0x5a5f6e, // 灰
@@ -20,11 +21,13 @@ export const BUTTON_COLOR = { // 遊び方の見本（HelpScene）も同じ色�
   stay: 0x6e4a46, // くすんだ赤茶（踏ん張り中は待て・攻めの札の「踏ん張り中」と同じ系統）
   hold: 0x3d6fc8, // 青（起き上がり）
   done: 0x5a5f6e,
+  kimeMash: 0xe8902a, // 橙の金（連打の技の〇＝左で回数ぶん・設計書 2026-10-16 §6）
+  kimeHold: 0xc9a227, // くすんだ金（長押しの技の〇＝右でためて緑で離す）
   off: 0x3a3f4c, // 暗い灰（出番でないボタン・左右とも）
 };
-const LABEL = { wait: 'wait', go: 'go', ring: 'go', tap: 'tap', bar: 'bar', again: 'again', stay: 'stay', hold: 'hold', done: 'wait' }; // 〇の時は立ち合いも決め技も「一押し！」
-const HINT = { wait: 'ready', go: 'ready', ring: 'ring', tap: 'push', bar: 'bar', again: 'again', stay: 'stay', hold: 'down' };
-const COACH = { wait: 'ready', go: 'ready', ring: 'finish', tap: 'push', bar: 'bar', again: 'again', stay: 'stay', hold: 'down' };
+const LABEL = { wait: 'wait', go: 'go', ring: 'go', tap: 'tap', bar: 'bar', again: 'again', stay: 'stay', hold: 'hold', done: 'wait', kimeMash: 'kimeMash', kimeHold: 'kimeHold' }; // 〇の時は立ち合いも決め技も「一押し！」
+const HINT = { wait: 'ready', go: 'ready', ring: 'ring', tap: 'push', bar: 'bar', again: 'again', stay: 'stay', hold: 'down', kimeMash: 'kimeMash', kimeHold: 'kimeHold' };
+const COACH = { wait: 'ready', go: 'ready', ring: 'finish', tap: 'push', bar: 'bar', again: 'again', stay: 'stay', hold: 'down', kimeMash: 'kimeMash', kimeHold: 'kimeHold' };
 const DIM = { wait: true, stay: true, done: true, off: true }; // 暗く描く mode
 const RING_PULSE_S = 0.5; // 〇のぴったりからこの秒離れると脈は 0
 
@@ -51,7 +54,15 @@ function sceneLook(st, side) {
     return r && r.kind === 'tachiai' && !me.charged ? look('go', ringPulse(st, r)) : look('wait');
   }
   if (me.down) return look('hold', 0, Math.max(0, Math.min(1, me.standHeld / me.standTime)));
-  if (me.ring) return look('ring', ringPulse(st, me.ring));
+  if (me.ring) {
+    const r = me.ring;
+    if (r.input === 'mash') return look('kimeMash', 0, Math.max(0, Math.min(1, 1 - (st.t - r.from) / r.window))); // 弧＝窓の残り（左）
+    if (r.input === 'hold') {
+      if (me.held && r.heldFrom === null) return look('again'); // 光る前から押したままの指＝はなして、もう一度（ため始めない・Review Focus #2）
+      return look('kimeHold', 0, r.heldFrom === null ? 0 : kimeHoldGauge(st, side), false, [r.center - r.half, r.center + r.half]); // 弧＝ため・緑の帯（右）
+    }
+    return look('ring', ringPulse(st, r));
+  }
   const b = st.bar && st.bar.side === side && st.bar.result === null ? st.bar : null;
   if (b) {
     if (me.held && b.heldFrom === null) return look('again', 0, 0, true); // 指が押したまま（出る前からの指・出てすぐの押し）＝ためていない
@@ -69,20 +80,31 @@ export const neutralLook = () => look('wait');
 // 左のボタン（連打）：押し合いの連打だけ明るい・踏ん張り中は「待て」・立ち合い前と終わりは暗い・〇／バー／はなして／倒れは暗く「→右」
 export function leftLook(st, side = 'east') {
   const l = sceneLook(st, side);
-  return l.mode === 'tap' || l.mode === 'stay' || l.mode === 'wait' || l.mode === 'done' ? l : off('toRight');
+  return l.mode === 'tap' || l.mode === 'stay' || l.mode === 'wait' || l.mode === 'done' || l.mode === 'kimeMash' ? l : off('toRight');
 }
 
 // 右のボタン（一押しと長押し）：〇＝「一押し！」・バー＝「長押し！」・はなして もう一度・倒れ＝「長押しで起きる」・立ち合い前と終わりは暗い・連打の間と踏ん張り中は暗い
 export function rightLook(st, side = 'east') {
   const l = sceneLook(st, side);
-  return l.mode === 'tap' || l.mode === 'stay' ? off('right') : l;
+  return l.mode === 'tap' || l.mode === 'stay' || l.mode === 'kimeMash' ? off('right') : l;
 }
 
 // 攻めの場面か（v42 本人「攻めの場面に『こらえ』の字を出さない」）：連打（tap）・立ち合いの〇（go）・決め技の〇（ring）。
 // 呼び方：攻め＝連打（左）と一押し（右の〇）／守り＝長押し（右・バー）。この間は「こらえ」を含む吹き出し（相手の攻めの返し方）を閉じる。
 // バーの成功の字は「守り成功！」（こらえを使わない）：成功すると相手の攻めはすぐ終わって連打（攻め）になるので、その字は攻めの場面に少し残る
-const ATTACK = { tap: true, go: true, ring: true };
+const ATTACK = { tap: true, go: true, ring: true, kimeMash: true, kimeHold: true };
 export const attackScene = (st, side = 'east') => !!ATTACK[sceneLook(st, side).mode];
+
+// 決め技の〇の合図（ボタンの上に大きく・設計書 2026-10-16 §6）：連打＝「連打！ あと{n}回」（左の上）・長押し＝「長押し！」（右の上）・一押し＝「押せ！」（右の上）。
+// 押し合いの決め技の〇の時だけ（立ち合いの〇・押し直しの「はなして」・〇が無い時は null）
+export function kimeCall(st, side = 'east') {
+  if (!st || st.phase !== 'push') return null;
+  const l = sceneLook(st, side), r = st.f[side].ring;
+  if (l.mode === 'kimeMash') return { key: 'kami.call.mash', btn: 'left', n: Math.max(0, r.need - r.count) };
+  if (l.mode === 'kimeHold') return { key: 'kami.call.hold', btn: 'right', n: 0 };
+  if (l.mode === 'ring') return { key: 'kami.call.tap', btn: 'right', n: 0 };
+  return null;
+}
 
 // 下の案内の1行の鍵（終わったら null）
 export function hintKey(st, side = 'east') {

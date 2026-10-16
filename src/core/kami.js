@@ -1,10 +1,11 @@
 // 紙相撲の計算（10/13 本人「紙相撲に切り替える」・設計書 2026-10-13-sumo-kamizumo-design.md）
 // 画面から切り離した、型紙2枚の動き。単位＝画面の px と秒。x＝足もとの真ん中・y＝箱の面からの高さ（上が＋）
 // a＝傾き（＋＝自分の後ろへ反る）。東＝主人公＝左から右へ（dir +1）・西＝敵＝右から左へ（dir -1）
-import { makeRng } from './rng.js?v=45';
-import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=45';
-import { ON_BEAT } from './beat.js?v=45';
-import { IPPON, ipponJudge } from './drills.js?v=45';
+import { makeRng } from './rng.js?v=46';
+import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=46';
+import { ON_BEAT } from './beat.js?v=46';
+import { IPPON } from './drills.js?v=46';
+import { KIME_INPUTS, tapJudge, mashJudge, holdJudge } from './kimeinput.js?v=46';
 
 export { ON_BEAT };
 
@@ -52,21 +53,43 @@ const ARCHS = Object.keys(KIMETE_FX);
 // 10/14 Task 2（Ruling 3）：kimeHit 0.6→0.9・最短 kimeMin 0.8 秒（0.36 秒では見てから押せなかった）
 // 10/15（〇が押すか時間切れまで消えない）：kimeHit 0.9→0.7（〇の間は跳ねない＝長い〇は鍛えた主人公ほど損。大ボスの初挑戦が 20% に落ちた・kami_tune で 31%／最初の心技体 6%）
 // charge＝立ち合いの当たりの強さ（判定 0・1・2 ごと。合図の前の早押しも 0.5）・kimeK＝決め技の強さ（判定 1・2・0 は出ない）・missStun＝決め技の外れの すき
-// cool＝決め技の〇が通り過ぎてから（hitAt＋0.17）次に光るまでの秒
+// cool＝決め技の〇の終わり（until＝光った時に決まる・長押しは押し始めで満タンまで延びる）から次に光るまでの秒。早く決めても数え始めは until のまま（3つの出し方で同じ）。
+//   Task 7 で「決めた時刻から数える」を試した：連打と長押しの〇が早く光り直す分、〇の間は押せない時間が増え、一生の40秒超が 5.1%→7.3%・満月寄りの勝ちが 67%→62%＝今のままにした
 // reachSlack＝押した時の届く距離の余裕（px・10/15）：主人公の〇は相手が離れても消えない（押すか時間切れまで）。押した時に相手が
 // KIMETE_REACH＋reachSlack の外（うっちゃりは自分の背中側の端から EDGE_SELF＋reachSlack の外も）なら「届かない」＝決め技無し・すき無し
 export const RING = { tachiaiHit: 0.9, kimeHit: 0.7, kimeMin: 0.8, charge: [0.5, 1.0, 1.6], kimeK: [0, 0.6, 1], missStun: 0.3, cool: 1.5, reachSlack: 40 };
 const RING_NEAR = IPPON.nearMs / 1000; // 押さないまま hitAt からこれを過ぎたら外れ（〇が消える）
+
+// 決め技の〇の出し方（input の無い〇＝試験が手で作る物と立ち合いは一押し）と、消える時刻（until の無い〇は hitAt＋近いの幅）
+const ringInput = (r) => (r && r.input ? r.input : 'tap');
+const ringUntil = (r) => (Number.isFinite(r.until) ? r.until : r.hitAt + RING_NEAR);
+
+// 光った時の決め技の〇（設計書 2026-10-16 §6）。連打＝窓 window 秒に need 回・長押し＝limit 秒の内に押し始める（押し始めたら満タンまで延びる・kimeHold）・一押し＝今の〇（幅は scale 倍）
+function kimeRing(st, side, me) {
+  const inp = me.kimete.input, from = st.t;
+  if (inp && inp.input === 'mash') {
+    const until = from + inp.window;
+    return { side, kind: 'kime', input: 'mash', from, hitAt: until, until, need: inp.need, count: 0, window: inp.window, good: inp.good };
+  }
+  if (inp && inp.input === 'hold') {
+    const until = from + inp.limit;
+    return { side, kind: 'kime', input: 'hold', from, hitAt: until, until, fillMs: inp.fillMs, center: inp.center, half: inp.half, core: inp.core, heldFrom: null };
+  }
+  const hitAt = from + Math.max(RING.kimeMin, me.gaugeTime * RING.kimeHit), scale = inp && inp.scale > 0 ? inp.scale : 1;
+  return { side, kind: 'kime', input: 'tap', scale, from, hitAt, until: hitAt + RING_NEAR * scale }; // 消える時刻も幅と同じ倍率（○の外の遅い押しは、幅 1 と同じく〇が消えた後＝すき無し）
+}
 
 const SIDES = ['east', 'west'];
 const other = (s) => (s === 'east' ? 'west' : 'east');
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
 // 決め技の系統と相性の倍率（無い＝光らない）。名前の id がある＝敵の必殺技（〇でなく攻めの順番で予告とバーで来る・gap＝次の必殺技までの最短の秒）
+// input＝主人公の決め技の出し方の数（src/core/kimeinput.js の kimeInputSpec・無い＝今の一押し・幅 1）
 function kimeteOf(k) {
   if (!k || ARCHS.indexOf(k.arch) < 0) return null;
   const out = { arch: k.arch, power: k.power > 0 ? k.power : 1 };
   if (typeof k.id === 'string' && k.id) { out.id = k.id; out.gap = k.gap > 0 ? k.gap : 0; }
+  if (k.input && typeof k.input === 'object' && KIME_INPUTS.indexOf(k.input.input) >= 0) out.input = k.input;
   return out;
 }
 
@@ -78,7 +101,7 @@ function fighter(p, x, dir) {
     x, y: 0, vx: 0, vy: 0, a: 0, va: 0, dir,
     down: false, held: false, standHeld: 0, upAt: -Infinity, upHeld: false, stun: 0, fell: false, taps: [], charged: false,
     litUntil: 0, litFrom: 0, cool: 0, pushT: 0, pushV: 0,
-    ring: null, // 一発の〇 { side, kind: 'tachiai'|'kime', from, hitAt }（無い＝null）
+    ring: null, // 一発の〇 { side, kind: 'tachiai'|'kime', from, hitAt }（無い＝null）。主人公の決め技の〇は input・until と出し方の数も持つ（kimeRing）
     tactics: Array.isArray(p.tactics) ? p.tactics.filter(isTactic) : [], tacticIndex: Number(p.tacticIndex) || 0, // 相手の攻め（西だけ）
   };
 }
@@ -182,17 +205,17 @@ function updateGauge(st, side) {
   const ok = !me.down && inZone(me, op) && !ringBlocked(st, side); // 光ってよい形か（間の時間 cool とは分けて見る）
   const keep = keepsRing(side, me.ring) && !me.down && !me.fell; // 主人公の〇は、倒れない限り押すか時間切れまで残る
   if (ok && st.t >= me.cool && st.t >= me.litUntil) {
-    const hitAt = st.t + Math.max(RING.kimeMin, me.gaugeTime * RING.kimeHit);
-    me.litFrom = st.t; me.litUntil = hitAt + RING_NEAR; me.cool = me.litUntil + RING.cool;
-    me.ring = { side, kind: 'kime', from: st.t, hitAt };
+    me.ring = kimeRing(st, side, me);
+    me.litFrom = st.t; me.litUntil = me.ring.until; me.cool = me.litUntil + RING.cool;
   }
   if (!ok && !keep && st.t < me.litUntil) { me.litUntil = st.t; if (me.ring && me.ring.kind === 'kime') me.ring = null; } // 倒れた・相手が場所を外れた＝消す（次に光るのは cool の後）
 }
 
-// 〇の判定：今押したら 0・1・2（〇は消さない）。〇が無ければ 0
+// 〇の判定：今押したら 0・1・2（〇は消さない）。一押しの〇だけ（幅は scale 倍）。〇が無い・連打と長押しの〇は 0
 export function ringJudge(st, side) {
   const r = st.f[side].ring;
-  return r ? ipponJudge((st.t - r.hitAt) * 1000) : 0;
+  if (!r || ringInput(r) !== 'tap') return 0;
+  return tapJudge((st.t - r.hitAt) * 1000, r.scale > 0 ? r.scale : 1);
 }
 
 const endRing = (st, side, judge, far) => {
@@ -219,17 +242,61 @@ function pressRing(st, side) {
     return j;
   }
   if (me.down || me.fell || me.stun > 0) return null;
-  if (keepsRing(side, r)) {
-    if (!inReach(me, op)) { endRing(st, side, 0, true); me.litUntil = st.t; return 0; } // 届かない＝決め技は出ない・すき無し・跳ねない
-  } else if (!inZone(me, op)) { me.ring = null; me.litUntil = st.t; tap(st, side); return null; } // 西の〇（試験だけ）：場所を外れた〇は消える＝ふつうのたたき
-  const j = ringJudge(st, side);
+  if (ringInput(r) === 'mash') { mashKime(st, side); return null; } // 連打の技：一押しも1回に数える（機械と試験の入口・画面の左は mash）
+  if (ringInput(r) === 'hold') return null; // 長押しの技は hold（画面の右は strike）
+  if (!keepsRing(side, r) && !inZone(me, op)) { me.ring = null; me.litUntil = st.t; tap(st, side); return null; } // 西の〇（試験だけ）：場所を外れた〇は消える＝ふつうのたたき
+  return resolveKime(st, side, ringJudge(st, side));
+}
+
+// 決め技の〇の終わり方（一押し・連打・長押しで同じ・preflight M2）。判定 0・1・2 を返す
+// 届かない＝決め技は出ない・すき無し・跳ねない（画面の「届かない…」）／外れ（0）＝出ない・一瞬すき／○◎＝決め技
+// 西の〇（試験だけ）は inZone を通ってから来る。inZone は inReach より狭いので、ここで届く距離を見ても西の〇は今までと同じ
+function resolveKime(st, side, j) {
+  const me = st.f[side], op = st.f[other(side)];
+  if (!inReach(me, op)) { endRing(st, side, 0, true); me.litUntil = st.t; return 0; }
   endRing(st, side, j);
   me.litUntil = st.t;
-  if (j === 0) { me.stun = Math.max(me.stun, RING.missStun); return 0; } // 外れ＝出ない・一瞬すき
+  if (j === 0) { me.stun = Math.max(me.stun, RING.missStun); return 0; }
   fireKimete(st, side, RING.kimeK[j]);
   st.finisherBy = side;
   st.finisherAt = st.t;
   return j;
+}
+
+// 連打の技の1回（設計書 2026-10-16 §6・Ruling R2）：回数に届いたら判定して決める（窓の時間切れは expireRings）。跳ねない
+function mashKime(st, side) {
+  const me = st.f[side], r = me.ring;
+  if (me.stun > 0 || me.fell) return false;
+  r.count += 1;
+  if (r.count >= r.need) resolveKime(st, side, mashJudge(r.count, r.need, st.t - r.from, r.window, r.good));
+  return true;
+}
+
+// 長押しの技のゲージ 0〜1（押していない＝0）
+export function kimeHoldGauge(st, side) {
+  const r = st.f[side].ring;
+  if (!r || ringInput(r) !== 'hold' || r.heldFrom === null) return 0;
+  return clamp01((st.t - r.heldFrom) * 1000 / r.fillMs);
+}
+
+// 長押しの技を離した（または満タン）：判定して決める（Ruling R1）
+function finishKimeHold(st, side, g) {
+  const r = st.f[side].ring;
+  resolveKime(st, side, holdJudge(g, r.center, r.half, r.core));
+}
+
+// 長押しの技の指：新しい押し（離した→押した）でため始め・離して判定。前から押したままの指ではため始めない（Review Focus #2）
+function kimeHold(st, side, on, was) {
+  const me = st.f[side], r = me.ring;
+  if (on && !was && r.heldFrom === null) {
+    if (me.stun > 0) return;
+    r.heldFrom = st.t;
+    // Ruling R3：limit は押し始めるまでの秒。押し始めたら満タン（fillMs）まで〇は消えない＝遅く押し始めても緑で離せる（×は満タンの行）
+    r.until = Math.max(r.until, st.t + r.fillMs / 1000 + 0.05); r.hitAt = r.until;
+    me.litUntil = Math.max(me.litUntil, r.until); me.cool = Math.max(me.cool, me.litUntil + RING.cool);
+    return;
+  }
+  if (!on && was && r.heldFrom !== null) finishKimeHold(st, side, kimeHoldGauge(st, side));
 }
 
 // ボタンの入口（1つ）：〇が出ていればその判定（0・1・2 を返す・跳ねない）・無ければ今の tap（null を返す）
@@ -247,6 +314,7 @@ export function press(st, side) {
 // 立っていて受けた押しは起き上がりの指（upHeld）を外す（press と同じ：右を押したままで次の攻めを止め続けられない）
 export function mash(st, side) {
   const me = st.f[side];
+  if (st.phase === 'push' && me.ring && ringInput(me.ring) === 'mash' && !me.down) return mashKime(st, side); // 連打の技の〇は左で数える
   if (st.phase !== 'push' || me.ring || me.down || barOpen(st, side)) return false;
   me.upHeld = false;
   const t = st.tactic;
@@ -261,6 +329,8 @@ export function strike(st, side) {
   if (st.phase === 'done') return null;
   const me = st.f[side];
   if (me.down) { hold(st, side, true); return null; }
+  if (me.ring && ringInput(me.ring) === 'mash') return null; // 連打の技は左だけ（右は何も起きない）
+  if (me.ring && ringInput(me.ring) === 'hold') { me.upHeld = false; hold(st, side, true); return null; } // 長押しの技はため始め
   if (me.ring) return press(st, side);
   if (st.phase !== 'push') return null;
   me.upHeld = false;
@@ -268,13 +338,17 @@ export function strike(st, side) {
   return null;
 }
 
-// 押さないまま〇が通り過ぎた（hitAt＋0.17）：立ち合いは判定 0 の弱い当たり・決め技は消えるだけ（すきは無い）
+// 〇が通り過ぎた（until）：立ち合いは判定 0 の弱い当たり・決め技は消える。連打を1回でも数えていた・長押しをため始めていた＝×（すき・Ruling R2）。
+// ほかの決め技の見送りは消えるだけ（すきは無い）
 function expireRings(st) {
   for (const s of SIDES) {
     const r = st.f[s].ring;
-    if (!r || st.t <= r.hitAt + RING_NEAR) continue;
+    if (!r || st.t <= ringUntil(r)) continue;
+    const me = st.f[s];
+    const tried = r.kind === 'kime' && ((ringInput(r) === 'mash' && r.count > 0) || (ringInput(r) === 'hold' && r.heldFrom !== null));
     endRing(st, s, 0);
-    if (r.kind === 'tachiai' && st.phase === 'ready' && !st.f[s].charged) charge(st, s, RING.charge[0]);
+    if (tried) me.stun = Math.max(me.stun, RING.missStun);
+    if (r.kind === 'tachiai' && st.phase === 'ready' && !me.charged) charge(st, s, RING.charge[0]);
   }
 }
 
@@ -514,6 +588,8 @@ export function hold(st, side, on) {
   const me = st.f[side], was = me.held;
   me.held = !!on;
   if (!on) { me.standHeld = 0; me.upHeld = false; }
+  const kr = me.ring;
+  if (kr && ringInput(kr) === 'hold' && st.phase === 'push' && !me.down && !me.fell) { kimeHold(st, side, on, was); return; } // 長押しの技の〇（バーより先・同時には出ない）
   if (!barOpen(st, side) || me.down || me.fell) return;
   const b = st.bar;
   if (on && !was && b.heldFrom === null) { if (st.t >= b.from + BAR.react - 1e-6) { b.heldFrom = st.t; lateWarn(st, b, true); } }
@@ -577,6 +653,7 @@ export function step(st, dt) {
   if (st.phase === 'ready' && st.t >= st.signalAt) { // 合図で、まだ立ち合っていない側に〇
     for (const s of SIDES) { const f = st.f[s]; if (!f.charged && !f.ring) f.ring = { side: s, kind: 'tachiai', from: st.signalAt, hitAt: st.signalAt + RING.tachiaiHit }; }
   }
+  for (const s of SIDES) { const r = st.f[s].ring; if (r && ringInput(r) === 'hold' && r.heldFrom !== null && kimeHoldGauge(st, s) >= 1) finishKimeHold(st, s, 1); } // 長押しの技の満タン＝×
   expireRings(st); // たたかない側は、〇が通り過ぎた時（合図＋0.9＋0.17秒）に弱い当たり 0.5 で立ち合う
   updateBar(st);
   if (st.phase === 'push') updateTactic(st);

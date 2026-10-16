@@ -1,14 +1,14 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=45';
-import { GUIDE_IDS } from '../data/guides.js?v=45';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=45';
-import { foeAt } from '../data/foes.js?v=45';
-import { inGame } from '../data/kimarite.js?v=45';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt } from './ladder.js?v=45';
-import { startStats, growthMult, diminish } from './career.js?v=45';
-import { GROWTH, FOE_TOTAL, TRAIN } from './tuning.js?v=45';
-import { kimeteGain } from './drills.js?v=45';
-import { isTactic, FOE_KIME_ID } from './tactics.js?v=45';
+import { TYPES } from '../data/types.js?v=46';
+import { GUIDE_IDS } from '../data/guides.js?v=46';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=46';
+import { foeAt } from '../data/foes.js?v=46';
+import { inGame } from '../data/kimarite.js?v=46';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt, rankIndexOf } from './ladder.js?v=46';
+import { startStats, growthMult, diminish } from './career.js?v=46';
+import { GROWTH, FOE_TOTAL, TRAIN, CEILING } from './tuning.js?v=46';
+import { kimeteGain } from './drills.js?v=46';
+import { isTactic, FOE_KIME_ID } from './tactics.js?v=46';
 
 // はじめて見た時に ことねが返し方を教える攻め：相手の攻め4つと、敵の必殺技（foeKime・ボタン1つ Task 3）。記録の seenTactics はこれだけを残す
 const seenable = (id) => isTactic(id) || id === FOE_KIME_ID;
@@ -17,11 +17,23 @@ export const RUN_VERSION = 4;
 // 遊び方の版（Ruling 15・10/14 ボタン1つ）：これより古い版の遊び方を見た記録は、読み込みで「まだ見ていない」に戻し、見た攻めも空にする（古い返し方を教えていた）。
 // 遊び方を閉じた時に今の版を書く（state.markHelpSeen）。記録の版 RUN_VERSION は変えない
 // 3＝ボタン2つ（v39・左＝連打・右＝一押しと長押し）の遊び方と吹き出し。v38（ボタン1つ・版2）を見た人にももう一度見せる
-export const HELP_VER = 3;
+// 4＝50体版（2026-10-16）：決め技は技ごとの出し方（連打・長押し・一押し）の遊び方。前の版を見た人にももう一度見せる（Ruling R12）
+export const HELP_VER = 4;
 export const TRAIN_STEPS = 3; // 1回の稽古のコマ数
 export const STATS = ['shin', 'gi', 'tai'];
 const r1 = (v) => Math.round(v * 10) / 10;
 const cap = (v) => Math.min(100, r1(v));
+
+// ---- 番付ごとの天井（設計書 2026-10-16 §4・Ruling R5） ----
+// 今の番付の天井（勝ち数から）
+export const statCeiling = (wins) => CEILING.byRank[rankIndexOf(wins)];
+// 伸びた値を天井で止める。前から天井の上にいる古い記録の値は下げない（伸びないだけ）
+export function capStat(before, grown, ceil) {
+  if (before >= ceil) return before;
+  return Math.min(ceil, grown);
+}
+// その心技体が今の番付の天井に着いているか（稽古の結果の親方の一言）
+export const atCeiling = (run, stat) => run.stats[stat] >= statCeiling(run.wins) - 1e-9;
 const total = (s) => s.shin + s.gi + s.tai;
 
 // 案内役は若女将ことねに固定（呼ぶ側の guide は受け取るだけで使わない・読み込み deserializeRun と同じ）
@@ -63,12 +75,14 @@ export function currentFoe(run) {
   return { ...f, stats: foeStats(f.type, f.index) };
 }
 
-// 1番ごとの伸び：勝ち＝格上ほど多い（和の差 upsetSpanTotal で upsetMax）・負け＝勝ちの lossMult 倍
+// 1番ごとの伸び：勝ち＝格上ほど多い（和の差 upsetSpanTotal で upsetMax）・負け＝勝ちの lossMult 倍。
+// 天井＝この番の後の勝ち数の番付の天井（昇進の一番の伸びは上の番付の天井まで・Ruling R5）
 function grow(run, foeS, won) {
   const gap = Math.min(1, Math.max(0, (total(foeS) - total(run.stats)) / GROWTH.upsetSpanTotal));
   const k = won ? 1 + (GROWTH.upsetMax - 1) * gap : GROWTH.lossMult;
+  const ceil = statCeiling(won ? run.wins + 1 : run.wins);
   const stats = { ...run.stats };
-  for (const s of STATS) stats[s] = cap(stats[s] + GROWTH.win * k * growthMult(run.type, s) * diminish(stats[s]));
+  for (const s of STATS) stats[s] = capStat(run.stats[s], cap(stats[s] + GROWTH.win * k * growthMult(run.type, s) * diminish(stats[s])), ceil);
   return stats;
 }
 
@@ -82,7 +96,8 @@ export function recordResult(run, won) {
   const next = { ...run, stats, wins, streak: 0 };
   const promoted = promotionAt(wins);
   const k = NEW_TECH_AT.indexOf(wins);
-  const unlocked = k > 0 ? newTechIds(run.type)[k] : null;
+  const due = k > 0 ? newTechIds(run.type)[k] : null;
+  const unlocked = due && run.unlocked.indexOf(due) < 0 ? due : null; // 古い記録で覚えて解禁済みの技は二度足さない・知らせない（Ruling R7）
   if (unlocked) next.unlocked = [...run.unlocked, unlocked];
   if (wins >= CLEAR_AT) next.cleared = true;
   return { run: next, note: { ...base, promoted, unlocked, cleared: next.cleared } };
@@ -114,12 +129,12 @@ const step = (run, changes) => {
   return { ...run, ...changes, trainings: (run.trainings || 0) + (first ? 1 : 0), training: left > 0 ? { ...run.training, left } : null };
 };
 
-// mult＝遊びの出来の倍率（src/core/drills.js の drillMult・0.5〜1.5）。既定 1＝今までと同じ伸び
+// mult＝遊びの出来の倍率（src/core/drills.js の drillMult・0.5〜1.5）。既定 1＝今までと同じ伸び。今の番付の天井まで（設計書 2026-10-16 §4）
 export function trainStat(run, stat, mult = 1) {
   if (!run.training || !STATS.includes(stat)) return run;
   const m = Number.isFinite(mult) && mult >= 0 ? mult : 1;
   const stats = { ...run.stats };
-  stats[stat] = cap(stats[stat] + TRAIN.gain * m * growthMult(run.type, stat) * diminish(stats[stat]));
+  stats[stat] = capStat(run.stats[stat], cap(stats[stat] + TRAIN.gain * m * growthMult(run.type, stat) * diminish(stats[stat])), statCeiling(run.wins));
   return step(run, { stats });
 }
 
@@ -180,8 +195,10 @@ export function deserializeRun(text) {
     const known = Array.isArray(c.known) ? c.known.filter(inGame) : [];
     c.known = known.length ? known : [...TYPES[c.type].sample];
     const mine = newTechIds(c.type);
-    c.unlocked = mine.filter((id, k) => NEW_TECH_AT[k] <= c.wins);
-    c.newKnown = Array.isArray(c.newKnown) ? c.newKnown.filter((id) => c.unlocked.includes(id)) : [];
+    // 50体版（Ruling R7）：解禁は今の時期（0・10・20・30・40）で数え直す。古い記録で覚えた決め技は、時期の前でも覚えたまま（解禁済みとして読む）
+    const learned = Array.isArray(c.newKnown) ? c.newKnown.filter((id, i) => mine.includes(id) && c.newKnown.indexOf(id) === i) : [];
+    c.unlocked = mine.filter((id, k) => NEW_TECH_AT[k] <= c.wins || learned.includes(id));
+    c.newKnown = learned;
     // 決め技のゲージ：無い古い記録は {}・数でない／0以下／1以上・解禁していない・覚えた id は捨てる
     const kp = c.kimeteProgress && typeof c.kimeteProgress === 'object' && !Array.isArray(c.kimeteProgress) ? c.kimeteProgress : {};
     const progress = {};

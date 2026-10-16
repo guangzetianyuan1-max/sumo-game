@@ -1,14 +1,14 @@
-// フィギュア風の立ち絵の選び方（10/12 夜 設計書 §8・§10）：主人公・敵の絵の鍵と置き場・段階の見せ方・取組での敵の傾け方
-// 絵は tools/prep_figures.py が assets/figures/ に置く（画面用）・assets/figures/dot/（取組用のドット）
-import { PLAY_COUNT } from './ladder.js?v=45';
+// フィギュア風の立ち絵の選び方（10/12 夜 設計書 §8・§10／50体版 2026-10-16 Ruling R9・R10）：主人公・敵の絵の鍵と置き場・段階の見せ方・取組での敵の傾け方
+// 絵は tools/prep_figures.py（本物）と tools/prep_placeholders.py（新しい30人の仮の姿）が assets/figures/ に置く
+import { PLAY_COUNT } from './ladder.js?v=46';
 
-// 壱号・弐号＝ふだんの姿／参号〜伍号＝本気の姿／20体版は20体目（PLAY_COUNT - 1）が大ボス
+// 1〜20体目（段 0・1）＝ふだんの姿／21〜49体目（段 2〜4）＝本気の姿／50体目（PLAY_COUNT - 1）＝大ボスの姿
 export function foeForm(foe) {
   if (foe.index === PLAY_COUNT - 1) return 'boss';
   return foe.stage >= 2 ? 'honki' : 'normal';
 }
 
-const foeFile = (foe) => (foeForm(foe) === 'boss' ? 'foe_boss' : `foe_${foe.id}_${foeForm(foe)}`);
+const foeFile = (foe) => `foe_${foe.id}_${foeForm(foe)}`;
 
 // 画面用（相手の情報）と取組用（ドット）の絵の鍵と置き場
 export function foeArt(foe) {

@@ -1,21 +1,22 @@
 // src/scenes/OpponentScene.js — 今日の相手（20体版 Task 4・10/13）：相手の絵と型・得意と苦手（系統）・心技体・決め技を選ぶ札5枚・ことねの勧め → 取組へ
 // 作戦表の頃の名残（よく使う手・技の勧めの吹き出し）は外した。シニアにも読める大きな札と、下の真ん中の「取組へ」1つだけ
 // 決め技の札：覚えた物だけ押して選べる（選んだ札が朱に光る）。最初は勧め（recommendKimete）を選んでおく。覚えていない物は灰色
-import { TYPES } from '../data/types.js?v=45';
-import { OKAMI } from '../data/heroes.js?v=45';
-import { t, foeLabel } from '../i18n/i18n.js?v=45';
-import { session, prepareOpponent } from '../state.js?v=45';
-import { playBout } from '../ui/sfx.js?v=45';
-import { kimeteCards, recommendKimete, chosenKimete, coachAdvice } from '../core/kimetepick.js?v=45';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=45';
+import { TYPES } from '../data/types.js?v=46';
+import { OKAMI } from '../data/heroes.js?v=46';
+import { t, foeLabel } from '../i18n/i18n.js?v=46';
+import { session, prepareOpponent } from '../state.js?v=46';
+import { playBout } from '../ui/sfx.js?v=46';
+import { kimeteCards, recommendKimete, chosenKimete, coachAdvice } from '../core/kimetepick.js?v=46';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=46';
 import {
   button, bindPress, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
   preloadTypeArt, preloadGuideArt, addAura, clearScene, COLORS,
-} from '../ui/widgets.js?v=45';
-import { currentFoe } from '../core/run.js?v=45';
-import { menuBgKey } from '../core/bgkey.js?v=45';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=45';
-import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=45';
+} from '../ui/widgets.js?v=46';
+import { currentFoe } from '../core/run.js?v=46';
+import { menuBgKey } from '../core/bgkey.js?v=46';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=46';
+import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=46';
+import { kimeteById } from '../data/kimete.js?v=46';
 
 const INFO = { y: 286, h: 292 }; // 相手の札（140〜432）：得意・苦手は英語だと5行になるので高めに：左に絵・右に型と得意・苦手
 const ART = { x: 175, r: 100, h: 200 };
@@ -25,13 +26,13 @@ const TEXT_X = 305; // 右の字の左端
 const STATS_Y = 450; // 心技体の見出し（棒はその下）
 const PICK_Y = 624; // 「決め技をえらぶ」
 const CARD = { w: 216, h: 112, gap: 12, row1: 724, row2: 852 }; // 札5枚：上に3枚・下に2枚（行の間 16）
-// ことねの顔と吹き出し：おすすめ（または稽古の案内）・この相手の攻めの名前を並べた1行（返し方はどれも「右のボタン（またはバー）を長押し・緑で離す」。踏ん張りの「来たら待ち、解けたら左を連打」は はじめての吹き出しと遊び方で教える＝ここは字を 26 以上に保つ）・この相手の必殺技の名前（10/14・10/15 ボタン2つ）。
-// 下の段の札の下 904 と「取組へ」の上 1132 の間に広げる。字は 26 以上を保つ（ja・en とも・大ボスは勧めの1行を外す）
-const COACH = { faceX: 70, size: 108, left: 138, top: 912, w: 560, h: 236, font: 30, min: 28 }; // 5行（勧め・攻め・必殺技・返し方2行）が字28で収まる高さ
+// ことねの顔と吹き出し：おすすめ（または稽古の案内）・この相手の攻めの名前を並べた1行（返し方はどれも「右のボタン（またはバー）を長押し・緑で離す」。踏ん張りの「来たら待ち、解けたら左を連打」は はじめての吹き出しと遊び方で教える＝ここは字を 28 以上に保つ）・この相手の必殺技の名前（10/14・10/15 ボタン2つ）。
+// 下の段の札の下 908 と「取組へ」の上 1164 の間（912〜1160）に置く。字は 28 以上を保つ（ja・en とも・大ボスは勧めの1行を外す）
+const COACH = { faceX: 70, size: 108, left: 138, top: 912, w: 560, h: 248, font: 28, min: 28 }; // 6行（勧め・出し方・攻め・必殺技・返し方2行）が字28で収まる高さ（6行＝224＋内側の余白20・画面で測った。236 では字が 27 に縮んだ）。最終レビュー：244 は余白 0.2px＝Web フォントが読めない時に 28 の下へ縮む＝248
 const TAG = { w: 150, h: 38, dy: 2, size: 28 }; // 勧めの金の札：札の上の縁に少しかかる（下の段の札でも上の段の札 776 に重ならない）
 const NAME_DY = -16; // 札の名前の高さ（札の真ん中から）：勧めの札の下の端より下（v44）
 const GO_H = 100;
-const GO_Y = 1206; // 「取組へ」（高さ GO_H・上の端 1156）：吹き出しの下 1148 の下
+const GO_Y = 1214; // 「取組へ」（高さ GO_H・上の端 1164・下の端 1264＝画面 1280 の中）：吹き出しの下 1160 の下
 const BAND = 130; // 見出しの帯の下の端（見出しと相手の名の行・相手の札の上 140 より上）
 const AFF_KEY = (a) => (a > 1 ? 'good' : a < 1 ? 'bad' : 'normal');
 const AFF_COLOR = { good: COLORS.gold, normal: COLORS.sub, bad: '#d9a08f' };
@@ -127,6 +128,8 @@ export class OpponentScene extends Phaser.Scene {
     const lines = [t('opp.attackList', { list }),
       t('opp.foeKime', { name: t(`foekime.${foeKimeteAt(foe.index).id}`) }), // この相手の必殺技（予告の札と同じ名前）
       t('opp.attacks')];
+    const pickK = this.pick ? kimeteById(this.pick) : null; // 選んでいる決め技の出し方（50体版・Ruling R13）
+    if (pickK) lines.unshift(t('opp.how', { how: t(`kimete.how.${pickK.input}`) }));
     if (ids.length < 3) lines.unshift(advice); // 大ボス（攻め4つ）は勧めの1行を外す（勧めは札の「おすすめ」で分かる）
     speakerFace(this, OKAMI, COACH.faceX, COACH.top + COACH.h / 2, COACH.size);
     this.coachText = speechBubble(this, COACH.left, COACH.top, COACH.w, COACH.h, lines.join('\n'), { size: COACH.font, min: COACH.min })[2];

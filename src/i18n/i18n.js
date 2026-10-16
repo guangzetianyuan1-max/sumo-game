@@ -1,9 +1,9 @@
 // 言葉の切り替えと文の引き方。画面の文字は全部ここを通す。
-import ja from './ja.js?v=45';
-import en from './en.js?v=45';
-import { KIMARITE } from '../data/kimarite.js?v=45';
-import { KIMETE_IDS } from '../data/kimete.js?v=45';
-import { rankParts } from '../core/banzuke.js?v=45';
+import ja from './ja.js?v=46';
+import en from './en.js?v=46';
+import { KIMARITE } from '../data/kimarite.js?v=46';
+import { KIMETE_IDS } from '../data/kimete.js?v=46';
+import { rankParts } from '../core/banzuke.js?v=46';
 
 export const TABLES = { ja, en };
 export const LANGS = ['ja', 'en'];
@@ -77,9 +77,9 @@ export function heroName(type, l = lang) {
   return t(`hero.${type}.name`, {}, l);
 }
 
-// 敵の名前（例「忍者・弐号」・「Ninja II」）
+// 敵の名前（例「忍者」・「Ninja」・力士はしこ名）。50体版から同じ敵は1回だけ＝段の字（壱号など）は付けない（Ruling R9）
 export function foeLabel(foe, l = lang) {
-  return t('foe.name', { name: t(`foe.${foe.id}`, {}, l), stage: t(`foe.stage.${foe.stage}`, {}, l) }, l);
+  return t(`foe.${foe.id}`, {}, l);
 }
 
 // 場所の名前：日本語は通り名（例「初場所（東京）」・名古屋場所と九州場所は場所の名を重ねない）・英語は「July Basho (Nagoya)」

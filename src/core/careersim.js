@@ -1,19 +1,20 @@
-// 一生の通し（20体版の強さ合わせと試験用・設計書 §5）。取組は紙相撲の自動（kamiai.autoBout）
+// 一生の通し（50体版の強さ合わせと試験用・設計書 2026-10-16 §7）。取組は紙相撲の自動（kamiai.autoBout）
 // 勝てば次の敵へ・負けたら稽古（3コマ）：解禁していて覚えていない決め技があれば、ふつうの出来（6割＝ゲージ満タン）の1コマで覚え、残りは一番低い心技体を伸ばす。
 // 取組ごとに、覚えた決め技の中から相手の情報の画面の勧め（kimetepick.recommendKimete：相性→敵の型に合う系統→相手ごとの種）を持っていく。
 // 最初は五月雨突きが解禁済みでも、まだ覚えていない＝最初の稽古までは決め技無しで取る
-import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=45';
-import { autoBout } from './kamiai.js?v=45';
-import { recommendKimete } from './kimetepick.js?v=45';
-import { PLAY_COUNT } from './ladder.js?v=45';
-import { drillMult, NORMAL_SCORE } from './drills.js?v=45';
+import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=46';
+import { autoBout } from './kamiai.js?v=46';
+import { recommendKimete } from './kimetepick.js?v=46';
+import { PLAY_COUNT } from './ladder.js?v=46';
+import { drillMult, NORMAL_SCORE } from './drills.js?v=46';
+import { GATE_INDEXES } from '../data/foes.js?v=46';
 
-export const MAX_BOUTS = 300;
+export const MAX_BOUTS = 600; // 50体ぶん
 
 // 覚えた決め技から勧めの物（無ければ null）。相手の情報の画面の勧め（kimetepick.recommendKimete）と同じ（seed＝記録の種・foeIndex＝相手の番号）
 export const bestKimete = (newKnown, foeType, seed = 0, foeIndex = 0) => recommendKimete({ newKnown, seed }, foeType, foeIndex);
 
-// 稽古の遊び（20体版 Task 6）の出来は「ふつう」＝倍率 1.0 で回す（強さの目標は遊ばない人の床）。番付からの自分から入る稽古は回さない
+// 稽古の遊び（稽古の3つの遊び）の出来は「ふつう」＝倍率 1.0 で回す（強さの目標は遊ばない人の床）。番付からの自分から入る稽古は回さない
 export const SIM_DRILL_MULT = drillMult(NORMAL_SCORE);
 
 // 負けた後の稽古（3コマ）：解禁していて覚えていない決め技を先に1コマずつ覚え、残りは一番低い心技体
@@ -28,7 +29,25 @@ export function trainAfterLoss(run) {
   return r;
 }
 
-export function careerSim(seed, hero) {
+// 稽古だけを積む人（設計書 2026-10-16 §7「天井の効き目」）：自分から稽古（3コマ・一番低い心技体・ふつうの出来）を、心技体が伸びなくなる（今の番付の天井に着く）まで繰り返す
+export const GRIND_MAX = 60;
+const sum3 = (s) => s.shin + s.gi + s.tai;
+export function grindToCeiling(run) {
+  let r = run;
+  for (let n = 0; n < GRIND_MAX; n++) {
+    const before = sum3(r.stats);
+    r = startTraining(r, { voluntary: true });
+    while (r.training) {
+      const low = STATS.reduce((a, b) => (r.stats[b] < r.stats[a] ? b : a), STATS[0]);
+      r = trainStat(r, low, SIM_DRILL_MULT);
+    }
+    if (sum3(r.stats) <= before + 1e-9) break;
+  }
+  return r;
+}
+
+// opts.grind＝関門の力士（5・10…45体目）の初挑戦の前に、天井まで稽古を積む人（天井の効き目の目標）
+export function careerSim(seed, hero, opts = {}) {
   let run = newRun({ type: 'balance', seed });
   let bouts = 0, trainings = 0, long = 0; // long＝40秒を超えた番の数
   const firstTry = [], firstStats = []; // index ごとの初挑戦の勝ち負けと、その時の心技体
@@ -37,6 +56,7 @@ export function careerSim(seed, hero) {
   for (let i = 0; i < PLAY_COUNT; i++) { firstTry.push(null); firstStats.push(null); boutsAt.push(0); kimeWarnsAt.push(0); }
   let foe;
   while ((foe = currentFoe(run)) && bouts < MAX_BOUTS) {
+    if (opts && opts.grind && firstTry[foe.index] === null && GATE_INDEXES.indexOf(foe.index) >= 0) run = grindToCeiling(run); // 関門の力士の初挑戦の前に天井まで稽古
     const r = autoBout({ heroStats: run.stats, foeIndex: foe.index, hero, seed: seed + bouts, heroKimete: bestKimete(run.newKnown, foe.type, run.seed, foe.index) });
     bouts++;
     boutsAt[foe.index]++; kimeWarnsAt[foe.index] += r.kimeWarns || 0;

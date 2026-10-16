@@ -26,13 +26,18 @@ export function ringProgress(from, hitAt, now) {
   return clamp((now - from) / span, 0, WHINE.over);
 }
 
-// 取組（kami.js の st）：主人公の〇が出ている間＝〇の進み／守りのバーを長押しでためている間＝バーの高さ。ほか・終わり・倒れている間＝null
+// 取組（kami.js の st）：主人公の〇が出ている間＝〇の進み（連打の技の〇＝鳴らさない・長押しの技の〇＝ためている間だけバーと同じ高さ）／守りのバーを長押しでためている間＝バーの高さ。ほか・終わり・倒れている間＝null
 // barGauge は kami.js の barGauge（循環を作らないように呼ぶ側が渡す）
 export function boutWhine(st, barGauge, side = 'east') {
   if (!st || st.phase === 'done' || !st.f || !st.f[side]) return null;
   const me = st.f[side];
   if (me.down || me.fell) return null;
-  if (me.ring) return ringProgress(me.ring.from, me.ring.hitAt, st.t);
+  if (me.ring) {
+    const r = me.ring;
+    if (r.input === 'mash') return null; // 連打の技の〇は唸らない（回数の字と連打の音）
+    if (r.input === 'hold') return r.heldFrom === null ? null : clamp((st.t - r.heldFrom) * 1000 / r.fillMs, 0, 1); // 長押しの技はバーと同じ
+    return ringProgress(r.from, r.hitAt, st.t);
+  }
   const b = st.bar;
   if (b && b.side === side && b.result === null && b.heldFrom !== null) return clamp(barGauge(st), 0, 1);
   return null;

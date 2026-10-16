@@ -6,18 +6,18 @@
 // 親方が一番低い心技体に合う遊びを勧める（★と金の字）。画面の数（四捨五入）で一番低いのが1つだけの時だけ（v45b：全部同じ・2つ並ぶ＝名指しせず★も付けない）
 // 負けた後の稽古は3コマ終えると同じ相手へ。番付からいつでも入る稽古（training.voluntary・10/13 本人「好きなときに稽古が出来るように」）は、
 // どのコマでも「番付へ戻る」で抜けられる（残りのコマは捨てる）・終われば番付へ
-import { t } from '../i18n/i18n.js?v=45';
-import { session, trainLeaveNow } from '../state.js?v=45';
-import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=45';
-import { kimeteById } from '../data/kimete.js?v=45';
-import { techCards, TECH_CARD_LIMIT, weakStat } from '../core/training.js?v=45';
-import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=45';
-import { playBout } from '../ui/sfx.js?v=45';
-import { menuBgKey } from '../core/bgkey.js?v=45';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=45';
+import { t } from '../i18n/i18n.js?v=46';
+import { session, trainLeaveNow } from '../state.js?v=46';
+import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=46';
+import { kimeteById } from '../data/kimete.js?v=46';
+import { techCards, TECH_CARD_LIMIT, weakStat } from '../core/training.js?v=46';
+import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=46';
+import { playBout } from '../ui/sfx.js?v=46';
+import { menuBgKey } from '../core/bgkey.js?v=46';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=46';
 import {
   topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, bindPress, preloadOyakataArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=45';
+} from '../ui/widgets.js?v=46';
 
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1235 は「稽古おわり」の字・1210 は番付へ戻る）
 const CARD = { w: 640, top: 470, step: 120, bottom: 1150 };

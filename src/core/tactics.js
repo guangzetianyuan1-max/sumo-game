@@ -1,17 +1,19 @@
 // 相手の型ごとの攻め（設計書 2026-10-14-sumo-two-buttons-and-foe-tactics-design.md §3）
 // 攻めは敵（西）だけが持つ。どれも 予告 warn → 実行 act → 後始末 after → 間 gap → 次の予告。一度に1つ。
 // 数字は Task 3 で強さを合わせる時に動かすので、全部ここに並べる。画面の字は i18n（tactic.<id>）。
-import { makeRng } from './rng.js?v=45';
+import { makeRng } from './rng.js?v=46';
 
 export const TACTIC_IDS = ['fumbari', 'hataki', 'tsuppari', 'kumi'];
 export const TACTIC_START = 2.5;   // 押し合いが始まってから、最初の予告まで（秒）
 export const TACTIC_MIN_GAP = 3;    // 攻めの終わりから次の予告までの最短（秒）
-export const TACTIC_LAST = 19;      // この番号（20体目＝大ボス）は4つ全部
-// 体の番号で動く3つ：[1体目, 20体目]（間は直線）
+export const TACTIC_LAST = 49;      // この番号（50体目＝大ボス）は4つ全部・攻めの間と強さ・緑の帯の狭め方は 0〜TACTIC_LAST の直線（50体版）
+// 体の番号で動く3つ：[1体目, 50体目（TACTIC_LAST）]（間は直線）
 // 間 gap は 10/14 Task 3 の強さ合わせで [6, 3]→[4.5, 3]（10体目のはたきが1取組に2回ほど来る＝返さない人は10体目で ふつうの人より15ポイント以上負ける）
 // 予告の長さは守りのバーから決める（barWarn）＝ここには持たない（ボタン1つ Task 2 直し・Ruling 8）
 // Task 2b 直し：gap の20体目 3→4→4.5（直し2・どの体も同じ間）。必殺技が攻めの順番に入り、攻めの数が増えた分
-export const TACTIC_CURVE = { gap: [4.5, 4.5], power: [0.6, 1] };
+// 50体版（2026-10-16 Task 7）：power の終わり 1→1.6（大ボスの初挑戦が 54〜62%＝60% の線の上下。1.3 は 53〜56%・1.6 で 45〜51%・2.0 は大ボスが戻った 51〜55%）。
+//   後ろの敵ほど攻めが効く＝返す人と返さない人の差も広がる（25体目 counter 0 17%／0.7 56%）
+export const TACTIC_CURVE = { gap: [4.5, 4.5], power: [0.6, 1.6] };
 
 // 攻めごと：act＝実行の秒・after＝後始末の秒・ほか＝強さの元の数（予告の秒は barWarn）
 export const TACTICS = {
@@ -26,7 +28,7 @@ export const TACTICS = {
   // 10/14 ボタン1つ Task 2：拍に合わせて返す形（beat）は無くした（守りは長押しバー1つ）。act は一瞬（はたいたら すぐ after）
   // 滑るのは slideFrom 番（8体目・Task 2b 直し2 で 10体目→8体目）から＝はたかれると、箱の端の近くまで滑る（本物のはたき込み）。それまでは倒れて起き上がる
   // slide は Task 2 の強さ合わせで 4000→2500（守りがバー1つになり、失敗のたびに はたかれる。4000 では10体目からの はたきの敵がどれも壁＝初挑戦 1〜2割だった）
-  hataki: { act: 0, after: 0.3, reach: 120, back: 30, fallA: -1.5, slide: 2500, slideFrom: 7 }, // 直し2（Task 2b）：slideFrom 9→7（8体目で返さない人が ふつうの人より勝ちやすかった）
+  hataki: { act: 0, after: 0.3, reach: 120, back: 30, fallA: -1.5, slide: 2500, slideFrom: 18 }, // 直し2（Task 2b）：slideFrom 9→7（8体目で返さない人が ふつうの人より勝ちやすかった）／50体版：7→18（20体版の8体目と同じ割合の19体目・Task 7 で動かしてよい）
   // 突っ張り：予告の終わりに（守りのバーに失敗していれば）、間 ≤ reach なら一突き（遠ければ突き損ね）＝速さ push×強さ÷重さ・浮き lift・後ろへ反る va
   // push は 10/14 Task 3 で 520→1100（520 では押し戻されても困らず、予告で こらえて たたけない方が損だった）
   tsuppari: { act: 0.3, after: 0.4, reach: 150, push: 1100, lift: 200, va: 0.05 },
@@ -41,7 +43,7 @@ const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
 export const isTactic = (id) => typeof id === 'string' && has(TACTICS, id);
 
-// 型→攻めの並び。バランスは種で4つを並べ替えて先頭2つ・20体目は4つ全部
+// 型→攻めの並び。バランスは種で4つを並べ替えて先頭2つ・50体目（大ボス・番号 TACTIC_LAST）は4つ全部
 const BY_TYPE = { heavy: 'fumbari', small: 'hataki', tall: 'tsuppari', yotsu: 'kumi' };
 export function tacticsFor(type, index, seed) {
   if (index >= TACTIC_LAST) return TACTIC_IDS.slice();
@@ -65,14 +67,14 @@ export function tacticTiming(index) {
 // ---- 守りの長押しバー（10/14 ボタン1つ・設計書 2026-10-14-sumo-one-button-ring-bar-design.md §4） ----
 // 相手の攻めの予告が出ると、主人公の左端にバーが出る。押している間 held/fillMs でたまり、緑の帯（center ± half）で離せば こらえ成功（攻めは打ち消し）。
 // 帯の外で離す・満タン（1）まで押す・押さないまま予告が終わる＝失敗（攻めがそのまま来る）。稽古の長押し（drills.js の NAGAOSHI）と同じ考え
-// fillMs＝型ごとのたまる秒（ms・重量＝ゆっくり〜小兵＝速い）。後の体ほど ×fast まで速く（直線）。half＝帯の半分の幅 [1体目, 20体目]（直線）
+// fillMs＝型ごとのたまる秒（ms・重量＝ゆっくり〜小兵＝速い）。後の体ほど ×fast まで速く（直線）。half＝帯の半分の幅 [1体目, 50体目]（直線・0〜TACTIC_LAST）
 // react＝見てから押し始めるまで（人の反応）・lead＝押し始めまでの余裕。予告は「緑の真ん中に届く秒＋react＋lead」より短くしない（Review Focus #2）
 // stun＝こらえ成功で相手が すきになる秒・linger＝結果（成功・失敗）を画面に残す秒
 // tapMax＝これより短い押し（連打の一押し）を帯の下で離しても「まだ」（失敗にしない・Ruling 7）。予告から react 秒までの押し始めも「まだ」
 // getUp＝起き上がってから次の予告まで待つ秒（指を離すまでも待つ・Ruling 6）
 // 強さ合わせ（Task 2・kami_tune）：half [0.12, 0.07]→[0.14, 0.12]・stun 0.5→1.0。細い帯と短い すきでは、10体目からの はたきの敵が壁になり
 // （ふつうの人＝7割の攻めで押し、成功 約6割）、こらえ成功の得も小さかった（返さない人との差が出ない）
-// Task 2b 直し：half の20体目 0.12→0.13（大ボスの初挑戦を 3割の上へ）
+// Task 2b 直し（20体版の時）：half の大ボス 0.12→0.13（大ボスの初挑戦を 3割の上へ）
 // late＝押し始めた押しが帯の上の端に届いてから、予告が終わるまでの最短の秒（最終点検の直し 2：反応の遅い人。予告は押し始めに合わせて延びるだけ）
 export const BAR = { fillMs: { heavy: 1700, yotsu: 1500, tall: 1400, small: 1200 }, fast: 0.85, half: [0.14, 0.13], center: 0.75, react: 0.3, lead: 0.5, stun: 1.0, linger: 0.6, tapMax: 0.2, getUp: 0.8, late: 0.15 };
 // 攻め → そのバーの型（型ごとの攻めの逆。バランスと大ボスも攻めの型の数を使う）
@@ -91,7 +93,7 @@ export const FOE_KIME = { act: 0, after: 0.4, reach: 30, slack: 40, edgeU: 260, 
 export const KIME_TYPE = { tsuki: 'heavy', hiki: 'small', nage: 'tall', yori: 'yotsu', utchari: 'yotsu' };
 
 // 緑の帯（合格の幅）を、進むほど少しずつ狭める倍率（v43 本人「緑の合格の幅は変更無しで、レベルが上がったら徐々に狭めてゆきます」）：
-// 1体目（番号 0）＝1.0（今の幅のまま）→ 20体目（大ボス・番号 19）＝0.75（今の幅の 3/4）・間は直線。範囲の外は端へ寄せる・数でない番号は 1体目
+// 1体目（番号 0）＝1.0（今の幅のまま）→ 50体目（大ボス・番号 TACTIC_LAST＝49）＝0.75（今の幅の 3/4）・間は直線。範囲の外は端へ寄せる・数でない番号は 1体目
 // 掛けるのは帯の半分の幅（真ん中 center はそのまま＝両端から詰める）。取組（barSpec）と長押し稽古（次の相手の番号）が使う・遊び方の見本は今の幅のまま
 export const BAR_GREEN = { first: 1, last: 0.75 };
 export function barGreenScale(index) {

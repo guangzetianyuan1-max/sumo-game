@@ -9,31 +9,31 @@
 // 決め技モード（10/14 本人「稽古の出来で決め技を習得できるようにしてください」・data.kimete＝決め技の id）：
 //   遊びはその決め技の drill（kimete.js）。心技体は伸びず、出来で習得ゲージ（drills.kimeteGain）がたまる（drillKimeteNow を1回だけ）。
 //   結果＝点数と出来 → ゲージが前→後へたまる → 満タンなら「習得！」・決めのカットイン（kime）・kan の音／満タンでなければ「習得 75%」
-import { t } from '../i18n/i18n.js?v=45';
-import { session, drillStatNow, drillKimeteNow } from '../state.js?v=45';
-import { canLeaveTraining, currentFoe } from '../core/run.js?v=45';
-import { kimeteById } from '../data/kimete.js?v=45';
-import { cutinArt } from '../core/cutin.js?v=45';
+import { t } from '../i18n/i18n.js?v=46';
+import { session, drillStatNow, drillKimeteNow } from '../state.js?v=46';
+import { canLeaveTraining, currentFoe, atCeiling, statCeiling } from '../core/run.js?v=46';
+import { kimeteById } from '../data/kimete.js?v=46';
+import { cutinArt } from '../core/cutin.js?v=46';
 import {
-  DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood, kimeteGrade,
+  DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood, statDrillGrade, kimeteGrade,
   IPPON, ipponHitMs, ipponJudge, ipponMissed, ipponScore,
   RENDA, COUNTDOWN, countdownAt, rendaScore, NAGAOSHI, nagaoshiHalf, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct, armStart,
-} from '../core/drills.js?v=45';
-import { kamiArt, heroArt } from '../core/foeart.js?v=45';
-import { HERO_TYPE } from '../data/heroes.js?v=45';
-import { createBigButton } from '../ui/bigbutton.js?v=45';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=45';
-import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, GOAL, HOLD, BTN, holdBlocked, DRILL_MAIN, drillButtonColor } from '../ui/drillstage.js?v=45'; // 置き場所と長押しの見せ方の計算（Phaser を使わない）
-import { drawCutinBand } from '../ui/cutinband.js?v=45';
-import { edgeFade } from '../ui/backdrop.js?v=45';
-import { HUD, HUD_HIT, HIT_MARK, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=45'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
-import { playTraining, playBout, whine, whineStop } from '../ui/sfx.js?v=45';
-import { ringProgress } from '../core/whine.js?v=45';
-import { newChime, greenChime, drillGreen, rendaGoal } from '../core/chime.js?v=45';
-import { guardOpen, openGuarded } from '../ui/openguard.js?v=45';
+} from '../core/drills.js?v=46';
+import { kamiArt, heroArt } from '../core/foeart.js?v=46';
+import { HERO_TYPE } from '../data/heroes.js?v=46';
+import { createBigButton } from '../ui/bigbutton.js?v=46';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=46';
+import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, GOAL, HOLD, BTN, holdBlocked, DRILL_MAIN, drillButtonColor } from '../ui/drillstage.js?v=46'; // 置き場所と長押しの見せ方の計算（Phaser を使わない）
+import { drawCutinBand } from '../ui/cutinband.js?v=46';
+import { edgeFade } from '../ui/backdrop.js?v=46';
+import { HUD, HUD_HIT, HIT_MARK, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=46'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
+import { playTraining, playBout, whine, whineStop } from '../ui/sfx.js?v=46';
+import { ringProgress } from '../core/whine.js?v=46';
+import { newChime, greenChime, drillGreen, rendaGoal } from '../core/chime.js?v=46';
+import { guardOpen, openGuarded } from '../ui/openguard.js?v=46';
 import {
   button, fitText, wrapText, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadHeroFigures, clearScene, COLORS,
-} from '../ui/widgets.js?v=45';
+} from '../ui/widgets.js?v=46';
 
 const BG_KEY = 'keiko-bg';
 const HERO_FILE = `hero_${HERO_TYPE}`;
@@ -536,7 +536,7 @@ export class DrillScene extends Phaser.Scene {
     const from = run.stats[stat];
     drillStatNow(stat, mult);
     const after = session.run;
-    this.result = { score, mult, stat, from, to: after.stats[stat], voluntary, left: after.training ? after.training.left : 0, count: this.count };
+    this.result = { score, mult, stat, from, to: after.stats[stat], voluntary, left: after.training ? after.training.left : 0, count: this.count, atCeil: atCeiling(after, stat), cap: statCeiling(after.wins) };
     playTraining(this.kind === 'ippon' ? 'waza' : this.kind === 'renda' ? 'teppo' : 'shiko');
     // 押しの最中に部品を消さない：描き直しは次のフレームへ
     this.time.delayedCall(0, () => this.drawResult());
@@ -575,10 +575,12 @@ export class DrillScene extends Phaser.Scene {
       fitText(this.add.text(width / 2, 305, t('drill.mult', { pct, m: r.mult.toFixed(2) }), textStyle(36, COLORS.gold)).setOrigin(0.5), width - 60);
       const fmt = (v) => (Math.round(v * 10) / 10).toFixed(1);
       fitText(this.add.text(width / 2, 375, t('drill.gain', { stat: t(`stat.${r.stat}`), from: fmt(r.from), to: fmt(r.to) }), textStyle(40, COLORS.ink)).setOrigin(0.5), width - 60);
+      // 今の番付の天井（設計書 2026-10-16 §4）：天井に着いたら金・まだなら灰（伸びの行 375 と親方の吹き出し 440 の間）
+      fitText(this.add.text(width / 2, 418, t('drill.ceiling', { cap: fmt(r.cap) }), textStyle(30, r.atCeil ? COLORS.gold : COLORS.sub)).setOrigin(0.5), width - 60);
     }
     // 親方：上手＝笑う・下手＝怒鳴る
     // 決め技モードは点数でなくゲージの進み（kimeteGrade）：覚えた＝great・満タンの6割以上進んだ＝good・ほか＝bad
-    const grade = r.kimete ? kimeteGrade(r) : drillGrade(r.score);
+    const grade = r.kimete ? kimeteGrade(r) : statDrillGrade(r.score, r.atCeil); // 天井に着いた＝「天井だ。次は土俵で勝て！」（Ruling R6）
     // 親方の顔と吹き出し：習得のカットインの帯の間は隠し、帯が閉じたら出す（10/15 バグ出し：帯の下で字が透けて重なった）
     this.oyakata = [...speakerFace(this, 'kotonami', 110, 540, 150, gradeMood(grade)), ...speechBubble(this, 210, 440, 480, 220, t(`drill.line.${grade}`), { size: 36, min: 28 })];
     statBars(this, 40, 700, 640, session.run.stats);

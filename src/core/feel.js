@@ -3,8 +3,8 @@
 // 画面（KamiScene）は毎コマ clockTick で実の秒を「計算の秒」に直し、機械のたたき手と step の両方にその秒を渡す＝
 // 両方の型紙・〇・バー・相手の攻めが同じだけ止まる／遅くなる（〇とバーの判定は計算の時刻 st.t で決まる＝止まっている間に押しても、見えている〇・バーのとおりに判定される）。
 // 強さの計算（kami.js）は何も変えない。足す遅れは1番で FEEL.budget 秒まで（ヒットストップは stopBudget まで・スローの分は残す）
-import { KAMI } from './kami.js?v=45';
-import { PLAY_COUNT } from './ladder.js?v=45';
+import { KAMI } from './kami.js?v=46';
+import { PLAY_COUNT } from './ladder.js?v=46';
 
 export const FEEL = {
   // 〇の判定ごと（2＝◎・1＝○）：stop＝止まる秒・flash＝白い光の濃さ（0.5 以下・1回）・shake＝揺れ（px・秒＝0.2 以下）・vol＝「バシッ」の大きさ
@@ -18,7 +18,7 @@ export const FEEL = {
   slow: { win: { scale: 0.3, secs: 1, dark: false, zoom: 1.04 }, lose: { scale: 0.3, secs: 0.5, dark: true, zoom: 1.02 } },
   // 連打：箱が沈む px・型紙の震え px（拍に合うと少し強く）・戻るまでの ms
   mash: { sink: 4, beatSink: 7, jitter: 1.5, beatJitter: 3, ms: 220 },
-  zabutonFrom: 9, // 10体目（0から9）から座布団
+  zabutonFrom: 24, // 25体目（0から24）から座布団（50体版 Task 7：20体版の 10体目＝9 から、50体の真ん中の 25体目へ）
   budget: 2, // 1番で足す遅れの上限（秒）
   stopBudget: 1.2, // そのうちヒットストップに使える分（残りはスロー）
 };
@@ -44,7 +44,7 @@ export function mashFeel(onBeat) {
   return { sink: onBeat ? m.beatSink : m.sink, jitter: onBeat ? m.beatJitter : m.jitter, ms: m.ms };
 }
 
-// 勝った時のにぎわい：'zabuton'＝座布団が舞い、どよめきが大きくふくらむ（必殺技で勝ち・10体目以降と大ボス・昇進の一番）／'cheer'＝ふつうの勝ち（拍手と歓声）／'none'＝負け
+// 勝った時のにぎわい：'zabuton'＝座布団が舞い、どよめきが大きくふくらむ（必殺技で勝ち・25体目以降と大ボス・昇進の一番）／'cheer'＝ふつうの勝ち（拍手と歓声）／'none'＝負け
 // how＝計算の st.how（'finisher' は勝った側の決め技で決まった）・promoted＝この勝ちで上がる番付（無い＝null）
 export function cheerLevel(r) {
   if (!r || !r.won) return 'none';
@@ -59,13 +59,17 @@ export const pastEdge = (f) => !!f && (f.fell || ((f.x < KAMI.BOX.l || f.x > KAM
 const secs = (v) => (v > 0 && Number.isFinite(v) ? v : 0);
 
 export function newClock() {
-  return { stop: 0, slow: 0, scale: 1, stopSpent: 0, spent: 0, held: false };
+  return { stop: 0, slow: 0, scale: 1, stopSpent: 0, spent: 0, held: false, holds: {} };
 }
 
-// カットインの間の止め（v42 第2段：必殺技の目の帯・v45 漫画は外した）：on の間は計算の秒を 0 にする（ヒットストップ・スローの残りは減らさない）。
-// 足す遅れの上限（budget）には数えない＝呼ぶ側（KamiScene）が見せる長さを決め、閉じたら off にする（たたけば早送りで閉じる）
-export function clockHold(c, on) {
-  c.held = !!on;
+// カットインの間の止め（v42 第2段：必殺技の目の帯）と、必殺技の演出の止め（50体版 2026-10-16 §6.5）：on の間は計算の秒を 0 にする（ヒットストップ・スローの残りは減らさない）。
+// who＝止める人（'cutin'＝目の帯・'fin'＝必殺技の演出）。どれか1人でも止めていれば止まる（Review Focus #3：片方が閉じても、もう片方の止めは外れない）。
+// 足す遅れの上限（budget）には数えない＝呼ぶ側（KamiScene）が見せる長さを決め、閉じたら off にする
+export function clockHold(c, on, who = 'cutin') {
+  if (!c.holds) c.holds = {};
+  if (on) c.holds[who] = true;
+  else delete c.holds[who];
+  c.held = Object.keys(c.holds).length > 0;
   return c;
 }
 

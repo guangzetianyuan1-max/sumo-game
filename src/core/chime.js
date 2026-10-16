@@ -2,8 +2,8 @@
 // v45 本人（10/16）「長押し、緑の帯に入って効果音」「稽古連打、目標達成で効果音」
 //   長押し：ためているバーが緑の帯に入った瞬間に1度だけ。帯の中にいる間は鳴らし直さない・新しい押し（押し直し・次の予告・次の回）でまた鳴る
 //   連打：数が目標（RENDA.full＝30）に届いたたたきで1度だけ（1回の5秒の中で数は増えるだけ＝越えるのは1度）
-import { barGauge, barInBand } from './kami.js?v=45';
-import { RENDA, nagaoshiInBand } from './drills.js?v=45';
+import { barGauge, barInBand, kimeHoldGauge } from './kami.js?v=46';
+import { RENDA, nagaoshiInBand } from './drills.js?v=46';
 
 // 押しごとの覚え：key＝今の押しの印（押し始めの時刻など・押していない＝null）・rung＝この押しでもう鳴らした
 export const newChime = () => ({ key: null, rung: false });
@@ -17,10 +17,16 @@ export function greenChime(memo, key, inGreen) {
   return true;
 }
 
-// 取組（kami.js の st）：side の守りのバーを長押しでためている間の { key（押し始めの st.t）, inGreen }。ためていない＝key null
+// 取組（kami.js の st）：side の守りのバー、または長押しの決め技の〇を、長押しでためている間の { key（押し始めの st.t）, inGreen }。ためていない＝key null
 export function boutGreen(st, side = 'east') {
-  const b = st && st.bar;
   const me = st && st.f && st.f[side];
+  const r = me && me.ring;
+  if (r && r.input === 'hold' && st.phase !== 'done') {
+    if (r.heldFrom === null || me.down || me.fell) return { key: null, inGreen: false };
+    const g = kimeHoldGauge(st, side);
+    return { key: r.heldFrom, inGreen: g < 1 && Math.abs(g - r.center) <= r.half + 1e-9 };
+  }
+  const b = st && st.bar;
   if (!b || st.phase === 'done' || b.side !== side || b.result !== null || b.heldFrom === null || !me || me.down || me.fell) return { key: null, inGreen: false };
   return { key: b.heldFrom, inGreen: barInBand(b, barGauge(st)) };
 }
