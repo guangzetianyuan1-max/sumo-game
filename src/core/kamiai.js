@@ -1,12 +1,12 @@
 // 紙相撲の強さ：心技体→型紙の重さ・起き上がり・ゲージ・決め技／敵の順番→機械のたたき方（設計書 §4）
-import { newBout, step, press, hold, mash, KAMI } from './kami.js?v=46';
-import { kimeInputSpec } from './kimeinput.js?v=46';
-import { makeRng } from './rng.js?v=46';
-import { foeAt } from '../data/foes.js?v=46';
-import { kimeteById, affinity } from '../data/kimete.js?v=46';
-import { FOE_KIMETE } from '../data/foekimete.js?v=46';
-import { foeStats } from './run.js?v=46';
-import { tacticsFor, FOE_KIME_ID } from './tactics.js?v=46';
+import { newBout, step, press, hold, mash, KAMI } from './kami.js?v=47';
+import { kimeInputSpec } from './kimeinput.js?v=47';
+import { makeRng } from './rng.js?v=47';
+import { foeAt } from '../data/foes.js?v=47';
+import { kimeteById, affinity } from '../data/kimete.js?v=47';
+import { FOE_KIMETE } from '../data/foekimete.js?v=47';
+import { foeStats } from './run.js?v=47';
+import { tacticsFor, FOE_KIME_ID } from './tactics.js?v=47';
 
 const lerp = (a, b, k) => a + (b - a) * k;
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -123,7 +123,7 @@ export function barError(acc, rng) {
 // masher（既定 false）：連打の人＝バーを気にせず、予告の間もいつもの速さでたたき続ける（一押しは MASH_TAP 秒押して離す）。返さない人（counter 0）と同じく負けやすいことを数える（Ruling 5）
 export function driver(p, rng, crng = makeRng(COUNTER_SEED), rrng = makeRng(RING_SEED), brng = makeRng(BAR_SEED)) {
   let next = 0, heldUntil = -Infinity, ringSeen = null, ringAt = Infinity, barFrom = null, barAt = Infinity;
-  let mashNext = Infinity, holdAt = Infinity, releaseAt = null; // 決め技の出し方（連打の次の一打・長押しの押し始めと離す時刻）
+  let mashNext = Infinity, mashStart = false, holdAt = Infinity, releaseAt = null; // 決め技の出し方（連打の次の一打・数える連打に入ったか・長押しの押し始めと離す時刻）
   const reaction = typeof p.reaction === 'number' ? p.reaction : HERO_REACT;
   const mashRate = p.mashRate > 0 ? p.mashRate : HERO_MASH; // 連打の技の速さ（連打の人 masher も人の速さ＝p.rate は使わない）
   const pressHold = p.pressHold > 0 ? p.pressHold : p.masher ? MASH_TAP : 0;
@@ -139,11 +139,17 @@ export function driver(p, rng, crng = makeRng(COUNTER_SEED), rrng = makeRng(RING
     if (!r) return false;
     if (r !== ringSeen) {
       ringSeen = r; ringAt = r.hitAt + ringError(p.acc, rrng);
-      mashNext = r.from + reaction; holdAt = r.from + reaction; releaseAt = null;
+      mashNext = r.from + reaction; mashStart = false; holdAt = r.from + reaction; releaseAt = null;
     }
     if (r.kind === 'kime' && p.finisher === false) return true; // 決め技を使わない＝〇は見送る
     if (r.input === 'mash') {
-      if (st.t >= mashNext) { mash(st, side); mashNext += 1 / mashRate; } // 刻みを足していく（コマの端数で遅れない）
+      // v47 直し1（点検）：人の真似＝光ったのに気づくまで（reaction）は いつもの速さで たたき続け（数えない）、気づいたら rearm 秒止めてから数える連打に入る
+      if (st.t < r.from + reaction) {
+        if (st.t >= next) { mash(st, side); next = st.t + 1 / p.rate; }
+        return true;
+      }
+      if (!mashStart) { mashStart = true; mashNext = Math.max(st.t, st.f[side].tapAt) + (r.rearm || 0); } // 気づいた時（と最後のたたき）から rearm 秒止める
+      if (st.t >= mashNext - 1e-9) { mash(st, side); mashNext += 1 / mashRate; } // 刻みを足していく（コマの端数で遅れない）
       return true;
     }
     if (r.input === 'hold') {

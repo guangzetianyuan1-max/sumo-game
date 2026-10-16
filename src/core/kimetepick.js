@@ -1,8 +1,8 @@
 // 決め技を選ぶ（相手の情報の画面・20体版 Task 4）。画面から切り離した純粋な関数
 // 覚えた決め技＝run.newKnown のうち KIMETE にある物。勧め＝recommendKimete（相性→敵の型に合う系統→相手ごとの種。v42）
 // 一生の通し（careersim.bestKimete）も同じ勧めを使う＝試しと本番で同じ物を持っていく
-import { KIMETE, affinity, typeFit } from '../data/kimete.js?v=46';
-import { makeRng } from './rng.js?v=46';
+import { KIMETE, affinity, typeFit } from '../data/kimete.js?v=47';
+import { makeRng } from './rng.js?v=47';
 
 const known = (run) => (run && Array.isArray(run.newKnown) ? run.newKnown : []);
 
@@ -15,7 +15,7 @@ export function learnedKimete(run) {
 // 勧め（v42 本人「決め技のおすすめが五月雨突きに偏る」：前は同じ相性なら いつも解禁の早い物＝五月雨突き）。覚えていなければ null
 //   1. 敵の型との相性（affinity）が一番良い物（ここは今まで通り・種で変わらない）
 //   2. 相性が同じ物が並んだら、相手ごとの種（run.seed と相手の番号 foeIndex）で選ぶ。重み＝解禁の順（1・2・3・4・5：後で覚えた＝威力の高い物ほど選ばれやすい）
-//      × 敵の型に合う系統なら 2（typeFit：弱みの系統か、それに近い系統。例 長身型→うっちゃり）
+//      × 敵の型に合う系統なら 2（typeFit：弱みの系統か、それに近い系統。例 重量型→引き。v47 からうっちゃり＝鉄壁は型では勧めない＝NO_TYPE_FIT）
 //   同じ記録・同じ相手なら いつも同じ物（相手の画面を開き直しても変わらない・一生の通し careersim と本番で同じ）
 //   ⚠合う系統を「必ず」先にすると、長身の大ボスに いつもうっちゃりを勧め、反応の遅い人との差が kami_tune の目標（12点）を超えた＝重みにとどめた
 export const pickSeed = (seed, foeIndex) => ((Math.imul(Number.isFinite(seed) ? seed | 0 : 0, 0x9e3779b1) ^ Math.imul((Number.isFinite(foeIndex) ? foeIndex | 0 : 0) + 1, 0x85ebca6b)) >>> 0);
@@ -33,6 +33,14 @@ export function recommendKimete(run, foeType, foeIndex = 0) {
   let r = makeRng(pickSeed(run && run.seed, foeIndex))() * total;
   for (const x of ties) { r -= weight(x); if (r < 0) return x.k.id; }
   return ties[ties.length - 1].k.id;
+}
+
+// 遊び方の2枚目で先に教える決め技（v47 本人「本番で一発〇が初めしか出ない」）：持っている決め技の解禁の順で最初の物・無ければ最初に覚える物（KIMETE[0]＝風車投げ）。
+// { id, input（tap・mash・hold）, owned（持っているか＝「まず覚える」を付けない） }
+export function helpKimete(run) {
+  const mine = learnedKimete(run);
+  const k = mine.length ? KIMETE.find((x) => x.id === mine[0]) : KIMETE[0];
+  return { id: k.id, input: k.input, owned: mine.length > 0 };
 }
 
 // 相手の情報の札5枚：state＝learned（覚えた・選べる）| learnable（解禁済み・稽古で覚えられる）| locked（まだ）。at＝解禁の勝ち数・aff＝相性の倍率

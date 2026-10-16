@@ -22,36 +22,36 @@
 //   守り成功＝主人公の踏ん張りの目の帯（v45・0.7秒・時計は止めない・入力を取らない・4秒以内の2回目は出さない）。v45b：置き場所は箱の前の面（〇・バー・型紙の頭・ボタンにかからない＝〇が出ても消さない）。
 //   絵が読めない時は何も出さない（「守り成功！」の字は出る）。
 //   止めるのは画面の時計だけ（kami.js の物理と careersim の数は変えない）
-import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge, kimeHoldGauge } from '../core/kami.js?v=46';
-import { isTactic, FOE_KIME_ID, BAR } from '../core/tactics.js?v=46';
-import { leftLook, rightLook, neutralLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey, attackScene, bossAlert, tipStep, eyeDeferDue, kimeCall } from '../core/kamibutton.js?v=46';
-import { cutinArt, eyeArt, EYE_HERO, EYE_FUNBARI, EYE_MS, funbariDue, cutinCloses, cutinNeutral } from '../core/cutin.js?v=46';
-import { newChime, greenChime, boutGreen } from '../core/chime.js?v=46';
-import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=46';
-import { chosenKimete } from '../core/kimetepick.js?v=46';
-import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=46';
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=46';
-import { currentFoe } from '../core/run.js?v=46';
-import { PLAY_COUNT } from '../core/ladder.js?v=46';
-import { makeRng } from '../core/rng.js?v=46';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=46';
-import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=46';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=46';
-import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=46';
-import { playBout, whine, whineStop } from '../ui/sfx.js?v=46';
-import { boutWhine } from '../core/whine.js?v=46';
-import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=46';
-import { GYOJI, tachiaiVoiceAt, tachiaiPreRoll, nokottaDue, hushVoices } from '../core/gyoji.js?v=46';
-import { ringEvent } from '../core/voice.js?v=46';
-import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=46';
-import { createBigButton } from '../ui/bigbutton.js?v=46';
-import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing, clockHold } from '../core/feel.js?v=46';
-import { createFx } from '../ui/fx.js?v=46';
-import { finisherPlan, finisherPose, ghostPoses, weakFinisher, pivotOffset } from '../core/finisherfx.js?v=46';
-import { createFinisherFx } from '../ui/finisherfx.js?v=46';
-import { drawCutinBand, drawEyeBand, drawFunbariBand } from '../ui/cutinband.js?v=46';
-import { HUD, HIT_MARK, ringShape, barShape, drawRing, drawBar, hudTouch, mashShape, kimeHoldShape, drawMash, drawKimeHold } from '../ui/hud.js?v=46';
-import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=46';
+import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge, kimeHoldGauge } from '../core/kami.js?v=47';
+import { isTactic, FOE_KIME_ID, BAR } from '../core/tactics.js?v=47';
+import { leftLook, rightLook, neutralLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey, attackScene, bossAlert, tipStep, eyeDeferDue, kimeCall } from '../core/kamibutton.js?v=47';
+import { cutinArt, eyeArt, EYE_HERO, EYE_FUNBARI, EYE_MS, funbariDue, cutinCloses, cutinNeutral } from '../core/cutin.js?v=47';
+import { newChime, greenChime, boutGreen } from '../core/chime.js?v=47';
+import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=47';
+import { chosenKimete } from '../core/kimetepick.js?v=47';
+import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=47';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=47';
+import { currentFoe } from '../core/run.js?v=47';
+import { PLAY_COUNT } from '../core/ladder.js?v=47';
+import { makeRng } from '../core/rng.js?v=47';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=47';
+import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=47';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=47';
+import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=47';
+import { playBout, whine, whineStop } from '../ui/sfx.js?v=47';
+import { boutWhine } from '../core/whine.js?v=47';
+import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=47';
+import { GYOJI, tachiaiVoiceAt, tachiaiPreRoll, nokottaDue, hushVoices } from '../core/gyoji.js?v=47';
+import { ringEvent } from '../core/voice.js?v=47';
+import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=47';
+import { createBigButton } from '../ui/bigbutton.js?v=47';
+import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing, clockHold } from '../core/feel.js?v=47';
+import { createFx } from '../ui/fx.js?v=47';
+import { finisherPlan, finisherPose, ghostPoses, weakFinisher, pivotOffset } from '../core/finisherfx.js?v=47';
+import { createFinisherFx } from '../ui/finisherfx.js?v=47';
+import { drawCutinBand, drawEyeBand, drawFunbariBand } from '../ui/cutinband.js?v=47';
+import { HUD, HIT_MARK, MASH_COUNT, ringShape, barShape, drawRing, drawBar, hudTouch, mashShape, kimeHoldShape, drawMash, drawKimeHold } from '../ui/hud.js?v=47';
+import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=47';
 
 const FIG_H = 330; // 型紙の高さ（敵は段階の倍率を掛ける）
 const VIS = FIG_H / 230; // 見た目の大きさの倍率（計算の座標は変えない・縦方向の跳ね・落ちは同じ比で描く）
@@ -264,7 +264,7 @@ export class KamiScene extends Phaser.Scene {
     this.bossSayBase = this.bossSay.scaleX;
     this.callSay = this.add.text(0, CALL_SAY.y, '', textStyle(CALL_SAY.size, '#ffffff', { stroke: '#7a4a0c', strokeThickness: 9 })).setOrigin(0.5).setDepth(HUD_DEPTH + 1).setVisible(false);
     this.callKey = null; // 今出している合図（字と場所を変えるのは変わった時だけ）
-    this.mashText = this.add.text(HUD.ring.x, HUD.ring.y, '', textStyle(110, COLORS.gold, { stroke: '#141a2e', strokeThickness: 10 })).setOrigin(0.5).setDepth(HUD_DEPTH + 0.1).setVisible(false); // 連打の技の残りの回数
+    this.mashText = this.add.text(HUD.ring.x, HUD.ring.y, '', textStyle(MASH_COUNT.size, COLORS.gold, { stroke: '#141a2e', strokeThickness: 12 })).setOrigin(0.5).setDepth(HUD_DEPTH + 0.1).setVisible(false); // 連打の技の残りの回数
     this.alert = false;
     this.hintKey = null;
     // 1体目は練習の一番：場面ごとに、ことねの吹き出しを上に出す

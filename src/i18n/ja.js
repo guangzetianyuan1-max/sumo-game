@@ -524,9 +524,10 @@ export default {
   'kami.hint.bar': '守り！右のボタン（またはバー）長押し・緑で離す',
   'kami.hint.again': '右をはなして、もう一度',
   'kami.hint.stay': '踏ん張り中は待つ・解けたら左を連打',
-  'kami.hint.kimeMash': '攻め！ 決め技は左のボタンを連打',
+  'kami.hint.kimeMash': '攻め！ 決め技は一度はなしてから左を連打', // v47 直し1：光る前からの連打は数えない
   'kami.hint.kimeHold': '攻め！ 決め技は右を長押し・緑で離す',
   'kami.call.mash': '連打！ あと{n}回',
+  'kami.call.mashWait': 'はなして、連打！', // v47：連打のまま光った＝一度離してから数える
   'kami.call.hold': '長押し！',
   'kami.call.tap': '押せ！',
   'kami.finish': '決め技！',
@@ -539,7 +540,7 @@ export default {
   'kami.btn.stay': '待て',
   'kami.btn.toRight': '→右',
   'kami.btn.right': '一押し\n長押し',
-  'kami.btn.kimeMash': '攻め！\n連打',
+  'kami.btn.kimeMash': '決め技！\n連打', // v47：ふだんの押し合い（攻め！連打）と見分ける
   'kami.btn.kimeHold': '攻め！\n長押し',
   'kami.warn.fumbari': '踏ん張り！',
   'kami.warn.hataki': 'はたくぞ！',
@@ -564,7 +565,11 @@ export default {
   // 遊び方の3枚（20体版 Task 4・ことねの説明）
   'help.title': '遊び方',
   'help.1': 'ボタンは2つ。\n攻めは左を連打で前へ押して、\n相手を箱から落とせば勝ち！\n倒れたら右を長押しで起きます。',
-  'help.2': '決め技は光ったら、技ごとの出し方！\n〇の技＝攻めの一押し！\n輪が重なったら\n右のボタン（または輪）を一押し\n連打の技＝\n左を出ている回数ぶん連打\n長押しの技＝右を長押し、緑で離す',
+  // 遊び方の2枚目（v47）：持っている決め技（無ければ最初に覚える風車投げ＝lead「まず覚える」）の出し方を先に・ほかの2つは後
+  'help.2.tap': '決め技は光ったら、技ごとの出し方！\n{lead}『{tech}』は〇の技！\n攻めの一押し！ 輪が重なったら\n右のボタン（または輪）を一押し\n連打の技＝左を回数ぶん連打\n長押しの技＝右を長押し、緑で離す',
+  'help.2.mash': '決め技は光ったら、技ごとの出し方！\n{lead}『{tech}』は連打の技！\n左を回数ぶん連打（一度はなしてから）\n〇の技＝攻めの一押し！\n輪が重なったら\n右のボタン（または輪）を一押し\n長押しの技＝右を長押し、緑で離す',
+  'help.2.hold': '決め技は光ったら、技ごとの出し方！\n{lead}『{tech}』は長押しの技！\n右を長押し、緑で離す\n〇の技＝攻めの一押し！\n輪が重なったら\n右のボタン（または輪）を一押し\n連打の技＝左を回数ぶん連打',
+  'help.2.lead': 'まず覚える',
   'help.3': '相手が攻めると左にバー。守り！\n右のボタン（またはバー）を\n長押し、緑で離せば「守り成功！」\n踏ん張りが来たら、\n待ってから左を連打。',
   'help.next': '次へ',
   'help.start': 'はじめる',
@@ -621,7 +626,7 @@ export default {
   'kami.coach.bar': '守りの長押し！\n右のボタン（またはバー）を長押し、\n緑の帯で離して、こらえて！',
   'kami.coach.again': '右の指をはなして、もう一度長押し！',
   'kami.coach.stay': '踏ん張り中は押すと跳ね返されます。\n待って、解けたら左を連打！',
-  'kami.coach.kimeMash': '決め技が光った！ 攻めの連打！\n左のボタンを、出ている回数たたいて！',
+  'kami.coach.kimeMash': '決め技が光った！ 一度はなしてから\n左のボタンを、出ている回数たたいて！',
   'kami.coach.kimeHold': '決め技が光った！ 攻めの長押し！\n右のボタンを長押し、緑で離して！',
   // 20体版 Task 5：懸賞旗・カットイン・クリアの画面（懸賞旗の字は架空の名前だけ）
   'kensho.title': '懸賞がかかりました',
@@ -638,8 +643,10 @@ export default {
   // 稽古の3つの遊び（20体版 Task 6）と、番付からいつでも入る稽古（10/13 本人）
   'ladder.train': '稽古する',
   'train2.oyakataFree': 'よし、来たか。今日はどれで鍛える？',
-  'train2.recDrill': '{stat}が足りん！ {drill}だ！',
-  'train2.recNone': 'どれでもよい。好きな稽古を選べ！',
+  // v47 稽古の勧め（core/training.js の trainingAdvice）：決め技＝あいさつを外して2行（技の名前が長い）・心技体の遊び＝比べる言い方はしない・3つとも天井
+  'train2.recKimete': 'まず決め技\n『{tech}』を覚えろ！',
+  'train2.recNext': '次は{drill}だ！',
+  'train2.recCeiling': '天井だ。土俵で勝て！',
   'train2.line': '{a}\n{b}',
   'train2.leave': '番付へ戻る',
   'train2.doneFree': '稽古おわり！ 番付へ戻ろう',
@@ -667,9 +674,7 @@ export default {
   'drill.early': '早い！',
   'drill.late': '上げすぎ！',
   'drill.result': '稽古の結果',
-  'drill.res.ippon': '{pts}点（10点満点）',
-  'drill.res.renda': '{n}回（30回で満点）',
-  'drill.res.nagaoshi': '{pts}点（100点満点）',
+  'drill.res': '{pts}点（100点満点）', // v47：3つの稽古とも出来の％
   'drill.mult': '出来 {pct}%　伸び ×{m}',
   'drill.gain': '{stat} {from} → {to}',
   'drill.line.great': 'がっはっは！\n見事だ！ その調子だ！',
@@ -677,6 +682,7 @@ export default {
   'drill.line.ok': 'まずまずだ。\nもう一息、踏ん張れ！',
   'drill.line.bad': 'なんだそれは！\n腰が入っとらん！',
   'drill.line.ceiling': '天井だ。\n次は土俵で勝て！', // 設計書 2026-10-16 §4：今の番付の天井に着いた
+  'drill.line.ceilingOne': '{stat}は天井だ。\nほかの稽古をしろ！', // v47：伸ばした物だけ天井（3つとも天井は drill.line.ceiling）
   'drill.ceiling': '今の番付の天井 {cap}',
   'drill.next': '次のコマへ（あと{n}コマ）',
   'drill.toFoe': '相手へ挑む',

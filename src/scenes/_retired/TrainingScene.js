@@ -3,18 +3,18 @@
 // 疲れ10で「番付を見る」を押すと休場の場所に入る（番付 → 取組の順は全部「休」→ 結果）
 // 押すと train → 保存 → 効果音 → 描き直した上に稽古の絵と効き目の札と応援の1行（2.4秒で閉じる・応援が無い時は1.6秒・押せばすぐ閉じる）。0回になったら「番付を見る」→ 場所を始めて（保存）→ 番付
 // 下の段の左「おまかせ稽古」（10/11 本人「自動モード」）：残りの稽古を親方の助言どおり（autoTrainingChoice）に1回ずつ・札は0.9秒で次へ。どこかを押すと今の1回の後で止まる
-import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=46';
-import { t, getLang, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=46';
-import { session, trainNow, beginBasho } from '../state.js?v=46';
-import { HEYA, heyaOfGuide } from '../data/heya.js?v=46';
-import { cheerKey, trainingAdvice } from '../core/cheer.js?v=46';
+import { TRAININGS, FATIGUE_MAX, condition, trainingEffects } from '../core/career.js?v=47';
+import { t, getLang, rankLabel, shikonaLabel } from '../i18n/i18n.js?v=47';
+import { session, trainNow, beginBasho } from '../state.js?v=47';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=47';
+import { cheerKey, trainingAdvice } from '../core/cheer.js?v=47';
 import {
   button, fitText, roundBox, hitZone, textStyle, statBars, preloadTypeArt, preloadTrainingIndex, loadTrainingArt, preloadWordsIndex, loadWordsArt, preloadVoiceIndex, loadVoice, preloadGuideArt, preloadOyakataArt,
   speakerFace, speechBubble, COLORS, CONDITION_COLOR, cssColor, clearScene, backButton, saveButton, TOP_LEFT_FREE,
-} from '../ui/widgets.js?v=46';
-import { playTraining } from '../ui/sfx.js?v=46';
-import { autoTrainingChoice } from '../core/auto.js?v=46';
-import { wordsFor, wordSpot, WORD_COLOR, wordArt, voiceSet, voiceKey } from '../data/words.js?v=46';
+} from '../ui/widgets.js?v=47';
+import { playTraining } from '../ui/sfx.js?v=47';
+import { autoTrainingChoice } from '../core/auto.js?v=47';
+import { wordsFor, wordSpot, WORD_COLOR, wordArt, voiceSet, voiceKey } from '../data/words.js?v=47';
 
 const BARS = { x: 40, y: 226, w: 640 }; // 心技体の棒（statBars の大きい版：行の高さ44・名前の幅96・数の幅46）
 const CARD = { w: 310, h: 150, cols: [190, 530], top: 450, step: 170 };

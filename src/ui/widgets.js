@@ -1,16 +1,16 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=46';
-import { HERO_IDS } from '../data/heroes.js?v=46';
-import { heroArt } from '../core/foeart.js?v=46';
-import { GUIDE_IDS } from '../data/guides.js?v=46';
-import { HEYA_IDS } from '../data/heya.js?v=46';
-import { t, getLang } from '../i18n/i18n.js?v=46';
-import { jaWrap, jaWrapBalanced } from '../data/wrap.js?v=46';
-import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=46';
-import { TRAININGS } from '../core/career.js?v=46';
-import { saveNow } from '../state.js?v=46';
-import { playBout } from './sfx.js?v=46';
-import { armOpenGuard, openGuarded } from './openguard.js?v=46';
+import { TYPE_IDS } from '../data/types.js?v=47';
+import { HERO_IDS } from '../data/heroes.js?v=47';
+import { heroArt } from '../core/foeart.js?v=47';
+import { GUIDE_IDS } from '../data/guides.js?v=47';
+import { HEYA_IDS } from '../data/heya.js?v=47';
+import { t, getLang } from '../i18n/i18n.js?v=47';
+import { jaWrap, jaWrapBalanced } from '../data/wrap.js?v=47';
+import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=47';
+import { TRAININGS } from '../core/career.js?v=47';
+import { saveNow } from '../state.js?v=47';
+import { playBout } from './sfx.js?v=47';
+import { armOpenGuard, openGuarded } from './openguard.js?v=47';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -379,7 +379,14 @@ export function topTitle(scene, y, str, size, color, { save = false } = {}) {
 
 // 心・技・体の3本の横棒（金の棒＋暗い溝・値は 0〜100 で棒の長さ・右に数）。x,y は左上。使った高さを返す。
 // ラベルの文は stat.shin / stat.gi / stat.tai（字 28：日本語は1字なので狭く、英語は Spirit が収まる幅）
-export function statBars(scene, x, y, w, stats) {
+// 天井の印の x（v47）：0〜100 で描いた棒（左の端 bx・幅 bw）の上で、天井 ceil がどこか。数でない・0以下は null（印を出さない）・100 より上は右の端
+export function ceilMarkX(bx, bw, ceil) {
+  if (!Number.isFinite(ceil) || ceil <= 0) return null;
+  return bx + bw * Math.min(100, ceil) / 100;
+}
+
+// opts.ceil＝今の番付の天井（v47 本人「稽古のナビがまちまち」）：棒の上に細い縦の線（白・墨のふち）を出す＝100 で描いた棒の上で天井がどこか分かる
+export function statBars(scene, x, y, w, stats, opts = {}) {
   const keys = ['shin', 'gi', 'tai'];
   const GOLD = 0xe3c27a;
   const track = (cx, cy, tw, th) => roundBox(scene, cx + tw / 2, cy, tw, th, 0x2f3858, { radius: th / 2, shadow: false });
@@ -397,6 +404,8 @@ export function statBars(scene, x, y, w, stats) {
     const bw = w - labelW - numW;
     track(bx, cy, bw, 18);
     fill(bx, cy, bw, 18, stats[k]);
+    const cx = ceilMarkX(bx, bw, opts && opts.ceil);
+    if (cx !== null) scene.add.rectangle(cx, cy, 4, 32, 0xffffff, 1).setStrokeStyle(2, 0x141a2e, 1);
     scene.add.text(x + w, cy, String(Math.round(stats[k])), textStyle(28, COLORS.gold)).setOrigin(1, 0.5);
   });
   return ROWH * keys.length;

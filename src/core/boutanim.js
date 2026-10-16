@@ -1,6 +1,6 @@
 // 取組の画面の動き（10/11 本人「3の動きで『動画を入れて』」・見本＝art_src/動画試作/bout_video.py）。画面には触らない（node で試せる）
 // 姿勢の絵＝assets/bout/<east|west>/<姿勢>.png（tools/prep_bout.py で切り抜く）。東＝右向き・紺／西＝左右反転・赤
-import { KIMARITE } from '../data/kimarite.js?v=46';
+import { KIMARITE } from '../data/kimarite.js?v=47';
 
 // 切り抜いた姿勢（tools/prep_bout.py の POSES と同じ名前）
 export const POSE_NAMES = [

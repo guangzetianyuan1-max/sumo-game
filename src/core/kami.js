@@ -1,11 +1,11 @@
 // 紙相撲の計算（10/13 本人「紙相撲に切り替える」・設計書 2026-10-13-sumo-kamizumo-design.md）
 // 画面から切り離した、型紙2枚の動き。単位＝画面の px と秒。x＝足もとの真ん中・y＝箱の面からの高さ（上が＋）
 // a＝傾き（＋＝自分の後ろへ反る）。東＝主人公＝左から右へ（dir +1）・西＝敵＝右から左へ（dir -1）
-import { makeRng } from './rng.js?v=46';
-import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=46';
-import { ON_BEAT } from './beat.js?v=46';
-import { IPPON } from './drills.js?v=46';
-import { KIME_INPUTS, tapJudge, mashJudge, holdJudge } from './kimeinput.js?v=46';
+import { makeRng } from './rng.js?v=47';
+import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=47';
+import { ON_BEAT } from './beat.js?v=47';
+import { IPPON } from './drills.js?v=47';
+import { KIME_INPUTS, tapJudge, mashJudge, holdJudge } from './kimeinput.js?v=47';
 
 export { ON_BEAT };
 
@@ -69,7 +69,7 @@ function kimeRing(st, side, me) {
   const inp = me.kimete.input, from = st.t;
   if (inp && inp.input === 'mash') {
     const until = from + inp.window;
-    return { side, kind: 'kime', input: 'mash', from, hitAt: until, until, need: inp.need, count: 0, window: inp.window, good: inp.good };
+    return { side, kind: 'kime', input: 'mash', from, hitAt: until, until, need: inp.need, count: 0, window: inp.window, good: inp.good, rearm: inp.rearm > 0 ? inp.rearm : 0, armed: false };
   }
   if (inp && inp.input === 'hold') {
     const until = from + inp.limit;
@@ -100,6 +100,7 @@ function fighter(p, x, dir) {
     kimete: kimeteOf(p.kimete),
     x, y: 0, vx: 0, vy: 0, a: 0, va: 0, dir,
     down: false, held: false, standHeld: 0, upAt: -Infinity, upHeld: false, stun: 0, fell: false, taps: [], charged: false,
+    tapAt: -Infinity, prevTapAt: -Infinity, // 左のたたき（mash）と一押し（press）の時刻・その前の時刻（連打の技は間 rearm をあけた押しから数える・v47）
     litUntil: 0, litFrom: 0, cool: 0, pushT: 0, pushV: 0,
     ring: null, // 一発の〇 { side, kind: 'tachiai'|'kime', from, hitAt }（無い＝null）。主人公の決め技の〇は input・until と出し方の数も持つ（kimeRing）
     tactics: Array.isArray(p.tactics) ? p.tactics.filter(isTactic) : [], tacticIndex: Number(p.tacticIndex) || 0, // 相手の攻め（西だけ）
@@ -264,9 +265,15 @@ function resolveKime(st, side, j) {
 }
 
 // 連打の技の1回（設計書 2026-10-16 §6・Ruling R2）：回数に届いたら判定して決める（窓の時間切れは expireRings）。跳ねない
+// v47：光った後は、前のたたきから rearm 秒あけた押し（一度離して止めた後）から数える（armed）。それまでの押しは数えない＝光る前からの連打で勝手に決まらない（false＝画面は左を揺らす）
+// v47 直し1：数え始めは光った後（r.from 以後）の押しだけ・前のたたき（光る前のたたきも含む）からの間で見る。rearm は 0.4 秒（kimeinput.js）
 function mashKime(st, side) {
   const me = st.f[side], r = me.ring;
   if (me.stun > 0 || me.fell) return false;
+  if (!r.armed) {
+    if (st.t < r.from - 1e-9 || me.tapAt - me.prevTapAt < (r.rearm || 0) - 1e-9) return false;
+    r.armed = true;
+  }
   r.count += 1;
   if (r.count >= r.need) resolveKime(st, side, mashJudge(r.count, r.need, st.t - r.from, r.window, r.good));
   return true;
@@ -299,10 +306,18 @@ function kimeHold(st, side, on, was) {
   if (!on && was && r.heldFrom !== null) finishKimeHold(st, side, kimeHoldGauge(st, side));
 }
 
+// たたいた時刻を覚える（連打の技の数え始め＝前のたたきとの間・v47）。左の mash と一押しの press（機械のたたき手の押し合いのたたき）
+function noteTap(st, side) {
+  const me = st.f[side];
+  me.prevTapAt = me.tapAt;
+  me.tapAt = st.t;
+}
+
 // ボタンの入口（1つ）：〇が出ていればその判定（0・1・2 を返す・跳ねない）・無ければ今の tap（null を返す）
 // バー（守り）が出ている間の押しは跳ねない（tap が止める）＝ためるのは hold（画面は押した指をそのまま hold へ）
 export function press(st, side) {
   if (st.phase === 'done') return null;
+  noteTap(st, side);
   if (!st.f[side].down) st.f[side].upHeld = false; // 立っていて新しい押し＝起き上がりの指はもう関係ない（2本目の指で猶予を延ばし続けられない・Ruling 6 直し2）
   if (st.f[side].ring) return pressRing(st, side);
   tap(st, side);
@@ -314,6 +329,7 @@ export function press(st, side) {
 // 立っていて受けた押しは起き上がりの指（upHeld）を外す（press と同じ：右を押したままで次の攻めを止め続けられない）
 export function mash(st, side) {
   const me = st.f[side];
+  noteTap(st, side);
   if (st.phase === 'push' && me.ring && ringInput(me.ring) === 'mash' && !me.down) return mashKime(st, side); // 連打の技の〇は左で数える
   if (st.phase !== 'push' || me.ring || me.down || barOpen(st, side)) return false;
   me.upHeld = false;

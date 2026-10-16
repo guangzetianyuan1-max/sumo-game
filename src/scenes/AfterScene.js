@@ -1,13 +1,13 @@
 // src/scenes/AfterScene.js — 取組の後（10/12 夜）：勝ち＝倒した相手・心技体の伸び・昇進・新技の解禁・クリア → 番付表
 // 負け＝心技体の伸び（少し）・「もう一度」（相手の情報へ）か「稽古へ」。同じ相手に3連敗したら案内役が稽古を勧める（選ぶのは本人）
-import { t, foeLabel, getLang } from '../i18n/i18n.js?v=46';
-import { session, suggestTraining, trainBegin } from '../state.js?v=46';
-import { playBout } from '../ui/sfx.js?v=46';
-import { preloadVoices, afterVoiceIds, sayVoice, hushGameVoices } from '../ui/voice.js?v=46';
-import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=46';
-import { menuBgKey } from '../core/bgkey.js?v=46';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=46';
-import { button, topTitle, fitText, wrapText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=46';
+import { t, foeLabel, getLang } from '../i18n/i18n.js?v=47';
+import { session, suggestTraining, trainBegin } from '../state.js?v=47';
+import { playBout } from '../ui/sfx.js?v=47';
+import { preloadVoices, afterVoiceIds, sayVoice, hushGameVoices } from '../ui/voice.js?v=47';
+import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=47';
+import { menuBgKey } from '../core/bgkey.js?v=47';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=47';
+import { button, topTitle, fitText, wrapText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=47';
 
 const STATS = ['shin', 'gi', 'tai'];
 const BAND = 140; // 見出し（勝ち・負け 72）の帯の下の端（倒した相手の行 190 の字の上の端 170 より上）

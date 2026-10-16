@@ -1,4 +1,7 @@
 {
+"foe_akabeko_normal": [
+"push"
+],
 "foe_alien_honki": [
 "push"
 ],
@@ -28,6 +31,9 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_daruma_normal": [
+"push"
 ],
 "foe_dino_normal": [
 "push",
@@ -62,6 +68,9 @@
 "sori",
 "fall"
 ],
+"foe_kokeshi_normal": [
+"push"
+],
 "foe_manekineko_honki": [
 "push"
 ],
@@ -76,6 +85,12 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_niwashi_normal": [
+"push"
+],
+"foe_okiagari_normal": [
+"push"
 ],
 "foe_pirate_normal": [
 "push",
@@ -130,6 +145,9 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_tanuki_normal": [
+"push"
 ],
 "foe_vending_normal": [
 "push",

@@ -3,21 +3,22 @@
 //   一押し稽古＝技・連打稽古＝体・長押し稽古＝心（遊びは DrillScene）／決め技を覚える（解禁していて覚えていない時だけ）
 //   決め技の札（10/14 本人「稽古の出来で決め技を習得できるようにしてください」）＝その技に合った遊び（kimete.js の drill）を決め技モードで開く。
 //   出来で習得ゲージ（run.kimeteProgress）がたまり、満タンで覚える。札にゲージの％（0%は出さない）
-// 親方が一番低い心技体に合う遊びを勧める（★と金の字）。画面の数（四捨五入）で一番低いのが1つだけの時だけ（v45b：全部同じ・2つ並ぶ＝名指しせず★も付けない）
+// 親方の勧め（v47・core/training.js の trainingAdvice）：必ず1つ★＝解禁済みで覚えていない決め技の札 → 天井でない一番低い心技体の遊び（同じなら 心→技→体）→ 3つとも天井なら★なし「天井だ。土俵で勝て！」。
+// 心技体の棒には今の番付の天井の印（細い線・v47）
 // 負けた後の稽古は3コマ終えると同じ相手へ。番付からいつでも入る稽古（training.voluntary・10/13 本人「好きなときに稽古が出来るように」）は、
 // どのコマでも「番付へ戻る」で抜けられる（残りのコマは捨てる）・終われば番付へ
-import { t } from '../i18n/i18n.js?v=46';
-import { session, trainLeaveNow } from '../state.js?v=46';
-import { canLeaveTraining, kimeteGauge, STATS } from '../core/run.js?v=46';
-import { kimeteById } from '../data/kimete.js?v=46';
-import { techCards, TECH_CARD_LIMIT, weakStat } from '../core/training.js?v=46';
-import { DRILLS, STAT_DRILL, kimetePct } from '../core/drills.js?v=46';
-import { playBout } from '../ui/sfx.js?v=46';
-import { menuBgKey } from '../core/bgkey.js?v=46';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=46';
+import { t } from '../i18n/i18n.js?v=47';
+import { session, trainLeaveNow } from '../state.js?v=47';
+import { canLeaveTraining, kimeteGauge, statCeiling } from '../core/run.js?v=47';
+import { kimeteById } from '../data/kimete.js?v=47';
+import { techCards, TECH_CARD_LIMIT, trainingAdvice } from '../core/training.js?v=47';
+import { DRILLS, kimetePct } from '../core/drills.js?v=47';
+import { playBout } from '../ui/sfx.js?v=47';
+import { menuBgKey } from '../core/bgkey.js?v=47';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=47';
 import {
   topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, bindPress, preloadOyakataArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=46';
+} from '../ui/widgets.js?v=47';
 
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1235 は「稽古おわり」の字・1210 は番付へ戻る）
 const CARD = { w: 640, top: 470, step: 120, bottom: 1150 };
@@ -50,15 +51,18 @@ export class TrainingScene extends Phaser.Scene {
     drawBackdrop(this, BG, { band: BAND });
     topTitle(this, 60, t('train2.title'), 56, COLORS.gold);
     fitText(this.add.text(width / 2, 130, t('train2.left', { n: r.training ? r.training.left : 0 }), textStyle(34, COLORS.ink)).setOrigin(0.5), width - 60);
-    statBars(this, 40, 190, 640, r.stats);
-    // 親方のおすすめ＝一番低い値に合う遊び（設計書 §7）。画面の数で一番低いのが1つだけの時（weakStat）・無い＝勧めない（v45b）
-    const low = weakStat(r.stats, STATS);
-    const rec = low ? STAT_DRILL[low] : null;
+    statBars(this, 40, 190, 640, r.stats, { ceil: statCeiling(r.wins) });
+    // 親方の勧め（v47）：決め技の札・心技体の遊び・天井（勧めなし）のどれか1つ
+    const adv = trainingAdvice(r);
+    const rec = adv.kind === 'stat' ? adv.drill : null;
+    const recTech = adv.kind === 'kimete' ? adv.id : null;
     // 琴浪親方：負けた後は怒鳴る顔・自分から来た時はふつうの顔（心技体の棒と札の間）
     speakerFace(this, 'kotonami', 100, 400, 112, free ? 'normal' : 'shout');
-    // 日本語は2行（あいさつ／勧め）に分けて渡す＝言葉の途中で折れない（v45b・train2.line）。幅 510＝あいさつの1行（約 476）が字 28 で収まる
-    const rest = low ? t('train2.recDrill', { stat: t(`stat.${low}`), drill: t(`drill.${rec}`) }) : t('train2.recNone');
-    const line = t('train2.line', { a: t(free ? 'train2.oyakataFree' : 'train2.oyakata'), b: rest });
+    // 日本語は2行（あいさつ／勧め）に分けて渡す＝言葉の途中で折れない（v45b・train2.line）。幅 510＝あいさつの1行（約 476）が字 28 で収まる。
+    // 決め技の勧めは技の名前が長い（鉄壁うっちゃり）＝あいさつを外して勧めだけを2行に（recKimete の中の改行）
+    const greet = t(free ? 'train2.oyakataFree' : 'train2.oyakata');
+    const line = recTech ? t('train2.recKimete', { tech: t(`newtech.${recTech}`) })
+      : t('train2.line', { a: greet, b: rec ? t('train2.recNext', { drill: t(`drill.${rec}`) }) : t('train2.recCeiling') });
     speechBubble(this, 180, 336, 510, 128, line, { size: 28, min: 28 });
     const cards = techCards(r, TECH_CARD_LIMIT);
     const techs = cards.show;
@@ -78,7 +82,8 @@ export class TrainingScene extends Phaser.Scene {
       const k = kimeteById(id);
       if (!k) continue;
       const pct = kimetePct(kimeteGauge(r, id));
-      const label = t('train2.tech', { tech: t(`newtech.${id}`), drill: t(`drill.${k.drill}.short`) });
+      const plain = t('train2.tech', { tech: t(`newtech.${id}`), drill: t(`drill.${k.drill}.short`) });
+      const label = id === recTech ? t('train2.rec', { label: plain }) : plain;
       this.card(i++, label, () => this.toDrill(k.drill, id), COLORS.gold, step, h, true, pct > 0 ? t('kimete.progress', { pct }) : '');
     }
     if (cards.more) {

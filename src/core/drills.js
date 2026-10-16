@@ -4,7 +4,7 @@
 //   連打（鉄砲）＝体：5秒間の連打の回数（30回で満点）
 //   長押し（四股）＝心：押している間ゲージがたまる。緑の帯でちょうど離す。3回・帯の真ん中ほど高い
 
-import { barGreenScale } from './tactics.js?v=46';
+import { barGreenScale } from './tactics.js?v=47';
 
 export const DRILLS = ['ippon', 'renda', 'nagaoshi'];
 export const DRILL_STAT = { ippon: 'gi', renda: 'tai', nagaoshi: 'shin' };
@@ -33,9 +33,10 @@ export function drillGrade(score) {
   const m = drillMult(score) + 1e-9; // 境目ちょうど（9割・6割）は上の段
   return m >= GRADE_MULT.great ? 'great' : m >= GRADE_MULT.good ? 'good' : m >= GRADE_MULT.ok ? 'ok' : 'bad';
 }
-export const gradeMood = (grade) => (grade === 'bad' ? 'shout' : grade === 'ok' || grade === 'ceiling' ? 'normal' : 'smile');
-// 心技体の稽古の親方の一言の段（Ruling R6）：伸ばした値が稽古の後に天井に着いていれば 'ceiling'（「天井だ。次は土俵で勝て！」）・ほかは出来の段
-export const statDrillGrade = (score, atCeil) => (atCeil ? 'ceiling' : drillGrade(score));
+export const gradeMood = (grade) => (grade === 'bad' ? 'shout' : grade === 'ok' || grade === 'ceiling' || grade === 'ceilingOne' ? 'normal' : 'smile');
+// 心技体の稽古の親方の一言の段（Ruling R6・v47）：稽古の後に3つとも天井（allCeil）＝'ceiling'（「天井だ。次は土俵で勝て！」）・
+// 伸ばした物だけ天井（atCeil）＝'ceilingOne'（「{stat}は天井だ。ほかの稽古をしろ！」・v47 本人「稽古のナビがまちまち」：1つ天井に着いただけで土俵へ行けと言っていた）・ほかは出来の段
+export const statDrillGrade = (score, atCeil, allCeil = false) => (allCeil ? 'ceiling' : atCeil ? 'ceilingOne' : drillGrade(score));
 
 // ---- 決め技の習得ゲージ（10/14 本人「稽古の出来で決め技を習得できるようにしてください」→ A 習得ゲージ） ----
 // 決め技の稽古1回でたまる量＝max(0.35, 出来/0.6)。合計が1以上で習得＝6割の出来で1回・どんなに下手でも3回で必ず覚える。1回で満タンを超える分は捨てる（上限1）
@@ -90,6 +91,10 @@ export function countdownAt(elapsedMs) {
 // そこで startAt を決めると、2回目以降に開いた時は最初のコマで「閉じていた長さ」だけ進んだことになり、3・2・1 を飛ばしていきなり GO（一押しは「よーい」を飛ばす）。
 // startAt がまだ数でなければ（開いたばかり）、最初のコマの now ＋ lead を始まりにする。数ならそのまま
 export const armStart = (startAt, now, lead = 0) => (Number.isFinite(startAt) ? startAt : now + (Number.isFinite(lead) ? lead : 0));
+// 稽古の始め方（v47 本人「稽古の始め方をそろえる」：前は 連打＝3・2・1・GO／一押し＝「よーい」だけ／長押し＝すぐ始まる）：
+// 3つとも 3・2・1・GO（'count'）から。GO の後は 一押し＝最初の輪（'ring'）・連打＝5秒を数える（'run'）・長押し＝押すのを待つ（'wait'）
+export const drillStartPhase = () => 'count';
+export const afterCountdown = (kind) => (kind === 'ippon' ? 'ring' : kind === 'renda' ? 'run' : 'wait');
 export const rendaScore = (count) => clamp01((Number.isFinite(count) ? count : 0) / RENDA.full);
 
 // ---- 長押し ----
@@ -111,19 +116,20 @@ export const nagaoshiScore = (points) => clamp01(points.reduce((a, p) => a + p, 
 
 // ---- 画面が裏へ回って戻った時の時計の直し（遊びの時計は画面が裏でも進む：戻った最初のコマで now が dur だけ飛ぶ） ----
 // c＝{ phase, roundAt, startAt, gapUntil, runAt }（遊びの今の時計）・now＝戻った最初のコマの時刻・dur＝裏にいた長さ（ms）。新しい時計を返す（元は書き換えない）
-//   一押し：輪が出ている最中ならその回をやり直す（外れにしない）／「よーい」と次の輪までの間は裏にいた分だけ後ろへ
-//   連打：走っている最中は裏にいた分だけ後ろへずらす（5秒が裏で尽きない）／3・2・1・GO の最中も同じく後ろへずらす（数えが裏で進まない）
+//   3つとも：3・2・1・GO の最中は裏にいた分だけ後ろへずらす（数えが裏で進まない・始まりが決まる前は触らない）
+//   一押し：輪が出ている最中ならその回をやり直す（外れにしない）／次の輪までの間は裏にいた分だけ後ろへ
+//   連打：走っている最中は裏にいた分だけ後ろへずらす（5秒が裏で尽きない）
 //   長押し：次の回までの間だけ後ろへずらす（押している最中は別に「やり直し」になる）
 export function shiftForHidden(kind, c, now, dur) {
   const d = Number.isFinite(dur) && dur > 0 ? dur : 0;
   const out = { phase: c.phase, roundAt: c.roundAt, startAt: c.startAt, gapUntil: c.gapUntil, runAt: c.runAt };
-  if (kind === 'ippon') {
+  if (c.phase === 'count') {
+    if (Number.isFinite(c.startAt)) out.startAt = c.startAt + d; // 3・2・1・GO は裏にいた間は止まる（まだ始まりが決まっていない＝armStart の前なら触らない）
+  } else if (kind === 'ippon') {
     if (c.phase === 'ring') out.roundAt = now;
-    else if (c.phase === 'ready' && Number.isFinite(c.startAt)) out.startAt = c.startAt + d; // まだ始まりが決まっていない（armStart の前）なら触らない
     else if (c.phase === 'gap') out.gapUntil = c.gapUntil + d;
   } else if (kind === 'renda') {
     if (c.phase === 'run') out.runAt = c.runAt + d;
-    else if (c.phase === 'count' && Number.isFinite(c.startAt)) out.startAt = c.startAt + d; // 3・2・1・GO は裏にいた間は止まる（始まりが決まる前は触らない）
   } else if (c.phase === 'gap') {
     out.gapUntil = c.gapUntil + d;
   }

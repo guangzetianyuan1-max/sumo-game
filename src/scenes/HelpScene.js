@@ -1,28 +1,31 @@
 // src/scenes/HelpScene.js — 遊び方の3枚（20体版 Task 4・10/13／10/15 ボタン2つに書き直し）：ことねの顔と吹き出しで、紙相撲のたたき方を1枚ずつ
 // 1枚目＝ボタンは2つ・左を連打で前へ押して箱から落とす・倒れたら右を長押し／2枚目＝立ち合いと決め技は中央上の〇（縮む金の輪が白い輪に重なった瞬間に右を一押し）／
 // 3枚目＝相手の攻めは赤い札で予告され、左にバーが出る・右を長押しでためて緑の帯で離すと「こらえ成功！」
+// v47：2枚目は、持っている決め技（無ければ最初に覚える風車投げ）の名前と出し方を先に教える（kimetepick.helpKimete・文は help.2.<出し方>・見本もその出し方）
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=46';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=46';
-import { kamiArt, foeArt } from '../core/foeart.js?v=46';
-import { foeAt } from '../data/foes.js?v=46';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=46';
-import { t, getLang } from '../i18n/i18n.js?v=46';
-import { session, markHelpSeen } from '../state.js?v=46';
-import { ringShape, barShape, drawRing, drawBar, hitMarkFit } from '../ui/hud.js?v=46';
-import { menuBgKey } from '../core/bgkey.js?v=46';
-import { newChime, demoChime } from '../core/chime.js?v=46';
-import { playBout } from '../ui/sfx.js?v=46';
-import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=46';
-import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=46';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=46';
+import { KAMI } from '../core/kami.js?v=47';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=47';
+import { kamiArt, foeArt } from '../core/foeart.js?v=47';
+import { foeAt } from '../data/foes.js?v=47';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=47';
+import { t, getLang } from '../i18n/i18n.js?v=47';
+import { session, markHelpSeen } from '../state.js?v=47';
+import { ringShape, barShape, drawRing, drawBar, hitMarkFit, drawMash, drawKimeHold, MASH_COUNT } from '../ui/hud.js?v=47';
+import { helpKimete } from '../core/kimetepick.js?v=47';
+import { IPPON } from '../core/drills.js?v=47';
+import { menuBgKey } from '../core/bgkey.js?v=47';
+import { newChime, demoChime } from '../core/chime.js?v=47';
+import { playBout } from '../ui/sfx.js?v=47';
+import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=47';
+import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=47';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=47';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）
 const MINI = { k: 0.62, ground: 556, boxH: 66 }; // 見本の紙相撲：箱の上の面の y・箱の前の面の高さ
 const MINI_FIG_H = 250; // 見本の型紙の高さ
-const MINI_BTN = { y: 678, r: 64, dx: 115 }; // 見本の下のボタン2つ（箱の下・真ん中から左右へ dx）
+const MINI_BTN = { y: 678, r: 64, rWide: 80, dx: 115 }; // 見本の下のボタン2つ（箱の下・真ん中から左右へ dx）
 const MINI_RING = { at: { x: 360, y: 250 }, k: 0.4, ms: 1000, hold: 700 }; // 見本の〇（札の中の中央上・型紙の頭 306 より上・本番の 0.4 倍）：縮む長さ・ぴったりの後に止める長さ
 const MINI_BAR = { box: { x: 84, top: 226, h: 290, w: 30 }, spec: { center: 0.75, half: 0.12 }, ms: 1300, hold: 900 }; // 見本のバー（札の左端）：緑の帯で止まる
 const ALERT = 0xff4a4a; // 守りのバーの間のボタンのふちの赤い光（KamiScene と同じ）
@@ -71,7 +74,7 @@ export class HelpScene extends Phaser.Scene {
     this.mini(width, this.page);
 
     speakerFace(this, OKAMI, COACH.faceX, COACH.faceY, COACH.size);
-    speechBubble(this, COACH.left, COACH.top, COACH.w, COACH.h, t(`help.${this.page + 1}`), { size: 36, min: 28 });
+    speechBubble(this, COACH.left, COACH.top, COACH.w, COACH.h, this.pageText(), { size: 36, min: 28 });
 
     const last = this.page === PAGES - 1;
     if (last) {
@@ -83,6 +86,13 @@ export class HelpScene extends Phaser.Scene {
       this.page += 1;
       this.redraw();
     }, { size: 44 });
+  }
+
+  // 吹き出しの文：2枚目は持っている決め技（無ければ最初に覚える物）の出し方から（v47）
+  pageText() {
+    if (this.page !== 1) return t(`help.${this.page + 1}`);
+    const hk = helpKimete(session.run);
+    return t(`help.2.${hk.input}`, { tech: t(`newtech.${hk.id}`), lead: hk.owned ? '' : t('help.2.lead') });
   }
 
   close() {
@@ -118,11 +128,24 @@ export class HelpScene extends Phaser.Scene {
       this.tweens.add({ targets: btn, scale: 0.9, duration: 90, yoyo: true, repeat: -1, repeatDelay: 120 });
       this.miniButton(rx, by, 'off', t('kami.btn.right'), false, true);
     } else if (page === 1) {
-      // ②中央上の〇：白い的の輪に金の輪が縮んで重なる → ◎ → くり返す。右のボタンは「一押し！」で脈打つ・左は暗く「→右」
-      this.miniRing();
-      this.miniButton(lx, by, 'off', t('kami.btn.toRight'), false, true);
-      const btn = this.miniButton(rx, by, 'go', t('kami.btn.go'), true);
-      this.tweens.add({ targets: btn, scale: 1.1, duration: 360, yoyo: true, repeat: -1 });
+      // ②決め技（v47：持っている決め技の出し方の見本）。〇の技＝白い的の輪に金の輪が縮んで重なる → ◎ → くり返す（右「一押し！」・左は暗く「→右」）／
+      // 連打の技＝中央上の回数が減る（左「決め技！連打」・右は暗い）／長押しの技＝円いゲージが緑の帯までたまる（右「攻め！長押し」・左は暗く「→右」）
+      const input = helpKimete(session.run).input;
+      if (input === 'mash') {
+        this.miniMash();
+        const btn = this.miniButton(lx, by, 'kimeMash', t('kami.btn.kimeMash'), false, false, MINI_BTN.rWide); // 英語の Finisher! が字 28 のまま収まる大きさ
+        this.tweens.add({ targets: btn, scale: 0.9, duration: 90, yoyo: true, repeat: -1, repeatDelay: 120 });
+        this.miniButton(rx, by, 'off', t('kami.btn.right'), false, true);
+      } else if (input === 'hold') {
+        this.miniKimeHold();
+        this.miniButton(lx, by, 'off', t('kami.btn.toRight'), false, true);
+        this.miniButton(rx, by, 'kimeHold', t('kami.btn.kimeHold'));
+      } else {
+        this.miniRing();
+        this.miniButton(lx, by, 'off', t('kami.btn.toRight'), false, true);
+        const btn = this.miniButton(rx, by, 'go', t('kami.btn.go'), true);
+        this.tweens.add({ targets: btn, scale: 1.1, duration: 360, yoyo: true, repeat: -1 });
+      }
     } else {
       // ③左端のバー：相手が赤い札（突っ張り「来るぞ！」）と赤い光 → バーが緑の帯までたまって「こらえ成功！」。ボタンは「長押し！」と赤いふち
       const warn = [];
@@ -141,8 +164,7 @@ export class HelpScene extends Phaser.Scene {
   }
 
   // 見本のボタン1つ（本番の色と字）。dark＝金の面に濃い字・dim＝使わない方（暗い面・灰の字・薄く）
-  miniButton(bx, by, mode, label, dark = false, dim = false) {
-    const r = MINI_BTN.r;
+  miniButton(bx, by, mode, label, dark = false, dim = false, r = MINI_BTN.r) {
     const btn = this.add.container(bx, by);
     if (getLang() !== 'ja' && !label.includes('\n')) label = label.replace(' ', '\n'); // 英語は2語なら2行に（円の中で字 28 を保つ）
     const bg = this.add.graphics();
@@ -170,6 +192,35 @@ export class HelpScene extends Phaser.Scene {
     };
     paint();
     this.tweens.add({ targets: p, v: 1, duration: MINI_RING.ms, repeat: -1, repeatDelay: MINI_RING.hold, onUpdate: paint, onRepeat: paint });
+  }
+
+  // 見本の連打の技（本番と同じ絵 drawMash を小さく・v47）：窓の弧が減りながら、〇の中の残りの回数が 4→0 → 少し止める → くり返す
+  miniMash() {
+    const g = this.add.graphics();
+    const { x, y } = MINI_RING.at, k = MINI_RING.k, need = 4;
+    const num = this.add.text(x, y, String(need), textStyle(Math.max(28, Math.round(MASH_COUNT.size * k)), COLORS.gold, { stroke: '#141a2e', strokeThickness: 6 })).setOrigin(0.5);
+    const p = { v: 0 };
+    const paint = () => {
+      g.clear();
+      drawMash(g, { x, y, r: IPPON.targetR * k, left: 1 - 0.6 * p.v });
+      num.setText(String(Math.max(0, need - Math.floor(p.v * need + 1e-6))));
+    };
+    paint();
+    this.tweens.add({ targets: p, v: 1, duration: MINI_RING.ms, repeat: -1, repeatDelay: MINI_RING.hold, onUpdate: paint, onRepeat: paint });
+  }
+
+  // 見本の長押しの技（本番と同じ絵 drawKimeHold を小さく・v47）：円いゲージが緑の帯の真ん中までたまる → 少し止める → くり返す
+  miniKimeHold() {
+    const g = this.add.graphics();
+    const { x, y } = MINI_RING.at, k = MINI_RING.k;
+    const c = MINI_BAR.spec.center, h = MINI_BAR.spec.half;
+    const p = { v: 0 };
+    const paint = () => {
+      g.clear();
+      drawKimeHold(g, { x, y, r: IPPON.targetR * k * 1.6, v: p.v, band: [c - h, c + h], core: [c - h / 2, c + h / 2] });
+    };
+    paint();
+    this.tweens.add({ targets: p, v: c, duration: MINI_BAR.ms, repeat: -1, repeatDelay: MINI_BAR.hold, onUpdate: paint, onRepeat: paint });
   }
 
   // 見本のバー（本番と同じ絵 drawBar を小さく）：予告の札と相手の赤い光の間に、下から緑の帯の真ん中までたまる →

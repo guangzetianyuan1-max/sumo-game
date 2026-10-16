@@ -6,10 +6,10 @@
 // 左が明るいのは tap だけ（stay は「待て」で暗い）・〇／バー／again／倒れの時は暗く「→右」。右が明るいのは go・ring・bar・again・hold（tap・stay の時は暗い）
 // 50体版（設計書 2026-10-16 §6）：決め技の〇は技ごとの出し方で見た目を分ける＝連打の技 kimeMash（左だけ明るい）・長押しの技 kimeHold（右だけ明るい）・一押しの技は今の ring
 // 〇とバーの絵そのものは src/ui/hud.js（中央上の〇・左端のバー）。ここはボタンの字・色・脈・満ち・暗さと、下の案内・ことねの吹き出しの鍵だけ
-import { KAMI, beatOffset, gaugeLit, barGauge, kimeHoldGauge } from './kami.js?v=46';
-import { gaugeTier } from './gaugetier.js?v=46';
-import { IPPON } from './drills.js?v=46';
-import { BAR } from './tactics.js?v=46';
+import { KAMI, beatOffset, gaugeLit, barGauge, kimeHoldGauge } from './kami.js?v=47';
+import { gaugeTier } from './gaugetier.js?v=47';
+import { IPPON } from './drills.js?v=47';
+import { BAR } from './tactics.js?v=47';
 
 export const BUTTON_COLOR = { // 遊び方の見本（HelpScene）も同じ色を使う
   wait: 0x5a5f6e, // 灰
@@ -100,7 +100,12 @@ export const attackScene = (st, side = 'east') => !!ATTACK[sceneLook(st, side).m
 export function kimeCall(st, side = 'east') {
   if (!st || st.phase !== 'push') return null;
   const l = sceneLook(st, side), r = st.f[side].ring;
-  if (l.mode === 'kimeMash') return { key: 'kami.call.mash', btn: 'left', n: Math.max(0, r.need - r.count) };
+  if (l.mode === 'kimeMash') {
+    // v47：連打のまま光った（まだ数えていない・最後のたたきが rearm 秒の内）＝「はなして、連打！」（光る前からの連打は数えない・kami.js の mashKime）
+    const me = st.f[side];
+    const wait = !r.armed && r.rearm > 0 && st.t - me.tapAt < r.rearm;
+    return { key: wait ? 'kami.call.mashWait' : 'kami.call.mash', btn: 'left', n: Math.max(0, r.need - r.count) };
+  }
   if (l.mode === 'kimeHold') return { key: 'kami.call.hold', btn: 'right', n: 0 };
   if (l.mode === 'ring') return { key: 'kami.call.tap', btn: 'right', n: 0 };
   return null;

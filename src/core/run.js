@@ -1,14 +1,14 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=46';
-import { GUIDE_IDS } from '../data/guides.js?v=46';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=46';
-import { foeAt } from '../data/foes.js?v=46';
-import { inGame } from '../data/kimarite.js?v=46';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt, rankIndexOf } from './ladder.js?v=46';
-import { startStats, growthMult, diminish } from './career.js?v=46';
-import { GROWTH, FOE_TOTAL, TRAIN, CEILING } from './tuning.js?v=46';
-import { kimeteGain } from './drills.js?v=46';
-import { isTactic, FOE_KIME_ID } from './tactics.js?v=46';
+import { TYPES } from '../data/types.js?v=47';
+import { GUIDE_IDS } from '../data/guides.js?v=47';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=47';
+import { foeAt } from '../data/foes.js?v=47';
+import { inGame } from '../data/kimarite.js?v=47';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt, rankIndexOf } from './ladder.js?v=47';
+import { startStats, growthMult, diminish } from './career.js?v=47';
+import { GROWTH, FOE_TOTAL, TRAIN, CEILING } from './tuning.js?v=47';
+import { kimeteGain } from './drills.js?v=47';
+import { isTactic, FOE_KIME_ID } from './tactics.js?v=47';
 
 // はじめて見た時に ことねが返し方を教える攻め：相手の攻め4つと、敵の必殺技（foeKime・ボタン1つ Task 3）。記録の seenTactics はこれだけを残す
 const seenable = (id) => isTactic(id) || id === FOE_KIME_ID;
@@ -34,6 +34,8 @@ export function capStat(before, grown, ceil) {
 }
 // その心技体が今の番付の天井に着いているか（稽古の結果の親方の一言）
 export const atCeiling = (run, stat) => run.stats[stat] >= statCeiling(run.wins) - 1e-9;
+// 心技体の3つとも今の番付の天井（稽古の結果の「天井だ。次は土俵で勝て！」・v47）
+export const allAtCeiling = (run) => STATS.every((s) => atCeiling(run, s));
 const total = (s) => s.shin + s.gi + s.tai;
 
 // 案内役は若女将ことねに固定（呼ぶ側の guide は受け取るだけで使わない・読み込み deserializeRun と同じ）
