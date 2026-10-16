@@ -53,6 +53,12 @@
 "sori",
 "fall"
 ],
+"foe_haniwa_honki": [
+"push"
+],
+"foe_inoshishi_honki": [
+"push"
+],
 "foe_itamae_normal": [
 "push",
 "shikiri",
@@ -69,6 +75,9 @@
 "fall"
 ],
 "foe_kokeshi_normal": [
+"push"
+],
+"foe_kuma_honki": [
 "push"
 ],
 "foe_manekineko_honki": [
@@ -90,6 +99,9 @@
 "push"
 ],
 "foe_okiagari_normal": [
+"push"
+],
+"foe_onigawara_honki": [
 "push"
 ],
 "foe_pirate_normal": [
@@ -147,6 +159,9 @@
 "fall"
 ],
 "foe_tanuki_normal": [
+"push"
+],
+"foe_tengu_honki": [
 "push"
 ],
 "foe_vending_normal": [

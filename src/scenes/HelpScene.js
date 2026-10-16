@@ -4,22 +4,22 @@
 // v47：2枚目は、持っている決め技（無ければ最初に覚える風車投げ）の名前と出し方を先に教える（kimetepick.helpKimete・文は help.2.<出し方>・見本もその出し方）
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=47';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=47';
-import { kamiArt, foeArt } from '../core/foeart.js?v=47';
-import { foeAt } from '../data/foes.js?v=47';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=47';
-import { t, getLang } from '../i18n/i18n.js?v=47';
-import { session, markHelpSeen } from '../state.js?v=47';
-import { ringShape, barShape, drawRing, drawBar, hitMarkFit, drawMash, drawKimeHold, MASH_COUNT } from '../ui/hud.js?v=47';
-import { helpKimete } from '../core/kimetepick.js?v=47';
-import { IPPON } from '../core/drills.js?v=47';
-import { menuBgKey } from '../core/bgkey.js?v=47';
-import { newChime, demoChime } from '../core/chime.js?v=47';
-import { playBout } from '../ui/sfx.js?v=47';
-import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=47';
-import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=47';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=47';
+import { KAMI } from '../core/kami.js?v=48';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=48';
+import { kamiArt, foeArt } from '../core/foeart.js?v=48';
+import { foeAt } from '../data/foes.js?v=48';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=48';
+import { t, getLang } from '../i18n/i18n.js?v=48';
+import { session, markHelpSeen } from '../state.js?v=48';
+import { ringShape, barShape, drawRing, drawBar, hitMarkFit, drawMash, drawKimeHold, MASH_COUNT } from '../ui/hud.js?v=48';
+import { helpKimete } from '../core/kimetepick.js?v=48';
+import { IPPON } from '../core/drills.js?v=48';
+import { menuBgKey } from '../core/bgkey.js?v=48';
+import { newChime, demoChime } from '../core/chime.js?v=48';
+import { playBout } from '../ui/sfx.js?v=48';
+import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=48';
+import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=48';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=48';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）

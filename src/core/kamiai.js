@@ -1,12 +1,12 @@
 // 紙相撲の強さ：心技体→型紙の重さ・起き上がり・ゲージ・決め技／敵の順番→機械のたたき方（設計書 §4）
-import { newBout, step, press, hold, mash, KAMI } from './kami.js?v=47';
-import { kimeInputSpec } from './kimeinput.js?v=47';
-import { makeRng } from './rng.js?v=47';
-import { foeAt } from '../data/foes.js?v=47';
-import { kimeteById, affinity } from '../data/kimete.js?v=47';
-import { FOE_KIMETE } from '../data/foekimete.js?v=47';
-import { foeStats } from './run.js?v=47';
-import { tacticsFor, FOE_KIME_ID } from './tactics.js?v=47';
+import { newBout, step, press, hold, mash, KAMI } from './kami.js?v=48';
+import { kimeInputSpec } from './kimeinput.js?v=48';
+import { makeRng } from './rng.js?v=48';
+import { foeAt } from '../data/foes.js?v=48';
+import { kimeteById, affinity } from '../data/kimete.js?v=48';
+import { FOE_KIMETE } from '../data/foekimete.js?v=48';
+import { foeStats } from './run.js?v=48';
+import { tacticsFor, FOE_KIME_ID } from './tactics.js?v=48';
 
 const lerp = (a, b, k) => a + (b - a) * k;
 const clamp01 = (x) => Math.max(0, Math.min(1, x));

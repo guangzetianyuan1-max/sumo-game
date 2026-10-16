@@ -1,9 +1,9 @@
 // src/scenes/NameScene.js — しこ名を選ぶ：候補3つを大きな札で縦に並べる・引き直せる・決めると一代記が始まる（保存）→ 番付（10/12 稽古を無くした）
-import { shikonaCandidates } from '../core/shikona.js?v=47';
-import { makeRng } from '../core/rng.js?v=47';
-import { t, getLang, shikonaLabel } from '../i18n/i18n.js?v=47';
-import { session, startCareer } from '../state.js?v=47';
-import { button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=47';
+import { shikonaCandidates } from '../core/shikona.js?v=48';
+import { makeRng } from '../core/rng.js?v=48';
+import { t, getLang, shikonaLabel } from '../i18n/i18n.js?v=48';
+import { session, startCareer } from '../state.js?v=48';
+import { button, backButton, topTitle, fitText, roundBox, hitZone, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=48';
 
 const CARD_W = 600;
 const CARD_H = 170;

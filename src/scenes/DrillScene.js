@@ -10,31 +10,31 @@
 // 決め技モード（10/14 本人「稽古の出来で決め技を習得できるようにしてください」・data.kimete＝決め技の id）：
 //   遊びはその決め技の drill（kimete.js）。心技体は伸びず、出来で習得ゲージ（drills.kimeteGain）がたまる（drillKimeteNow を1回だけ）。
 //   結果＝点数と出来 → ゲージが前→後へたまる → 満タンなら「習得！」・決めのカットイン（kime）・kan の音／満タンでなければ「習得 75%」
-import { t } from '../i18n/i18n.js?v=47';
-import { session, drillStatNow, drillKimeteNow } from '../state.js?v=47';
-import { canLeaveTraining, currentFoe, atCeiling, allAtCeiling, statCeiling } from '../core/run.js?v=47';
-import { kimeteById } from '../data/kimete.js?v=47';
-import { cutinArt } from '../core/cutin.js?v=47';
+import { t } from '../i18n/i18n.js?v=48';
+import { session, drillStatNow, drillKimeteNow } from '../state.js?v=48';
+import { canLeaveTraining, currentFoe, atCeiling, allAtCeiling, statCeiling } from '../core/run.js?v=48';
+import { kimeteById } from '../data/kimete.js?v=48';
+import { cutinArt } from '../core/cutin.js?v=48';
 import {
   DRILLS, DRILL_STAT, drillMult, drillGrade, gradeMood, statDrillGrade, kimeteGrade,
   IPPON, ipponHitMs, ipponJudge, ipponMissed, ipponScore,
   RENDA, COUNTDOWN, countdownAt, rendaScore, drillStartPhase, afterCountdown, NAGAOSHI, nagaoshiHalf, nagaoshiGauge, nagaoshiPoint, nagaoshiScore, shiftForHidden, kimetePct, armStart,
-} from '../core/drills.js?v=47';
-import { kamiArt, heroArt } from '../core/foeart.js?v=47';
-import { HERO_TYPE } from '../data/heroes.js?v=47';
-import { createBigButton } from '../ui/bigbutton.js?v=47';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=47';
-import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, GOAL, HOLD, BTN, holdBlocked, DRILL_MAIN, drillButtonColor } from '../ui/drillstage.js?v=47'; // 置き場所と長押しの見せ方の計算（Phaser を使わない）
-import { drawCutinBand } from '../ui/cutinband.js?v=47';
-import { edgeFade } from '../ui/backdrop.js?v=47';
-import { HUD, HUD_HIT, HIT_MARK, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=47'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
-import { playTraining, playBout, whine, whineStop } from '../ui/sfx.js?v=47';
-import { ringProgress } from '../core/whine.js?v=47';
-import { newChime, greenChime, drillGreen, rendaGoal } from '../core/chime.js?v=47';
-import { guardOpen, openGuarded } from '../ui/openguard.js?v=47';
+} from '../core/drills.js?v=48';
+import { kamiArt, heroArt } from '../core/foeart.js?v=48';
+import { HERO_TYPE } from '../data/heroes.js?v=48';
+import { createBigButton } from '../ui/bigbutton.js?v=48';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=48';
+import { FACE, FIG_H, FEET_Y, HERO_X, PILLAR, COUNT, GOAL, HOLD, BTN, holdBlocked, DRILL_MAIN, drillButtonColor } from '../ui/drillstage.js?v=48'; // 置き場所と長押しの見せ方の計算（Phaser を使わない）
+import { drawCutinBand } from '../ui/cutinband.js?v=48';
+import { edgeFade } from '../ui/backdrop.js?v=48';
+import { HUD, HUD_HIT, HIT_MARK, ringShape, barShape, drawRing, drawBar } from '../ui/hud.js?v=48'; // 〇とバーの置き場所と形は本番（KamiScene）と同じ物を読む
+import { playTraining, playBout, whine, whineStop } from '../ui/sfx.js?v=48';
+import { ringProgress } from '../core/whine.js?v=48';
+import { newChime, greenChime, drillGreen, rendaGoal } from '../core/chime.js?v=48';
+import { guardOpen, openGuarded } from '../ui/openguard.js?v=48';
 import {
   button, fitText, wrapText, textStyle, statBars, speakerFace, speechBubble, preloadOyakataArt, preloadHeroFigures, clearScene, COLORS,
-} from '../ui/widgets.js?v=47';
+} from '../ui/widgets.js?v=48';
 
 const BG_KEY = 'keiko-bg';
 const HERO_FILE = `hero_${HERO_TYPE}`;

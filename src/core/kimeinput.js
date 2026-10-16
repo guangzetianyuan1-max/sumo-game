@@ -1,8 +1,8 @@
 // 取組の決め技の出し方（設計書 2026-10-16-sumo-50-foes-design.md §6・Ruling R1〜R4）：技ごとに 連打（mash・左）・長押し（hold・右で緑で離す）・一押し（tap・右で〇）。
 // 難しさは敵の番号 0〜49 でなだらかに（連打の回数は増え・長押しの緑と一押しの〇の当たりの幅は狭く）。数は強さ合わせ（tools/kami_tune.mjs）で動かしてよい
 // 判定の段は今の〇と同じ（2＝◎・1＝○・0＝×）。画面と Phaser から切り離した純粋な関数
-import { ipponJudge } from './drills.js?v=47';
-import { BAR } from './tactics.js?v=47';
+import { ipponJudge } from './drills.js?v=48';
+import { BAR } from './tactics.js?v=48';
 
 export const KIME_INPUTS = ['tap', 'mash', 'hold'];
 export const KIME_INPUT = {

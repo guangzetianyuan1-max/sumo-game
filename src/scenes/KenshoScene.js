@@ -1,15 +1,15 @@
 // src/scenes/KenshoScene.js — 懸賞旗（20体版 Task 5・10/13）：取組の前に、懸賞旗2本が土俵の前を左から右へ渡る（約3秒）→ 取組（kami）
 // 土俵は取組と同じ箱と土俵（src/ui/arena.js）。型紙2枚は立ち合いの位置に立たせておく。たたくと飛ばせる
 // 旗の字は i18n の架空の名前だけ（ひまなぶた・琴浪部屋）。日本語は縦書き（1字ずつ改行）・英語は90度回して読む
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=47';
-import { currentFoe } from '../core/run.js?v=47';
-import { HERO_TYPE } from '../data/heroes.js?v=47';
-import { t, getLang, foeLabel } from '../i18n/i18n.js?v=47';
-import { session, prepareOpponent } from '../state.js?v=47';
-import { playBout } from '../ui/sfx.js?v=47';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=47';
-import { drawWaUnder } from '../ui/backdrop.js?v=47';
-import { preloadHeroFigures, addAura, textStyle, fitText, COLORS } from '../ui/widgets.js?v=47';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=48';
+import { currentFoe } from '../core/run.js?v=48';
+import { HERO_TYPE } from '../data/heroes.js?v=48';
+import { t, getLang, foeLabel } from '../i18n/i18n.js?v=48';
+import { session, prepareOpponent } from '../state.js?v=48';
+import { playBout } from '../ui/sfx.js?v=48';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=48';
+import { drawWaUnder } from '../ui/backdrop.js?v=48';
+import { preloadHeroFigures, addAura, textStyle, fitText, COLORS } from '../ui/widgets.js?v=48';
 
 const PARADE_MS = 3000; // 旗が渡りきる長さ
 const FLAG = { w: 96, h: 330, pole: 470, gap: 260 }; // 布の幅と高さ・竿の長さ（地面から）・2本の間
