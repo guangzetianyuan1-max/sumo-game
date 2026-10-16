@@ -1,22 +1,22 @@
 // src/scenes/OpponentScene.js — 今日の相手（20体版 Task 4・10/13）：相手の絵と型・得意と苦手（系統）・心技体・決め技を選ぶ札5枚・ことねの勧め → 取組へ
 // 作戦表の頃の名残（よく使う手・技の勧めの吹き出し）は外した。シニアにも読める大きな札と、下の真ん中の「取組へ」1つだけ
 // 決め技の札：覚えた物だけ押して選べる（選んだ札が朱に光る）。最初は勧め（recommendKimete）を選んでおく。覚えていない物は灰色
-import { TYPES } from '../data/types.js?v=48';
-import { OKAMI } from '../data/heroes.js?v=48';
-import { t, foeLabel } from '../i18n/i18n.js?v=48';
-import { session, prepareOpponent } from '../state.js?v=48';
-import { playBout } from '../ui/sfx.js?v=48';
-import { kimeteCards, recommendKimete, chosenKimete, coachAdvice } from '../core/kimetepick.js?v=48';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=48';
+import { TYPES } from '../data/types.js?v=49';
+import { OKAMI } from '../data/heroes.js?v=49';
+import { t, foeLabel } from '../i18n/i18n.js?v=49';
+import { session, prepareOpponent } from '../state.js?v=49';
+import { playBout } from '../ui/sfx.js?v=49';
+import { kimeteCards, recommendKimete, chosenKimete, coachAdvice } from '../core/kimetepick.js?v=49';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=49';
 import {
   button, bindPress, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble,
   preloadTypeArt, preloadGuideArt, addAura, clearScene, COLORS,
-} from '../ui/widgets.js?v=48';
-import { currentFoe } from '../core/run.js?v=48';
-import { menuBgKey } from '../core/bgkey.js?v=48';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=48';
-import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=48';
-import { kimeteById } from '../data/kimete.js?v=48';
+} from '../ui/widgets.js?v=49';
+import { currentFoe } from '../core/run.js?v=49';
+import { menuBgKey } from '../core/bgkey.js?v=49';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=49';
+import { foeTacticsAt, foeKimeteAt } from '../core/kamiai.js?v=49';
+import { kimeteById } from '../data/kimete.js?v=49';
 
 const INFO = { y: 286, h: 292 }; // 相手の札（140〜432）：得意・苦手は英語だと5行になるので高めに：左に絵・右に型と得意・苦手
 const ART = { x: 175, r: 100, h: 200 };

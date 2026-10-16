@@ -1,7 +1,7 @@
 // src/ui/notice.js — 画面の下に一度だけ出す知らせの札（HTML の上掛け・どの画面の上にも出る・たたくと閉じる・ms 後に消える）
 // v44：保存に失敗した時の「この端末では記録を残せません」（src/state.js の onSaveFail から main.js が呼ぶ）。文は呼ぶ側が i18n から渡す
 // 字は遊ぶ画面の 30px 相当（src/ui/terms.js の gamePx・字は28以上）。古い Safari のため inset と flex の gap は使わない
-import { gamePx } from './terms.js?v=48';
+import { gamePx } from './terms.js?v=49';
 
 export const NOTICE_MS = 6000;
 export const NOTICE_FONT = 30; // 遊ぶ画面の px（360幅で 15px。下限 15px＝遊ぶ画面の 30 以上）

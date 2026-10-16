@@ -1,14 +1,14 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=48';
-import { GUIDE_IDS } from '../data/guides.js?v=48';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=48';
-import { foeAt } from '../data/foes.js?v=48';
-import { inGame } from '../data/kimarite.js?v=48';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt, rankIndexOf } from './ladder.js?v=48';
-import { startStats, growthMult, diminish } from './career.js?v=48';
-import { GROWTH, FOE_TOTAL, TRAIN, CEILING } from './tuning.js?v=48';
-import { kimeteGain } from './drills.js?v=48';
-import { isTactic, FOE_KIME_ID } from './tactics.js?v=48';
+import { TYPES } from '../data/types.js?v=49';
+import { GUIDE_IDS } from '../data/guides.js?v=49';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=49';
+import { foeAt } from '../data/foes.js?v=49';
+import { inGame } from '../data/kimarite.js?v=49';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt, rankIndexOf } from './ladder.js?v=49';
+import { startStats, growthMult, diminish } from './career.js?v=49';
+import { GROWTH, FOE_TOTAL, TRAIN, CEILING } from './tuning.js?v=49';
+import { kimeteGain } from './drills.js?v=49';
+import { isTactic, FOE_KIME_ID } from './tactics.js?v=49';
 
 // はじめて見た時に ことねが返し方を教える攻め：相手の攻め4つと、敵の必殺技（foeKime・ボタン1つ Task 3）。記録の seenTactics はこれだけを残す
 const seenable = (id) => isTactic(id) || id === FOE_KIME_ID;
@@ -38,14 +38,19 @@ export const atCeiling = (run, stat) => run.stats[stat] >= statCeiling(run.wins)
 export const allAtCeiling = (run) => STATS.every((s) => atCeiling(run, s));
 const total = (s) => s.shin + s.gi + s.tai;
 
+// 最初から覚えている決め技（v49 本人「PCブラウザで取組時に、必殺技の〇合わせの画面が出ません」→「最初から風車投げを持つ」）。
+// 前は newKnown: []＝稽古で覚えるまで取組で決め技の〇が出なかった（記録はブラウザごと＝新しいブラウザでは出ない）。解禁の順の0番目（kimete.js）
+export const START_KIMETE = 'kazaguruma';
+
 // 案内役は若女将ことねに固定（呼ぶ側の guide は受け取るだけで使わない・読み込み deserializeRun と同じ）
+// 新しい記録は風車投げを覚えた状態（unlocked と newKnown に入る・ゲージ kimeteProgress には入れない）
 export function newRun({ type, seed }) {
   return {
     version: RUN_VERSION, guide: OKAMI, type,
     stats: startStats(type),
     known: [...TYPES[type].sample], pendingLearn: null, learnKind: null,
     wins: 0, losses: 0, streak: 0, trainings: 0,
-    unlocked: [newTechIds(type)[0]], newKnown: [], kimeteProgress: {}, seenTactics: [],
+    unlocked: [START_KIMETE], newKnown: [START_KIMETE], kimeteProgress: {}, seenTactics: [],
     training: null, seed, cleared: false, seenHelp: false, helpVer: HELP_VER,
   };
 }
@@ -199,6 +204,7 @@ export function deserializeRun(text) {
     const mine = newTechIds(c.type);
     // 50体版（Ruling R7）：解禁は今の時期（0・10・20・30・40）で数え直す。古い記録で覚えた決め技は、時期の前でも覚えたまま（解禁済みとして読む）
     const learned = Array.isArray(c.newKnown) ? c.newKnown.filter((id, i) => mine.includes(id) && c.newKnown.indexOf(id) === i) : [];
+    if (!learned.length) learned.push(START_KIMETE); // v49：覚えた決め技が1つも無い記録は風車投げを足す（取組で〇が出る）。もう覚えている記録はそのまま
     c.unlocked = mine.filter((id, k) => NEW_TECH_AT[k] <= c.wins || learned.includes(id));
     c.newKnown = learned;
     // 決め技のゲージ：無い古い記録は {}・数でない／0以下／1以上・解禁していない・覚えた id は捨てる

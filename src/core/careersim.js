@@ -1,13 +1,13 @@
 // 一生の通し（50体版の強さ合わせと試験用・設計書 2026-10-16 §7）。取組は紙相撲の自動（kamiai.autoBout）
 // 勝てば次の敵へ・負けたら稽古（3コマ）：解禁していて覚えていない決め技があれば、ふつうの出来（6割＝ゲージ満タン）の1コマで覚え、残りは一番低い心技体を伸ばす。
 // 取組ごとに、覚えた決め技の中から相手の情報の画面の勧め（kimetepick.recommendKimete：相性→敵の型に合う系統→相手ごとの種）を持っていく。
-// 最初の決め技（v47 から風車投げ）が解禁済みでも、まだ覚えていない＝最初の稽古までは決め技無しで取る
-import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=48';
-import { autoBout } from './kamiai.js?v=48';
-import { recommendKimete } from './kimetepick.js?v=48';
-import { PLAY_COUNT } from './ladder.js?v=48';
-import { drillMult, NORMAL_SCORE } from './drills.js?v=48';
-import { GATE_INDEXES } from '../data/foes.js?v=48';
+// 最初の決め技（v47 から風車投げ）は、v49 から新しい記録で覚えて始まる（newRun）＝1体目から風車投げを持っていく。覚える稽古は10勝の五月雨突きから
+import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=49';
+import { autoBout } from './kamiai.js?v=49';
+import { recommendKimete } from './kimetepick.js?v=49';
+import { PLAY_COUNT } from './ladder.js?v=49';
+import { drillMult, NORMAL_SCORE } from './drills.js?v=49';
+import { GATE_INDEXES } from '../data/foes.js?v=49';
 
 export const MAX_BOUTS = 600; // 50体ぶん
 

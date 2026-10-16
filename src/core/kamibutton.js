@@ -6,10 +6,10 @@
 // 左が明るいのは tap だけ（stay は「待て」で暗い）・〇／バー／again／倒れの時は暗く「→右」。右が明るいのは go・ring・bar・again・hold（tap・stay の時は暗い）
 // 50体版（設計書 2026-10-16 §6）：決め技の〇は技ごとの出し方で見た目を分ける＝連打の技 kimeMash（左だけ明るい）・長押しの技 kimeHold（右だけ明るい）・一押しの技は今の ring
 // 〇とバーの絵そのものは src/ui/hud.js（中央上の〇・左端のバー）。ここはボタンの字・色・脈・満ち・暗さと、下の案内・ことねの吹き出しの鍵だけ
-import { KAMI, beatOffset, gaugeLit, barGauge, kimeHoldGauge } from './kami.js?v=48';
-import { gaugeTier } from './gaugetier.js?v=48';
-import { IPPON } from './drills.js?v=48';
-import { BAR } from './tactics.js?v=48';
+import { KAMI, beatOffset, gaugeLit, barGauge, kimeHoldGauge } from './kami.js?v=49';
+import { gaugeTier } from './gaugetier.js?v=49';
+import { IPPON } from './drills.js?v=49';
+import { BAR } from './tactics.js?v=49';
 
 export const BUTTON_COLOR = { // 遊び方の見本（HelpScene）も同じ色を使う
   wait: 0x5a5f6e, // 灰

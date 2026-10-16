@@ -2,24 +2,25 @@
 // 1枚目＝ボタンは2つ・左を連打で前へ押して箱から落とす・倒れたら右を長押し／2枚目＝立ち合いと決め技は中央上の〇（縮む金の輪が白い輪に重なった瞬間に右を一押し）／
 // 3枚目＝相手の攻めは赤い札で予告され、左にバーが出る・右を長押しでためて緑の帯で離すと「こらえ成功！」
 // v47：2枚目は、持っている決め技（無ければ最初に覚える風車投げ）の名前と出し方を先に教える（kimetepick.helpKimete・文は help.2.<出し方>・見本もその出し方）
+// v49：新しい記録は風車投げを覚えて始まる＝新しい記録でも「まず覚える」は付かない
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=48';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=48';
-import { kamiArt, foeArt } from '../core/foeart.js?v=48';
-import { foeAt } from '../data/foes.js?v=48';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=48';
-import { t, getLang } from '../i18n/i18n.js?v=48';
-import { session, markHelpSeen } from '../state.js?v=48';
-import { ringShape, barShape, drawRing, drawBar, hitMarkFit, drawMash, drawKimeHold, MASH_COUNT } from '../ui/hud.js?v=48';
-import { helpKimete } from '../core/kimetepick.js?v=48';
-import { IPPON } from '../core/drills.js?v=48';
-import { menuBgKey } from '../core/bgkey.js?v=48';
-import { newChime, demoChime } from '../core/chime.js?v=48';
-import { playBout } from '../ui/sfx.js?v=48';
-import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=48';
-import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=48';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=48';
+import { KAMI } from '../core/kami.js?v=49';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=49';
+import { kamiArt, foeArt } from '../core/foeart.js?v=49';
+import { foeAt } from '../data/foes.js?v=49';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=49';
+import { t, getLang } from '../i18n/i18n.js?v=49';
+import { session, markHelpSeen } from '../state.js?v=49';
+import { ringShape, barShape, drawRing, drawBar, hitMarkFit, drawMash, drawKimeHold, MASH_COUNT } from '../ui/hud.js?v=49';
+import { helpKimete } from '../core/kimetepick.js?v=49';
+import { IPPON } from '../core/drills.js?v=49';
+import { menuBgKey } from '../core/bgkey.js?v=49';
+import { newChime, demoChime } from '../core/chime.js?v=49';
+import { playBout } from '../ui/sfx.js?v=49';
+import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=49';
+import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=49';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=49';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）
