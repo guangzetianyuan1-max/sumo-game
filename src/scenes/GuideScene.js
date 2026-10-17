@@ -1,15 +1,15 @@
 // src/scenes/GuideScene.js — 最初の画面：題・言葉の切り替え・記録①〜③の札（10/11 本人「昔話と同じように最大3つの四股名ですすめられるように」）。
 // 中身のある札を押す＝その記録のつづきへ（その時の画面へ）。空きの札を押す＝その記録でそのまま入門（10/13〜主人公はバランス型・案内役は若女将に固定＝選ぶ画面なし → 遊び方の3枚 → 番付表）。
 // 中身のある札の「はじめから」は2度押し（1度目は知らせるだけ・指1本の二重発火は数えない）で、その記録を消して入門へ
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=59';
-import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=59';
-import { session, startRun, SLOT_COUNT, slotView, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=59';
-import { button, bindPress, fitText, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=59';
-import { secondPress } from '../ui/press.js?v=59';
-import { menuBgKey } from '../core/bgkey.js?v=59';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=59';
-import { playBout } from '../ui/sfx.js?v=59';
-import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=59';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=60';
+import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=60';
+import { session, startRun, SLOT_COUNT, slotView, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=60';
+import { button, bindPress, fitText, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=60';
+import { secondPress } from '../ui/press.js?v=60';
+import { menuBgKey } from '../core/bgkey.js?v=60';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=60';
+import { playBout } from '../ui/sfx.js?v=60';
+import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=60';
 
 const CARD = { w: 640, h: 300, top: 210, gap: 40 }; // 札3枚：210〜1190（下に知らせの1行）
 const NEW = { w: 200, h: 64 }; // 札の右下の「はじめから」
@@ -63,7 +63,7 @@ export class GuideScene extends Phaser.Scene {
     if (this.armed) {
       // 「はじめから」の1度目：押しても消さない理由（もう一度押すと消える）を一番下に出す
       inkPanel(this, 24, 1206, width - 48, 58); // 知らせの行の後ろ
-      fitText(this.add.text(width / 2, 1236, t(this.armed.old ? 'slot.oldConfirm' : 'slot.confirm'), textStyle(28, COLORS.gold, { align: 'center' })).setOrigin(0.5), width - 60);
+      fitText(this.add.text(width / 2, 1236, t(this.armed.old ? 'slot.oldConfirm' : 'slot.confirm'), textStyle(32, COLORS.gold, { align: 'center' })).setOrigin(0.5), width - 60);
     }
   }
 
@@ -77,7 +77,7 @@ export class GuideScene extends Phaser.Scene {
     // 墨の板（後ろの土俵の絵が少し透ける）。中身のある札は金の縁・空きは和紙の色の縁
     const gfx = inkPanel(this, left, top, CARD.w, CARD.h, { radius: 32 });
     if (sum) gfx.lineStyle(3, COLORS.frame, 1).strokeRoundedRect(left, top, CARD.w, CARD.h, 32);
-    this.add.text(left + PAD, top + 38, t(`slot.${n}`), textStyle(30, COLORS.gold)).setOrigin(0, 0.5);
+    this.add.text(left + PAD, top + 38, t(`slot.${n}`), textStyle(34, COLORS.gold)).setOrigin(0, 0.5);
     const zone = hitZone(this, x, y, CARD.w, CARD.h);
     // 押しはこの札の上で始まったものだけ・開いた直後の押しは数えない（widgets.bindPress・button と同じ）
 
@@ -85,7 +85,7 @@ export class GuideScene extends Phaser.Scene {
       const old = !!(saved && saved.old);
       if (old && this.armed && this.armed.n === n && this.armed.old) gfx.lineStyle(3, COLORS.frame, 1).strokeRoundedRect(left, top, CARD.w, CARD.h, 32); // 1度目を押した古い札
       fitText(this.add.text(x, y - 6, t(old ? 'slot.old' : 'slot.empty'), textStyle(56, COLORS.sub)).setOrigin(0.5), CARD.w - 60);
-      fitText(this.add.text(x, y + 60, t(old ? 'slot.oldSub' : 'slot.emptySub'), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 60);
+      fitText(this.add.text(x, y + 60, t(old ? 'slot.oldSub' : 'slot.emptySub'), textStyle(32, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 60);
       bindPress(this, zone, gfx, () => {
         if (this.leaving) return;
         if (old) { this.pressOld(n); return; } // 古い版の記録は2度押しで消す（v44・バグ探し L4：1回で消えて戻せなかった）
@@ -97,7 +97,7 @@ export class GuideScene extends Phaser.Scene {
     }
 
     if (isLast) {
-      this.add.text(right - PAD, top + 38, t('slot.last'), textStyle(28, COLORS.gold, { fontStyle: '500' })).setOrigin(1, 0.5);
+      this.add.text(right - PAD, top + 38, t('slot.last'), textStyle(32, COLORS.gold, { fontStyle: '500' })).setOrigin(1, 0.5);
     }
     // 左に自分のタイプの絵、右にしこ名（大）・番付・タイプ
     const key = heroKey(this, sum.type);
@@ -110,8 +110,8 @@ export class GuideScene extends Phaser.Scene {
     }
     const room = right - PAD - tx;
     fitText(this.add.text(tx, top + 112, heroName(sum.type), textStyle(60, COLORS.ink)).setOrigin(0, 0.5), room);
-    fitText(this.add.text(tx, top + 172, t(`div.${sum.rank}`), textStyle(30, COLORS.ink)).setOrigin(0, 0.5), room);
-    fitText(this.add.text(tx, top + 222, sum.cleared ? t('slot.clear') : t('slot.count', { n: sum.wins }), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), right - PAD - NEW.w - 16 - tx);
+    fitText(this.add.text(tx, top + 172, t(`div.${sum.rank}`), textStyle(34, COLORS.ink)).setOrigin(0, 0.5), room);
+    fitText(this.add.text(tx, top + 222, sum.cleared ? t('slot.clear') : t('slot.count', { n: sum.wins }), textStyle(32, COLORS.sub, { fontStyle: '500' })).setOrigin(0, 0.5), right - PAD - NEW.w - 16 - tx);
 
     bindPress(this, zone, gfx, () => {
       if (!this.leave()) return;

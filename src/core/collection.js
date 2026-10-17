@@ -2,7 +2,7 @@
 // 50体を番号の順に並べる。倒した相手は姿と名前・まだの相手は黒い影と「？？？」（番号だけ見せる）
 // 勝ち抜きは1体目から順に戦う＝倒した相手は「勝った数より前の番号」。記録に新しい物は足さない（古い記録もそのまま読める）
 // 画面は CollectionScene（3列×3段＝1ページ9体）
-import { FOE_IDS, foeAt } from '../data/foes.js?v=59';
+import { FOE_IDS, foeAt } from '../data/foes.js?v=60';
 
 export const PER_PAGE = 9;
 

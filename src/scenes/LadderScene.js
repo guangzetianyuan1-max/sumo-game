@@ -1,12 +1,12 @@
 // src/scenes/LadderScene.js — 勝ち抜き番付（10/12 夜）：主人公の絵と名・地位・倒した数の目盛り・次の昇進・心技体・次の相手 → 相手の情報
 // 負けた後の稽古の途中なら稽古へ（つづきからと同じ）。下に「稽古する」：いつでも何度でも自分から稽古に入れる（10/13 本人「好きなときに稽古が出来るように」）
-import { t, heroName, foeLabel } from '../i18n/i18n.js?v=59';
-import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=59';
-import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=59';
-import { currentFoe, canLeaveTraining } from '../core/run.js?v=59';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=59';
-import { menuBgKey } from '../core/bgkey.js?v=59';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=59';
+import { t, heroName, foeLabel } from '../i18n/i18n.js?v=60';
+import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=60';
+import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=60';
+import { currentFoe, canLeaveTraining } from '../core/run.js?v=60';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=60';
+import { menuBgKey } from '../core/bgkey.js?v=60';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=60';
 
 const BAR = { x: 60, y: 520, w: 600, h: 34 };
 const HELP_Y = 1062; // 「遊び方」（次の相手の行 960 と、大きなボタン 1135〜 の間）
@@ -49,21 +49,21 @@ export class LadderScene extends Phaser.Scene {
     fitText(this.add.text(300, 300, t(`div.${rankOf(r.wins)}`), textStyle(44, COLORS.gold)).setOrigin(0, 0.5), 380);
 
     // 倒した数の目盛り
-    fitText(this.add.text(width / 2, 470, t('ladder.count', { n: r.wins }), textStyle(32, COLORS.ink)).setOrigin(0.5), width - 60);
+    fitText(this.add.text(width / 2, 470, t('ladder.count', { n: r.wins }), textStyle(38, COLORS.ink)).setOrigin(0.5), width - 60); // 10/17 字を大きく 32→38
     roundBox(this, BAR.x + BAR.w / 2, BAR.y, BAR.w, BAR.h, COLORS.empty, { radius: 16, shadow: false });
     const fill = Math.max(0, Math.round(BAR.w * r.wins / CLEAR_AT));
     if (fill > 0) this.add.rectangle(BAR.x + fill / 2, BAR.y, fill, BAR.h - 8, 0xe3b23c);
     const nr = nextRank(r.wins);
     const nextLine = r.cleared ? '' : nr ? t('ladder.next', { n: nr.at - r.wins, rank: t(`div.${nr.id}`) }) : t('ladder.toClear', { n: CLEAR_AT - r.wins });
-    if (nextLine) fitText(this.add.text(width / 2, 578, nextLine, textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
+    if (nextLine) fitText(this.add.text(width / 2, 578, nextLine, textStyle(34, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60); // 28→34
 
-    statBars(this, 40, 640, 640, r.stats);
+    statBars(this, 40, 634, 640, r.stats, { size: 34, rowH: 50 }); // 10/17 字を大きく（634〜784・墨の板 436〜790 の中）
     inkPanel(this, PANEL.x, 436, PANEL.w, 354); // 倒した数・目盛り・次の昇進・心技体（436〜790）
     inkPanel(this, PANEL.x, 922, PANEL.w, 76); // 次の相手（またはクリア）の行
 
     // 左下に小さく「遊び方」（説明を飛ばした人も、いつでも同じ3枚に入れる）・その右に「コレクション」（10/17 本人「倒した敵はコレクションとして見れるように」）
-    button(this, 150, HELP_Y, 240, 72, t('ladder.help'), () => this.scene.start('help'), { size: 28, color: COLORS.buttonSub });
-    button(this, 490, HELP_Y, 340, 72, t('ladder.collection'), () => this.scene.start('collection', { then: 'ladder' }), { size: 28, color: COLORS.buttonSub });
+    button(this, 150, HELP_Y, 240, 72, t('ladder.help'), () => this.scene.start('help'), { size: 32, color: COLORS.buttonSub });
+    button(this, 490, HELP_Y, 340, 72, t('ladder.collection'), () => this.scene.start('collection', { then: 'ladder' }), { size: 32, color: COLORS.buttonSub });
 
     if (r.cleared) {
       fitText(this.add.text(width / 2, 960, t('ladder.clear'), textStyle(40, COLORS.gold)).setOrigin(0.5), width - 60);

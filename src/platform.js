@@ -5,7 +5,7 @@
 //   記録＝SDK の saveData／loadData だけ（ほかの保存の仕方は不可）・音＝YouTube の消音に従う（ゲームの ♪ は出さない）・
 //   一時停止＝onPause／onResume（visibilitychange は使わない）・言葉＝getLanguage（navigator.language は使わない・言葉は記録に残さない）・
 //   同意書を出さない・振動を使わない・読み込み中に firstFrameReady・遊べるようになったら gameReady
-import { TERMS_KEY } from './core/terms.js?v=59';
+import { TERMS_KEY } from './core/terms.js?v=60';
 
 const sdk = () => (typeof ytgame !== 'undefined' && ytgame ? ytgame : null);
 export const isPlayables = () => typeof window !== 'undefined' && window.SUMO_PLAYABLES === true;

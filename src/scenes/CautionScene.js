@@ -1,9 +1,9 @@
 // src/scenes/CautionScene.js — ゲームの一番はじめの「注意書きの札」（10/14 本人「注意書きのサインも冒頭に付けて欲しい」）
 // 起動のたびに出す。約3.5秒で表紙へ・たたけばすぐ表紙へ。音楽は鳴らさない（まだ画面に触れていないので鳴らせない・SCENE_SONG.caution = null）
 // 絵は使わない：木の板の色の札（Graphics）・黄色い三角の注意の印・字（本文は30px以上＝シニア向け）
-import { t } from '../i18n/i18n.js?v=59';
-import { signalFirstFrame } from '../platform.js?v=59';
-import { roundBox, bubbleText, fitText, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=59';
+import { t } from '../i18n/i18n.js?v=60';
+import { signalFirstFrame } from '../platform.js?v=60';
+import { roundBox, bubbleText, fitText, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=60';
 
 export const CAUTION_MS = 3500; // 自動で表紙へ進むまで
 const CARD = { x: 360, top: 150, w: 640, h: 940 };
@@ -11,9 +11,9 @@ const WOOD = 0xcfa56a; // 木の板
 const WOOD_EDGE = 0x6d4a1f;
 const INK = '#2b1a08';
 const LINES = ['caution.sound', 'caution.light', 'caution.rest', 'caution.fiction'];
-const SLOT = { first: 528, step: 152, w: 560, h: 140 }; // 本文1つの枠（中心の y は first から step ずつ）
-const TEXT_SIZE = 32; // 本文はここから始め、収まらなければ 30 まで縮める
-const TEXT_MIN = 30;
+const SLOT = { first: 528, step: 152, w: 600, h: 140 }; // 本文1つの枠（中心の y は first から step ずつ）
+const TEXT_SIZE = 35; // 10/17 本人「文字は極力大きく」32→35（枠の幅 600 に1行17字が入る大きさ） // 本文はここから始め、収まらなければ 30 まで縮める
+const TEXT_MIN = 32;
 
 export class CautionScene extends Phaser.Scene {
   constructor() {
@@ -45,7 +45,7 @@ export class CautionScene extends Phaser.Scene {
       if (i < LINES.length - 1) g.lineStyle(2, WOOD_EDGE, 0.35).lineBetween(CARD.x - 220, y + SLOT.step / 2, CARD.x + 220, y + SLOT.step / 2);
     });
     // 下に小さく
-    const hint = fitText(this.add.text(width / 2, 1160, t('caution.tap'), textStyle(32, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 80);
+    const hint = fitText(this.add.text(width / 2, 1160, t('caution.tap'), textStyle(36, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 80);
     this.tweens.add({ targets: hint, alpha: 0.35, duration: 800, yoyo: true, repeat: -1 });
     // たたけばすぐ表紙へ・何もしなくても約3.5秒で表紙へ
     this.input.once('pointerdown', () => this.go());

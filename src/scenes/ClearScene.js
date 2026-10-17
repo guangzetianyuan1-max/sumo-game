@@ -1,13 +1,13 @@
 // src/scenes/ClearScene.js — クリアの画面（20体版 Task 5・10/13）：横綱の土俵入り風。箱の土俵の真ん中に主人公の型紙を大きく立て、少しずつ揺らす
 // 上に「横綱 誠ノ里 誕生！」とここまでの成績（倒した数・負け・稽古の回数）・続きは近日・はじめの画面へ（v43 本人「全勝後のLINEで送るは無しで」＝LINEの共有は消した）
 // 型紙＝正面の立ち絵に白い縁（紙の切り抜き）と小さな台。露払い・太刀持ちは置かない
-import { HERO_TYPE } from '../data/heroes.js?v=59';
-import { heroArt } from '../core/foeart.js?v=59';
-import { t, heroName } from '../i18n/i18n.js?v=59';
-import { session } from '../state.js?v=59';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=59';
-import { drawWaUnder } from '../ui/backdrop.js?v=59';
-import { button, addAura, preloadHeroFigures, textStyle, fitText, roundBox, COLORS } from '../ui/widgets.js?v=59';
+import { HERO_TYPE } from '../data/heroes.js?v=60';
+import { heroArt } from '../core/foeart.js?v=60';
+import { t, heroName } from '../i18n/i18n.js?v=60';
+import { session } from '../state.js?v=60';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=60';
+import { drawWaUnder } from '../ui/backdrop.js?v=60';
+import { button, addAura, preloadHeroFigures, textStyle, fitText, roundBox, COLORS } from '../ui/widgets.js?v=60';
 
 const FIG_H = 500; // 型紙の高さ（取組の 330 より大きく）
 const EDGE = 8; // 紙の白い縁の太さ
@@ -40,7 +40,7 @@ export class ClearScene extends Phaser.Scene {
     title.setScale(base * 0.5);
     this.tweens.add({ targets: title, scaleX: base, scaleY: base, duration: 420, ease: 'Back.easeOut' });
     roundBox(this, width / 2, 205, 640, 64, COLORS.panel, { radius: 32, stroke: COLORS.frame }).setAlpha(0.92).setDepth(10); // 紙吹雪より前
-    fitText(this.add.text(width / 2, 205, t('clear.stats', { wins: r.wins, losses: r.losses, trainings: r.trainings || 0 }), textStyle(30, COLORS.ink)).setOrigin(0.5).setDepth(10), 600);
+    fitText(this.add.text(width / 2, 205, t('clear.stats', { wins: r.wins, losses: r.losses, trainings: r.trainings || 0 }), textStyle(34, COLORS.ink)).setOrigin(0.5).setDepth(10), 600);
 
     // 下：続きは近日・はじめの画面へ
     fitText(this.add.text(width / 2, 1010, t('clear.next'), textStyle(36, COLORS.gold)).setOrigin(0.5), width - 60);

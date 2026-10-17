@@ -1,15 +1,15 @@
 // src/scenes/KenshoScene.js — 懸賞旗（20体版 Task 5・10/13）：取組の前に、懸賞旗2本が土俵の前を左から右へ渡る（約3秒）→ 取組（kami）
 // 土俵は取組と同じ箱と土俵（src/ui/arena.js）。型紙2枚は立ち合いの位置に立たせておく。たたくと飛ばせる
 // 旗の字は i18n の架空の名前だけ（ひまなぶた・琴浪部屋）。日本語は縦書き（1字ずつ改行）・英語は90度回して読む
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=59';
-import { currentFoe } from '../core/run.js?v=59';
-import { HERO_TYPE } from '../data/heroes.js?v=59';
-import { t, getLang, foeLabel } from '../i18n/i18n.js?v=59';
-import { session, prepareOpponent } from '../state.js?v=59';
-import { playBout } from '../ui/sfx.js?v=59';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=59';
-import { drawWaUnder } from '../ui/backdrop.js?v=59';
-import { preloadHeroFigures, addAura, textStyle, fitText, COLORS } from '../ui/widgets.js?v=59';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=60';
+import { currentFoe } from '../core/run.js?v=60';
+import { HERO_TYPE } from '../data/heroes.js?v=60';
+import { t, getLang, foeLabel } from '../i18n/i18n.js?v=60';
+import { session, prepareOpponent } from '../state.js?v=60';
+import { playBout } from '../ui/sfx.js?v=60';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=60';
+import { drawWaUnder } from '../ui/backdrop.js?v=60';
+import { preloadHeroFigures, addAura, textStyle, fitText, COLORS } from '../ui/widgets.js?v=60';
 
 const PARADE_MS = 3000; // 旗が渡りきる長さ
 const FLAG = { w: 96, h: 330, pole: 470, gap: 260 }; // 布の幅と高さ・竿の長さ（地面から）・2本の間
@@ -42,7 +42,7 @@ export class KenshoScene extends Phaser.Scene {
     this.leaving = false;
     drawArena(this); // 背景＝土俵（bgkey.menuBgKey('kensho')）
     drawWaUnder(this, GROUND + BOX_H); // 箱の下の藍に青海波・ふちに和紙の色の枠
-    fitText(this.add.text(width / 2, 132, foeLabel(foe), textStyle(34, COLORS.ink)).setOrigin(0.5).setShadow(...TXT_SHADOW), width - 80);
+    fitText(this.add.text(width / 2, 120, foeLabel(foe), textStyle(56, COLORS.gold)).setOrigin(0.5).setShadow(...TXT_SHADOW), width - 80); // 10/17 相手の名前を大きく金に（取組の画面とそろえる）
 
     // 型紙2枚（取組の始めと同じ向き・位置）
     this.figure(kamiArt(`hero_${HERO_TYPE}`).key, heroArt(HERO_TYPE).key, START_X.east, FIG_H);
@@ -68,7 +68,7 @@ export class KenshoScene extends Phaser.Scene {
     fitText(title, width - 60);
     title.setScale(title.scaleX * 0.6).setAlpha(0);
     this.tweens.add({ targets: title, alpha: 1, scaleX: title.scaleX / 0.6, scaleY: title.scaleY / 0.6, duration: 260, ease: 'Back.easeOut' });
-    fitText(this.add.text(width / 2, GROUND + 200, t('kensho.skip'), textStyle(30, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
+    fitText(this.add.text(width / 2, GROUND + 200, t('kensho.skip'), textStyle(34, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
 
     // 旗がはためく音：渡る3秒の間に、小さくなりながら3回
     [[0, 1], [1000, 0.7], [2000, 0.5]].forEach(([ms, vol]) => this.time.delayedCall(ms, () => { if (!this.leaving) playBout('flags', vol); }));

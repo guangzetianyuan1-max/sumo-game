@@ -1,7 +1,7 @@
 // 主人公はバランス型の1人（10/13 本人「主人公はバランス型のひとり」「新技は15」・前は5人だった）
 // id はタイプの id と同じ（取組の計算・ドットの絵・声はタイプの物を使う）。名前・性格・新技の名前は i18n の hero.<id>.name / .trait・newtech.<id>
 // press＝押し方（mash 連打・hold 長押し・tap 一発）・arch＝系統（tuning.js の ARCH・相性に使う）。第1段は解禁と覚えた記録だけ
-import { KIMETE } from './kimete.js?v=59';
+import { KIMETE } from './kimete.js?v=60';
 
 export const HERO_TYPE = 'balance';
 export const OKAMI = 'kotone';

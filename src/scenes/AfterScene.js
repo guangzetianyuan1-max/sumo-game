@@ -1,13 +1,13 @@
 // src/scenes/AfterScene.js — 取組の後（10/12 夜）：勝ち＝倒した相手・心技体の伸び・昇進・新技の解禁・クリア → 番付表
 // 負け＝心技体の伸び（少し）・「もう一度」（相手の情報へ）か「稽古へ」。同じ相手に3連敗したら案内役が稽古を勧める（選ぶのは本人）
-import { t, foeLabel, getLang } from '../i18n/i18n.js?v=59';
-import { session, suggestTraining, nothingToTrain, trainBegin, trainFreeBegin } from '../state.js?v=59';
-import { playBout } from '../ui/sfx.js?v=59';
-import { preloadVoices, afterVoiceIds, sayVoice, hushGameVoices } from '../ui/voice.js?v=59';
-import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=59';
-import { menuBgKey } from '../core/bgkey.js?v=59';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=59';
-import { button, topTitle, fitText, wrapText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=59';
+import { t, foeLabel, getLang } from '../i18n/i18n.js?v=60';
+import { session, suggestTraining, nothingToTrain, trainBegin, trainFreeBegin } from '../state.js?v=60';
+import { playBout } from '../ui/sfx.js?v=60';
+import { preloadVoices, afterVoiceIds, sayVoice, hushGameVoices } from '../ui/voice.js?v=60';
+import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=60';
+import { menuBgKey } from '../core/bgkey.js?v=60';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=60';
+import { button, topTitle, fitText, wrapText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=60';
 
 const STATS = ['shin', 'gi', 'tai'];
 const BAND = 140; // 見出し（勝ち・負け 72）の帯の下の端（倒した相手の行 190 の字の上の端 170 より上）
@@ -40,9 +40,9 @@ export class AfterScene extends Phaser.Scene {
     drawBackdrop(this, bgKey(lb), { band: BAND });
     const line = (y, str, size, color, extra) => fitText(this.add.text(width / 2, y, str, textStyle(size, color, extra)).setOrigin(0.5), width - 60);
     topTitle(this, 90, t(lb.won ? 'after.win' : 'after.lose'), 72, lb.won ? COLORS.gold : COLORS.ink);
-    if (lb.won) line(190, t('after.beat', { name: foeLabel(lb.foe) }), 38, COLORS.ink);
+    if (lb.won) line(190, t('after.beat', { name: foeLabel(lb.foe) }), 42, COLORS.ink); // 10/17 38→42
     // 心技体の伸び（1行ずつ）
-    STATS.forEach((s, i) => line(278 + i * 58, t('after.growth', { stat: t(`stat.${s}`), from: lb.before[s].toFixed(1), to: lb.after[s].toFixed(1) }), 36, COLORS.ink, { fontStyle: '500' }));
+    STATS.forEach((s, i) => line(278 + i * 58, t('after.growth', { stat: t(`stat.${s}`), from: lb.before[s].toFixed(1), to: lb.after[s].toFixed(1) }), 40, COLORS.ink, { fontStyle: '500' })); // 10/17 36→40
     let y = 480;
     let bottom = 424; // 字の後ろの墨の板の下の端（心技体の伸びの最後の行 394 の下）
     if (lb.promoted) { playBout('promo'); line(y, t('after.promoted', { rank: t(`div.${lb.promoted}`) }), 44, COLORS.gold); bottom = y + 38; y += 70; }

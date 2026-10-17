@@ -2,16 +2,16 @@
 // 福島昔話クエストの図鑑と同じ形：3列×3段の札（1ページ9体）・倒した相手は姿と名前と朱の判子・まだの相手は黒い影と「？？？」（番号だけ）・
 // 倒した札をさわると1体を大きく（姿・名前・何体目・種類・型・必殺技）。勝った直後は取組の後の画面から開き、その相手の札に判子を押す
 // 開き方：this.scene.start('collection', { stamp: 相手の id（判子を押す札・無ければ null）, then: 閉じた後の画面（'ladder' | 'clear'） })
-import { t, foeLabel } from '../i18n/i18n.js?v=59';
-import { session } from '../state.js?v=59';
-import { collectionOf, pageOf, PER_PAGE } from '../core/collection.js?v=59';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=59';
-import { foeKimeteAt } from '../core/kamiai.js?v=59';
-import { menuBgKey } from '../core/bgkey.js?v=59';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=59';
-import { playBout } from '../ui/sfx.js?v=59';
-import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=59';
-import { button, bindPress, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, addAura, clearScene, COLORS } from '../ui/widgets.js?v=59';
+import { t, foeLabel } from '../i18n/i18n.js?v=60';
+import { session } from '../state.js?v=60';
+import { collectionOf, pageOf, PER_PAGE } from '../core/collection.js?v=60';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=60';
+import { foeKimeteAt } from '../core/kamiai.js?v=60';
+import { menuBgKey } from '../core/bgkey.js?v=60';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=60';
+import { playBout } from '../ui/sfx.js?v=60';
+import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=60';
+import { button, bindPress, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, addAura, clearScene, COLORS } from '../ui/widgets.js?v=60';
 
 const CARD = { w: 212, h: 298, top: 168, gapY: 14 }; // 札（3列×3段：168〜1094）
 const FIG = { dy: 112, h: 188, w: 190 }; // 札の中の姿（札の上の端から姿の真ん中まで・高さ・幅）
@@ -114,7 +114,7 @@ export class CollectionScene extends Phaser.Scene {
     const shown = it.got && !fresh;
     const box = roundBox(this, cx, top + CARD.h / 2, CARD.w, CARD.h, COLORS.panel, { radius: 18, stroke: it.got ? COLORS.frame : 0x3a4466 });
     const name = fitText(this.add.text(cx, top + NAME_DY, shown ? foeLabel(it) : t('col.unknown'), textStyle(28, shown ? COLORS.ink : COLORS.sub)).setOrigin(0.5), CARD.w - 16);
-    fitText(this.add.text(cx, top + NO_DY, t('opp.foeNo', { n: it.index + 1 }), textStyle(28, COLORS.gold, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 16);
+    fitText(this.add.text(cx, top + NO_DY, t('opp.foeNo', { n: it.index + 1 }), textStyle(30, COLORS.gold, { fontStyle: '500' })).setOrigin(0.5), CARD.w - 16);
     const slot = { it, cx, top, name, img: null, dark: !shown };
     this.slots[foeArt(it).key] = slot;
     this.placeFigure(slot);
@@ -200,7 +200,7 @@ export class CollectionScene extends Phaser.Scene {
     line(940, t('opp.foeKime', { name: t(`foekime.${foeKimeteAt(it.index).id}`) }), 34, COLORS.gold);
     // 説明（10/17 本人「日本をテーマに英語で」：郷土の物・昔話の物は本当の事を出典つきで・ほかはゲームの中の戦い方）。日本語は60字・英語は120字まで＝字30で4行に収まる
     const desc = `col.desc.${it.id}`;
-    if (t(desc) !== desc) box.add(wrapText(this, width / 2, DESC.y, t(desc), DESC.w, 30, COLORS.ink, { fontStyle: '500' }));
+    if (t(desc) !== desc) box.add(wrapText(this, width / 2, DESC.y, t(desc), DESC.w, 32, COLORS.ink, { fontStyle: '500' }));
     line(1210, t('col.tapBack'), 30, COLORS.sub);
     playBout('pon');
     // 開いた指の離しで閉じない＝0.25秒たってからの押しだけ

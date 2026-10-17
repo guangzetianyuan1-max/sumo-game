@@ -7,18 +7,18 @@
 // 心技体の棒には今の番付の天井の印（細い線・v47）
 // 負けた後の稽古は3コマ終えると同じ相手へ。番付からいつでも入る稽古（training.voluntary・10/13 本人「好きなときに稽古が出来るように」）は、
 // どのコマでも「番付へ戻る」で抜けられる（残りのコマは捨てる）・終われば番付へ
-import { t } from '../i18n/i18n.js?v=59';
-import { session, trainLeaveNow } from '../state.js?v=59';
-import { canLeaveTraining, kimeteGauge, statCeiling } from '../core/run.js?v=59';
-import { kimeteById } from '../data/kimete.js?v=59';
-import { techCards, TECH_CARD_LIMIT, trainingAdvice } from '../core/training.js?v=59';
-import { DRILLS, kimetePct } from '../core/drills.js?v=59';
-import { playBout } from '../ui/sfx.js?v=59';
-import { menuBgKey } from '../core/bgkey.js?v=59';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=59';
+import { t } from '../i18n/i18n.js?v=60';
+import { session, trainLeaveNow } from '../state.js?v=60';
+import { canLeaveTraining, kimeteGauge, statCeiling } from '../core/run.js?v=60';
+import { kimeteById } from '../data/kimete.js?v=60';
+import { techCards, TECH_CARD_LIMIT, trainingAdvice } from '../core/training.js?v=60';
+import { DRILLS, kimetePct } from '../core/drills.js?v=60';
+import { playBout } from '../ui/sfx.js?v=60';
+import { menuBgKey } from '../core/bgkey.js?v=60';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=60';
 import {
   topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, bindPress, preloadOyakataArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=59';
+} from '../ui/widgets.js?v=60';
 
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1235 は「稽古おわり」の字・1210 は番付へ戻る）
 const CARD = { w: 640, top: 470, step: 120, bottom: 1150 };
@@ -51,7 +51,7 @@ export class TrainingScene extends Phaser.Scene {
     drawBackdrop(this, BG, { band: BAND });
     topTitle(this, 60, t('train2.title'), 56, COLORS.gold);
     fitText(this.add.text(width / 2, 130, t('train2.left', { n: r.training ? r.training.left : 0 }), textStyle(34, COLORS.ink)).setOrigin(0.5), width - 60);
-    statBars(this, 40, 190, 640, r.stats, { ceil: statCeiling(r.wins) });
+    statBars(this, 40, 190, 640, r.stats, { ceil: statCeiling(r.wins), size: 32 }); // 10/17 字を大きく 28→32
     // 親方の勧め（v47）：決め技の札・心技体の遊び・天井（勧めなし）のどれか1つ
     const adv = trainingAdvice(r);
     const rec = adv.kind === 'stat' ? adv.drill : null;
@@ -63,7 +63,7 @@ export class TrainingScene extends Phaser.Scene {
     const greet = t(free ? 'train2.oyakataFree' : 'train2.oyakata');
     const line = recTech ? t('train2.recKimete', { tech: t(`newtech.${recTech}`) })
       : t('train2.line', { a: greet, b: rec ? t('train2.recNext', { drill: t(`drill.${rec}`) }) : t('train2.recCeiling') });
-    speechBubble(this, 180, 336, 510, 128, line, { size: 28, min: 28 });
+    speechBubble(this, 180, 336, 510, 128, line, { size: 28, min: 28 }); // 親方の一言は字28で行の切れ目を決めてある（試験が見張る）＝大きくしない
     const cards = techCards(r, TECH_CARD_LIMIT);
     const techs = cards.show;
     const nextAt = cards.nextAt;
@@ -87,11 +87,11 @@ export class TrainingScene extends Phaser.Scene {
       this.card(i++, label, () => this.toDrill(k.drill, id), COLORS.gold, step, h, true, pct > 0 ? t('kimete.progress', { pct }) : '');
     }
     if (cards.more) {
-      fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.more', { n: cards.more }), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
+      fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.more', { n: cards.more }), textStyle(32, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
       i += 1;
     }
     if (nextAt !== undefined) {
-      fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.locked', { n: nextAt - r.wins }), textStyle(28, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
+      fitText(this.add.text(width / 2, CARD.top + i * step + step / 2, t('train2.locked', { n: nextAt - r.wins }), textStyle(32, COLORS.sub, { fontStyle: '500' })).setOrigin(0.5), width - 60);
     }
     // 番付からの稽古だけ：いつでも番付へ戻れる（残りのコマは捨てる）
     if (free) {
