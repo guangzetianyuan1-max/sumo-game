@@ -1,8 +1,8 @@
 // 決め技を選ぶ（相手の情報の画面・20体版 Task 4）。画面から切り離した純粋な関数
 // 覚えた決め技＝run.newKnown のうち KIMETE にある物。勧め＝recommendKimete（相性→敵の型に合う系統→相手ごとの種。v42）
 // 一生の通し（careersim.bestKimete）も同じ勧めを使う＝試しと本番で同じ物を持っていく
-import { KIMETE, affinity, typeFit } from '../data/kimete.js?v=52';
-import { makeRng } from './rng.js?v=52';
+import { KIMETE, affinity, typeFit } from '../data/kimete.js?v=53';
+import { makeRng } from './rng.js?v=53';
 
 const known = (run) => (run && Array.isArray(run.newKnown) ? run.newKnown : []);
 
@@ -62,8 +62,10 @@ export function chosenKimete(run, id) {
 
 // 相手の画面のことねの一言（i18n の鍵と技の id）：選んだ札が勧めと違う＝選んだ技の名前（opp.picked）・勧めがある＝勧め（opp.recommend）・
 // 覚えた技が無い＝稽古の案内（opp.noKimete）。10/15 バグ出し：別の札を選んでも勧めの技を語り続けた
-export function coachAdvice(rec, pick) {
+// recAff＝勧めの技とこの相手の相性（affinity）：よく効く＝「効きそう」・ふつう＝「でいきましょう」・効きにくい＝「効きにくい相手」
+//   10/17 バグ出し：覚えた技が1つ（風車投げ）で相性が悪いと、札は「効きにくい」なのに「効きそうです！」と言った
+export function coachAdvice(rec, pick, recAff = 1.5) {
   if (pick && pick !== rec) return { key: 'opp.picked', tech: pick };
-  if (rec) return { key: 'opp.recommend', tech: rec };
+  if (rec) return { key: recAff > 1 ? 'opp.recommend' : recAff < 1 ? 'opp.recommendWeak' : 'opp.picked', tech: rec };
   return { key: 'opp.noKimete', tech: null };
 }

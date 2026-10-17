@@ -1,15 +1,16 @@
 // src/state.js — 場面をまたぐ選び。run は勝ち抜き（入門を終えるまで null）。移り変わりはここの関数で行い、そのたびに保存する
 // 10/12 夜 場所をやめて100体の勝ち抜きへ（設計書 §3）。場所の頃の関数は basho.js・career.js に残る（使わない）
-import { TYPE_IDS, TYPES } from './data/types.js?v=52';
-import { recommendStrategy } from './core/recommend.js?v=52';
-import { defaultStrategy } from './core/strategy.js?v=52';
-import { CAREER_KEY } from './core/career.js?v=52';
-import { learnMove } from './core/learn.js?v=52';
-import { rankOf } from './core/ladder.js?v=52';
-import { HERO_TYPE } from './data/heroes.js?v=52';
+import { TYPE_IDS, TYPES } from './data/types.js?v=53';
+import { recommendStrategy } from './core/recommend.js?v=53';
+import { defaultStrategy } from './core/strategy.js?v=53';
+import { CAREER_KEY } from './core/career.js?v=53';
+import { learnMove } from './core/learn.js?v=53';
+import { rankOf } from './core/ladder.js?v=53';
+import { HERO_TYPE } from './data/heroes.js?v=53';
+import { trainingAdvice } from './core/training.js?v=53';
 import {
   newRun, currentFoe, recordResult, startTraining, leaveTraining, trainStat, trainKimete, serializeRun, deserializeRun, markTacticSeen, HELP_VER,
-} from './core/run.js?v=52';
+} from './core/run.js?v=53';
 
 export const session = {
   you: HERO_TYPE,
@@ -180,7 +181,10 @@ export function recordNow(won, kimarite, store = localStore()) {
 }
 
 export const SUGGEST_TRAIN_AT = 3; // 同じ相手にこれだけ負けたら案内役が稽古を勧める
-export const suggestTraining = (run) => run.streak >= SUGGEST_TRAIN_AT;
+// 稽古で伸ばせる物が無い（心技体が3つとも今の番付の天井・解禁した決め技も全部覚えた）時は勧めない（10/17 バグ出し M1：
+//   天井の人が3連敗すると「稽古で地力を」と勧め、抜けられない稽古3コマに入れて何も伸びなかった）
+export const nothingToTrain = (run) => trainingAdvice(run).kind === 'ceiling';
+export const suggestTraining = (run) => run.streak >= SUGGEST_TRAIN_AT && !nothingToTrain(run);
 
 const keep = (store, run) => {
   session.run = run;

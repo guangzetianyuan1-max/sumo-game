@@ -22,36 +22,36 @@
 //   守り成功＝主人公の踏ん張りの目の帯（v45・0.7秒・時計は止めない・入力を取らない・4秒以内の2回目は出さない）。v45b：置き場所は箱の前の面（〇・バー・型紙の頭・ボタンにかからない＝〇が出ても消さない）。
 //   絵が読めない時は何も出さない（「守り成功！」の字は出る）。
 //   止めるのは画面の時計だけ（kami.js の物理と careersim の数は変えない）
-import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge, kimeHoldGauge } from '../core/kami.js?v=52';
-import { isTactic, FOE_KIME_ID, BAR } from '../core/tactics.js?v=52';
-import { leftLook, rightLook, neutralLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey, attackScene, bossAlert, tipStep, eyeDeferDue, kimeCall } from '../core/kamibutton.js?v=52';
-import { cutinArt, eyeArt, EYE_HERO, EYE_FUNBARI, EYE_MS, funbariDue, cutinCloses, cutinNeutral } from '../core/cutin.js?v=52';
-import { newChime, greenChime, boutGreen } from '../core/chime.js?v=52';
-import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=52';
-import { chosenKimete } from '../core/kimetepick.js?v=52';
-import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=52';
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=52';
-import { currentFoe } from '../core/run.js?v=52';
-import { PLAY_COUNT } from '../core/ladder.js?v=52';
-import { makeRng } from '../core/rng.js?v=52';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=52';
-import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=52';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=52';
-import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=52';
-import { playBout, whine, whineStop } from '../ui/sfx.js?v=52';
-import { boutWhine } from '../core/whine.js?v=52';
-import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=52';
-import { GYOJI, tachiaiVoiceAt, tachiaiPreRoll, nokottaDue, hushVoices } from '../core/gyoji.js?v=52';
-import { ringEvent } from '../core/voice.js?v=52';
-import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=52';
-import { createBigButton } from '../ui/bigbutton.js?v=52';
-import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing, clockHold } from '../core/feel.js?v=52';
-import { createFx } from '../ui/fx.js?v=52';
-import { finisherPlan, finisherPose, ghostPoses, weakFinisher, pivotOffset } from '../core/finisherfx.js?v=52';
-import { createFinisherFx } from '../ui/finisherfx.js?v=52';
-import { drawCutinBand, drawEyeBand, drawFunbariBand } from '../ui/cutinband.js?v=52';
-import { HUD, HIT_MARK, MASH_COUNT, ringShape, barShape, drawRing, drawBar, hudTouch, mashShape, kimeHoldShape, drawMash, drawKimeHold } from '../ui/hud.js?v=52';
-import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=52';
+import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge, kimeHoldGauge } from '../core/kami.js?v=53';
+import { isTactic, FOE_KIME_ID, BAR } from '../core/tactics.js?v=53';
+import { leftLook, rightLook, neutralLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey, attackScene, bossAlert, tipStep, eyeDeferDue, kimeCall } from '../core/kamibutton.js?v=53';
+import { cutinArt, eyeArt, EYE_HERO, EYE_FUNBARI, EYE_MS, funbariDue, cutinCloses, cutinNeutral } from '../core/cutin.js?v=53';
+import { newChime, greenChime, boutGreen } from '../core/chime.js?v=53';
+import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=53';
+import { chosenKimete } from '../core/kimetepick.js?v=53';
+import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=53';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=53';
+import { currentFoe } from '../core/run.js?v=53';
+import { PLAY_COUNT } from '../core/ladder.js?v=53';
+import { makeRng } from '../core/rng.js?v=53';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=53';
+import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=53';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=53';
+import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=53';
+import { playBout, whine, whineStop } from '../ui/sfx.js?v=53';
+import { boutWhine } from '../core/whine.js?v=53';
+import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=53';
+import { GYOJI, tachiaiVoiceAt, tachiaiPreRoll, nokottaDue, hushVoices } from '../core/gyoji.js?v=53';
+import { ringEvent } from '../core/voice.js?v=53';
+import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=53';
+import { createBigButton } from '../ui/bigbutton.js?v=53';
+import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing, clockHold } from '../core/feel.js?v=53';
+import { createFx } from '../ui/fx.js?v=53';
+import { finisherPlan, finisherPose, ghostPoses, weakFinisher, pivotOffset } from '../core/finisherfx.js?v=53';
+import { createFinisherFx } from '../ui/finisherfx.js?v=53';
+import { drawCutinBand, drawEyeBand, drawFunbariBand } from '../ui/cutinband.js?v=53';
+import { HUD, HIT_MARK, MASH_COUNT, ringShape, barShape, drawRing, drawBar, hudTouch, mashShape, kimeHoldShape, drawMash, drawKimeHold } from '../ui/hud.js?v=53';
+import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=53';
 
 const FIG_H = 330; // 型紙の高さ（敵は段階の倍率を掛ける）
 const VIS = FIG_H / 230; // 見た目の大きさの倍率（計算の座標は変えない・縦方向の跳ね・落ちは同じ比で描く）
@@ -372,10 +372,11 @@ export class KamiScene extends Phaser.Scene {
   }
 
   // カットインの帯：左に主人公の顔・右に大きな字（と小さな2行目）。約1秒で消える・たたくと閉じる。取組は止めない（上に重ねるだけ）
-  showCutin(name, line1, line2 = '', onClose = null) {
+  // late＝帯が消えきってから onClose を呼ぶ（勝ち負けの帯：消える途中にいつもの字が重なって二重に見えた・10/17 バグ出し）
+  showCutin(name, line1, line2 = '', onClose = null, late = false) {
     this.closeCutin(true);
     const c = drawCutinBand(this, CUT, name, line1, line2);
-    this.cutin = { c, kind: 'band', held: false, onClose, timer: this.time.delayedCall(CUT.ms, () => this.closeCutin()) };
+    this.cutin = { c, kind: 'band', held: false, onClose, late, timer: this.time.delayedCall(CUT.ms, () => this.closeCutin()) };
   }
 
   // 主人公の決め技（v42 第2段・v45 目の帯だけ）：主人公の目の帯と技の名前（EYE_MS.heroEye）。その間は画面の時計を止める。
@@ -458,9 +459,10 @@ export class KamiScene extends Phaser.Scene {
     this.cutin = null;
     cut.timer.remove(false);
     if (cut.held) clockHold(this.clock, false); // 止めていた画面の時計を動かす
-    if (cut.onClose) cut.onClose();
-    if (now) { cut.c.destroy(); return; }
-    this.tweens.add({ targets: cut.c, alpha: 0, duration: 150, onComplete: () => cut.c.destroy() });
+    if (cut.onClose && !cut.late) cut.onClose();
+    const done = () => { cut.c.destroy(); if (cut.onClose && cut.late) cut.onClose(); };
+    if (now) { done(); return; }
+    this.tweens.add({ targets: cut.c, alpha: 0, duration: 150, onComplete: done });
   }
 
   // 決め技の系統（最後に出た決め技・無ければ突き）
@@ -852,7 +854,7 @@ export class KamiScene extends Phaser.Scene {
       playBout(cheer === 'zabuton' ? 'roar' : won ? 'win' : 'lose');
       if (cheer === 'zabuton') this.fx.zabuton();
       sayVoice(this, won ? 'win' : 'loss', { big: cheer === 'zabuton' }, { preempt: true }); // 勝ち＝「ごっつあんです！」（大きな勝ちは続けてことね「やったー！」）・負け＝声なし（v42：「もう一丁！」は取り直しと紛らわしい）
-      this.showCutin(won ? 'yorokobi' : 'kuyashii', word, how, () => { this.banner.setVisible(true); this.kimarite.setVisible(true); });
+      this.showCutin(won ? 'yorokobi' : 'kuyashii', word, how, () => { if (this.banner.active) { this.banner.setVisible(true); this.kimarite.setVisible(true); } }, true);
       this.time.delayedCall(TO_AFTER_MS + (cheer === 'zabuton' ? ZABUTON_EXTRA_MS : 0), () => {
         if (this.leaving) return;
         this.leaving = true;

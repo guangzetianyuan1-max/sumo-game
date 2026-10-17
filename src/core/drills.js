@@ -4,7 +4,7 @@
 //   連打（鉄砲）＝体：5秒間の連打の回数（30回で満点）
 //   長押し（四股）＝心：押している間ゲージがたまる。緑の帯でちょうど離す。3回・帯の真ん中ほど高い
 
-import { barGreenScale } from './tactics.js?v=52';
+import { barGreenScale } from './tactics.js?v=53';
 
 export const DRILLS = ['ippon', 'renda', 'nagaoshi'];
 export const DRILL_STAT = { ippon: 'gi', renda: 'tai', nagaoshi: 'shin' };

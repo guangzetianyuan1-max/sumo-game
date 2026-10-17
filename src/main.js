@@ -1,23 +1,24 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { CautionScene } from './scenes/CautionScene.js?v=52';
-import { CoverScene } from './scenes/CoverScene.js?v=52';
-import { GuideScene } from './scenes/GuideScene.js?v=52';
-import { LadderScene } from './scenes/LadderScene.js?v=52';
-import { OpponentScene } from './scenes/OpponentScene.js?v=52';
-import { AfterScene } from './scenes/AfterScene.js?v=52';
-import { TrainingScene } from './scenes/TrainingScene.js?v=52';
-import { DrillScene } from './scenes/DrillScene.js?v=52';
-import { KamiScene } from './scenes/KamiScene.js?v=52';
-import { HelpScene } from './scenes/HelpScene.js?v=52';
-import { KenshoScene } from './scenes/KenshoScene.js?v=52';
-import { ClearScene } from './scenes/ClearScene.js?v=52';
-import { initLang, t } from './i18n/i18n.js?v=52';
-import { storage } from './ui/widgets.js?v=52';
-import { session, lastSlot, onSaveFail } from './state.js?v=52';
-import { setScene, setMuted, isMuted, unlockOnGesture, musicHidden } from './ui/music.js?v=52';
-import { sfxHidden, sfxWake } from './ui/sfx.js?v=52';
-import { askTerms, askTermsPlain } from './ui/terms.js?v=52';
-import { showNotice } from './ui/notice.js?v=52';
+import { CautionScene } from './scenes/CautionScene.js?v=53';
+import { CoverScene } from './scenes/CoverScene.js?v=53';
+import { GuideScene } from './scenes/GuideScene.js?v=53';
+import { LadderScene } from './scenes/LadderScene.js?v=53';
+import { OpponentScene } from './scenes/OpponentScene.js?v=53';
+import { AfterScene } from './scenes/AfterScene.js?v=53';
+import { TrainingScene } from './scenes/TrainingScene.js?v=53';
+import { DrillScene } from './scenes/DrillScene.js?v=53';
+import { KamiScene } from './scenes/KamiScene.js?v=53';
+import { HelpScene } from './scenes/HelpScene.js?v=53';
+import { KenshoScene } from './scenes/KenshoScene.js?v=53';
+import { ClearScene } from './scenes/ClearScene.js?v=53';
+import { CollectionScene } from './scenes/CollectionScene.js?v=53';
+import { initLang, t } from './i18n/i18n.js?v=53';
+import { storage } from './ui/widgets.js?v=53';
+import { session, lastSlot, onSaveFail } from './state.js?v=53';
+import { setScene, setMuted, isMuted, unlockOnGesture, musicHidden } from './ui/music.js?v=53';
+import { sfxHidden, sfxWake } from './ui/sfx.js?v=53';
+import { askTerms, askTermsPlain } from './ui/terms.js?v=53';
+import { showNotice } from './ui/notice.js?v=53';
 
 const lang = initLang(storage(), navigator.language);
 document.documentElement.lang = lang;
@@ -69,7 +70,7 @@ function start() {
     backgroundColor: '#141a2e',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 720, height: 1280 },
     input: { activePointers: 3 }, // 指は3本まで（既定は1本＝2本目の親指が落ちる。取組は左右の2つのボタンを両手で押す）
-    scene: [CautionScene, CoverScene, GuideScene, HelpScene, LadderScene, OpponentScene, KenshoScene, KamiScene, AfterScene, ClearScene, TrainingScene, DrillScene],
+    scene: [CautionScene, CoverScene, GuideScene, HelpScene, LadderScene, OpponentScene, KenshoScene, KamiScene, AfterScene, ClearScene, TrainingScene, DrillScene, CollectionScene],
   });
   hookMusic(game);
 }

@@ -1,12 +1,12 @@
 // src/scenes/LadderScene.js — 勝ち抜き番付（10/12 夜）：主人公の絵と名・地位・倒した数の目盛り・次の昇進・心技体・次の相手 → 相手の情報
 // 負けた後の稽古の途中なら稽古へ（つづきからと同じ）。下に「稽古する」：いつでも何度でも自分から稽古に入れる（10/13 本人「好きなときに稽古が出来るように」）
-import { t, heroName, foeLabel } from '../i18n/i18n.js?v=52';
-import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=52';
-import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=52';
-import { currentFoe, canLeaveTraining } from '../core/run.js?v=52';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=52';
-import { menuBgKey } from '../core/bgkey.js?v=52';
-import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=52';
+import { t, heroName, foeLabel } from '../i18n/i18n.js?v=53';
+import { session, trainFreeBegin, trainLeaveNow } from '../state.js?v=53';
+import { rankOf, nextRank, CLEAR_AT } from '../core/ladder.js?v=53';
+import { currentFoe, canLeaveTraining } from '../core/run.js?v=53';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=53';
+import { menuBgKey } from '../core/bgkey.js?v=53';
+import { button, backButton, saveButton, topTitle, fitText, roundBox, textStyle, statBars, preloadTypeArt, preloadHeroFigures, heroKey, COLORS } from '../ui/widgets.js?v=53';
 
 const BAR = { x: 60, y: 520, w: 600, h: 34 };
 const HELP_Y = 1062; // 「遊び方」（次の相手の行 960 と、大きなボタン 1135〜 の間）
@@ -61,14 +61,15 @@ export class LadderScene extends Phaser.Scene {
     inkPanel(this, PANEL.x, 436, PANEL.w, 354); // 倒した数・目盛り・次の昇進・心技体（436〜790）
     inkPanel(this, PANEL.x, 922, PANEL.w, 76); // 次の相手（またはクリア）の行
 
-    // 左下に小さく「遊び方」（説明を飛ばした人も、いつでも同じ3枚に入れる）
+    // 左下に小さく「遊び方」（説明を飛ばした人も、いつでも同じ3枚に入れる）・その右に「コレクション」（10/17 本人「倒した敵はコレクションとして見れるように」）
     button(this, 150, HELP_Y, 240, 72, t('ladder.help'), () => this.scene.start('help'), { size: 28, color: COLORS.buttonSub });
+    button(this, 490, HELP_Y, 340, 72, t('ladder.collection'), () => this.scene.start('collection', { then: 'ladder' }), { size: 28, color: COLORS.buttonSub });
 
     if (r.cleared) {
       fitText(this.add.text(width / 2, 960, t('ladder.clear'), textStyle(40, COLORS.gold)).setOrigin(0.5), width - 60);
-      // クリアの画面をもう一度見る（「遊び方」の右・同じ高さ）
-      button(this, 490, HELP_Y, 340, 72, t('ladder.seeClear'), () => this.scene.start('clear'), { size: 28 });
-      button(this, width / 2, 1190, 460, 110, t('ladder.toTop'), () => this.scene.start('guide'), { size: 38 });
+      // クリアの画面をもう一度見る（左）・はじめの画面へ（右）。上の段に3つ並べると字が 28 より小さく縮んだ（10/17）
+      button(this, width / 2 - 170, 1190, 320, 110, t('ladder.seeClear'), () => this.scene.start('clear'), { size: 36, color: TRAIN_COLOR });
+      button(this, width / 2 + 170, 1190, 320, 110, t('ladder.toTop'), () => this.scene.start('guide'), { size: 36 });
       return;
     }
     const foe = currentFoe(r);

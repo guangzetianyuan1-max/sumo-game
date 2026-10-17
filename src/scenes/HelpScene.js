@@ -5,22 +5,22 @@
 // v49：新しい記録は風車投げを覚えて始まる＝新しい記録でも「まず覚える」は付かない
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=52';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=52';
-import { kamiArt, foeArt } from '../core/foeart.js?v=52';
-import { foeAt } from '../data/foes.js?v=52';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=52';
-import { t, getLang } from '../i18n/i18n.js?v=52';
-import { session, markHelpSeen } from '../state.js?v=52';
-import { ringShape, barShape, drawRing, drawBar, hitMarkFit, drawMash, drawKimeHold, MASH_COUNT } from '../ui/hud.js?v=52';
-import { helpKimete } from '../core/kimetepick.js?v=52';
-import { IPPON } from '../core/drills.js?v=52';
-import { menuBgKey } from '../core/bgkey.js?v=52';
-import { newChime, demoChime } from '../core/chime.js?v=52';
-import { playBout } from '../ui/sfx.js?v=52';
-import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=52';
-import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=52';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=52';
+import { KAMI } from '../core/kami.js?v=53';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=53';
+import { kamiArt, foeArt } from '../core/foeart.js?v=53';
+import { foeAt } from '../data/foes.js?v=53';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=53';
+import { t, getLang } from '../i18n/i18n.js?v=53';
+import { session, markHelpSeen } from '../state.js?v=53';
+import { ringShape, barShape, drawRing, drawBar, hitMarkFit, drawMash, drawKimeHold, MASH_COUNT } from '../ui/hud.js?v=53';
+import { helpKimete } from '../core/kimetepick.js?v=53';
+import { IPPON } from '../core/drills.js?v=53';
+import { menuBgKey } from '../core/bgkey.js?v=53';
+import { newChime, demoChime } from '../core/chime.js?v=53';
+import { playBout } from '../ui/sfx.js?v=53';
+import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=53';
+import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=53';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=53';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）
@@ -63,7 +63,7 @@ export class HelpScene extends Phaser.Scene {
   draw() {
     this.tweens.killAll();
     clearScene(this);
-    guardOpen(this, this.page === PAGES - 1 ? OPEN_GUARD_LONG_MS : OPEN_GUARD_MS); // 描くたび（次へ）に付け直す（最後の枚＝「はじめる」が「次へ」と同じ所＝0.6秒・v45 点検 m2）：直後 0.3秒の押しは受けない＝「次へ」の2度たたきで1枚飛ばない・3枚目の「はじめる」が押されない（v45b・バグ出し2 L1）
+    guardOpen(this, this.page === PAGES - 1 || this.page === 0 ? OPEN_GUARD_LONG_MS : OPEN_GUARD_MS); // 1枚目も 0.6秒（10/17 バグ出し L5：記録③の札の下を二度たたくと「飛ばす」に落ち、遊び方を見ないまま進んだ）。 描くたび（次へ）に付け直す（最後の枚＝「はじめる」が「次へ」と同じ所＝0.6秒・v45 点検 m2）：直後 0.3秒の押しは受けない＝「次へ」の2度たたきで1枚飛ばない・3枚目の「はじめる」が押されない（v45b・バグ出し2 L1）
     const { width } = this.scale;
     drawBackdrop(this, BG, { band: BAND });
     topTitle(this, 60, t('help.title'), 52, COLORS.gold);

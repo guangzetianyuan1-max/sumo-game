@@ -1,17 +1,17 @@
 // src/scenes/StrategyScene.js — 作戦表（設計書 §2）。
 // 10/11 本人「技の一押しでどのような技かの図解が出る。長押しで移動ができる。移動先がいっぱいの場合、押されたほうが覚えた手に戻る」
 // 押す＝図解の札が開く（段の手も覚えた手も）／長押し＝持ち上げて指（マウス）について来る・離した枠へ置く（規則は core/strategy.js の moveTech）
-import { SCENES, ROW, canPlace, scenesOf, moveTech, defaultStrategy } from '../core/strategy.js?v=52';
-import { recommendStrategy, effectiveAgainst } from '../core/recommend.js?v=52';
-import { TYPES } from '../data/types.js?v=52';
-import { KIMARITE } from '../data/kimarite.js?v=52';
-import { KIMARITE_DESC_JA } from '../data/kimarite_desc.js?v=52';
-import { classifyPress, movedTooFar, LONG_PRESS_MS } from '../ui/press.js?v=52';
-import { t, techLabel, getLang } from '../i18n/i18n.js?v=52';
-import { session } from '../state.js?v=52';
+import { SCENES, ROW, canPlace, scenesOf, moveTech, defaultStrategy } from '../core/strategy.js?v=53';
+import { recommendStrategy, effectiveAgainst } from '../core/recommend.js?v=53';
+import { TYPES } from '../data/types.js?v=53';
+import { KIMARITE } from '../data/kimarite.js?v=53';
+import { KIMARITE_DESC_JA } from '../data/kimarite_desc.js?v=53';
+import { classifyPress, movedTooFar, LONG_PRESS_MS } from '../ui/press.js?v=53';
+import { t, techLabel, getLang } from '../i18n/i18n.js?v=53';
+import { session } from '../state.js?v=53';
 import {
   button, backButton, fitText, roundBox, hitZone, textStyle, preloadKimariteIndex, loadKimariteArt, COLORS, GROUP_COLOR, clearScene, TOP_LEFT_FREE,
-} from '../ui/widgets.js?v=52';
+} from '../ui/widgets.js?v=53';
 
 const ICON = 120;
 const STEP = 130; // 段の枠の間隔

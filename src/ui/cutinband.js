@@ -1,8 +1,8 @@
 // src/ui/cutinband.js — カットインの帯の絵（20体版 Task 5 の KamiScene から切り出した・10/14 稽古の決め技の習得でも使う）
 // 横長の帯：左に主人公の顔（src/core/cutin.js の表情）・右に大きな字（と小さな2行目）。左から滑り込む。
 // 消す時間・たたいて閉じるは呼ぶ側（取組＝KamiScene・稽古の結果＝DrillScene）が持つ。返すのは帯の container
-import { cutinArt } from '../core/cutin.js?v=52';
-import { textStyle, fitText, COLORS } from './widgets.js?v=52';
+import { cutinArt } from '../core/cutin.js?v=53';
+import { textStyle, fitText, COLORS } from './widgets.js?v=53';
 
 // box＝{ y, h, faceX, faceH, textX, textW }（帯の真ん中の高さ・帯の高さ・顔の x と高さ・字の真ん中の x と幅）
 export function drawCutinBand(scene, box, name, line1, line2 = '', depth = 20) {
@@ -52,11 +52,12 @@ export function drawEyeBand(scene, box, eyeKey, name, sub = '', { accent = 0xe3c
   for (let x = -box.stripH; x < width; x += 70) g.fillTriangle(x, bottom, x + 26, bottom, x + box.stripH + 26, stripTop);
   g.fillStyle(accent, 1).fillRect(0, box.top, width, 6).fillRect(0, stripTop - 2, width, 4).fillRect(0, bottom, width, 6);
   c.add(g);
-  const nameY = sub ? stripTop + box.stripH * 0.4 : stripTop + box.stripH / 2;
+  // 2行の時：名前を少し小さく上へ・2行目を下へ（10/17 バグ出し：名前 58 と2行目 30 の間がくっつき、2行目が下の線にかかった）
+  const nameY = sub ? stripTop + box.stripH * 0.36 : stripTop + box.stripH / 2;
   const textL = box.textL || 0;
   const textX = (textL + width) / 2, textW = width - textL - (textL ? 20 : 60);
-  c.add(fitText(scene.add.text(textX, nameY, name, textStyle(sub ? 58 : 64, COLORS.gold, { stroke: '#141a2e', strokeThickness: 10 })).setOrigin(0.5), textW));
-  if (sub) c.add(fitText(scene.add.text(textX, stripTop + box.stripH * 0.8, sub, textStyle(30, COLORS.ink, { stroke: '#141a2e', strokeThickness: 6 })).setOrigin(0.5), textW));
+  c.add(fitText(scene.add.text(textX, nameY, name, textStyle(sub ? 50 : 64, COLORS.gold, { stroke: '#141a2e', strokeThickness: 8 })).setOrigin(0.5), textW));
+  if (sub) c.add(fitText(scene.add.text(textX, stripTop + box.stripH * 0.78, sub, textStyle(28, COLORS.ink, { stroke: '#141a2e', strokeThickness: 6 })).setOrigin(0.5), textW));
   c.x = -width;
   scene.tweens.add({ targets: c, x: 0, duration: 140, ease: 'Cubic.easeOut' });
   return c;

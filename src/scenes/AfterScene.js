@@ -1,13 +1,13 @@
 // src/scenes/AfterScene.js — 取組の後（10/12 夜）：勝ち＝倒した相手・心技体の伸び・昇進・新技の解禁・クリア → 番付表
 // 負け＝心技体の伸び（少し）・「もう一度」（相手の情報へ）か「稽古へ」。同じ相手に3連敗したら案内役が稽古を勧める（選ぶのは本人）
-import { t, foeLabel, getLang } from '../i18n/i18n.js?v=52';
-import { session, suggestTraining, trainBegin } from '../state.js?v=52';
-import { playBout } from '../ui/sfx.js?v=52';
-import { preloadVoices, afterVoiceIds, sayVoice, hushGameVoices } from '../ui/voice.js?v=52';
-import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=52';
-import { menuBgKey } from '../core/bgkey.js?v=52';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=52';
-import { button, topTitle, fitText, wrapText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=52';
+import { t, foeLabel, getLang } from '../i18n/i18n.js?v=53';
+import { session, suggestTraining, nothingToTrain, trainBegin, trainFreeBegin } from '../state.js?v=53';
+import { playBout } from '../ui/sfx.js?v=53';
+import { preloadVoices, afterVoiceIds, sayVoice, hushGameVoices } from '../ui/voice.js?v=53';
+import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=53';
+import { menuBgKey } from '../core/bgkey.js?v=53';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=53';
+import { button, topTitle, fitText, wrapText, textStyle, speechBubble, speakerFace, preloadGuideArt, preloadOyakataArt, COLORS } from '../ui/widgets.js?v=53';
 
 const STATS = ['shin', 'gi', 'tai'];
 const BAND = 140; // 見出し（勝ち・負け 72）の帯の下の端（倒した相手の行 190 の字の上の端 170 より上）
@@ -61,9 +61,11 @@ export class AfterScene extends Phaser.Scene {
         speakerFace(this, 'kotonami', 110, 820, 150, 'smile');
         speechBubble(this, 210, 730, 470, 180, t('after.promoOyakata', { rank: t(`div.${lb.promoted}`) }), { size: 32, min: 28 });
       }
-      // 20体目を倒した＝クリアの画面（横綱の土俵入り）へ
-      if (lb.cleared) button(this, width / 2, 1190, 460, 110, t('after.toClear'), () => this.scene.start('clear'), { size: 38 });
-      else button(this, width / 2, 1190, 460, 110, t('after.next'), () => this.scene.start('ladder'), { size: 38 });
+      // 勝った相手はコレクションの札に判子を押してから先へ（10/17 本人「昔話方式」＝昔話の図鑑と同じ流れ）
+      // 50体目を倒した＝判子の後にクリアの画面（横綱の土俵入り）へ
+      const stamp = (then) => () => this.scene.start('collection', { stamp: lb.foe.id, then });
+      if (lb.cleared) button(this, width / 2, 1190, 460, 110, t('after.toClear'), stamp('clear'), { size: 38 });
+      else button(this, width / 2, 1190, 460, 110, t('after.next'), stamp('ladder'), { size: 38 });
       return;
     }
     if (suggestTraining(r)) {
@@ -73,7 +75,8 @@ export class AfterScene extends Phaser.Scene {
     }
     button(this, width / 2 - 170, 1190, 320, 110, t('after.retry'), () => this.scene.start('opponent'), { size: 36, color: COLORS.buttonSub });
     button(this, width / 2 + 170, 1190, 320, 110, t('after.train'), () => {
-      trainBegin();
+      // 伸ばせる物が無い時は自分から入る稽古（途中で番付へ戻れる・親方が「天井だ。土俵で勝て」と言う）
+      if (nothingToTrain(r)) trainFreeBegin(); else trainBegin();
       this.scene.start('training');
     }, { size: 36 });
   }

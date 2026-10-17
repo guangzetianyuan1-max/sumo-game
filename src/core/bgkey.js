@@ -31,6 +31,7 @@ export function menuBgKey(scene) { // 呼ぶ側は { foeIndex, cleared } も渡�
     case 'guide':
     case 'help':
     case 'clear':
+    case 'collection':
     case 'kensho': return DOHYO_BG;
     default: return null;
   }

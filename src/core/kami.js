@@ -1,11 +1,11 @@
 // 紙相撲の計算（10/13 本人「紙相撲に切り替える」・設計書 2026-10-13-sumo-kamizumo-design.md）
 // 画面から切り離した、型紙2枚の動き。単位＝画面の px と秒。x＝足もとの真ん中・y＝箱の面からの高さ（上が＋）
 // a＝傾き（＋＝自分の後ろへ反る）。東＝主人公＝左から右へ（dir +1）・西＝敵＝右から左へ（dir -1）
-import { makeRng } from './rng.js?v=52';
-import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=52';
-import { ON_BEAT } from './beat.js?v=52';
-import { IPPON } from './drills.js?v=52';
-import { KIME_INPUTS, tapJudge, mashJudge, holdJudge } from './kimeinput.js?v=52';
+import { makeRng } from './rng.js?v=53';
+import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=53';
+import { ON_BEAT } from './beat.js?v=53';
+import { IPPON } from './drills.js?v=53';
+import { KIME_INPUTS, tapJudge, mashJudge, holdJudge } from './kimeinput.js?v=53';
 
 export { ON_BEAT };
 
@@ -673,10 +673,22 @@ export function step(st, dt) {
   expireRings(st); // たたかない側は、〇が通り過ぎた時（合図＋0.9＋0.17秒）に弱い当たり 0.5 で立ち合う
   updateBar(st);
   if (st.phase === 'push') updateTactic(st);
-  for (const s of SIDES) { const f = st.f[s]; if (!f.fell && f.y < KAMI.FALL_Y) f.fell = true; }
+  for (const s of SIDES) {
+    const f = st.f[s];
+    if (f.outAt === undefined && !onBox(f)) f.outAt = st.t; // 箱の上から外へ出た時刻（足もとが箱の外＝もう床が無い）
+    else if (f.outAt !== undefined && onBox(f) && f.y >= 0) f.outAt = undefined; // 宙で箱の上へ戻った（まだ床より上）＝出ていない
+    if (!f.fell && f.y < KAMI.FALL_Y) f.fell = true;
+  }
   const e = st.f.east, w = st.f.west;
   if (e.fell || w.fell) {
-    const loser = e.fell && w.fell ? (e.y <= w.y ? 'east' : 'west') : e.fell ? 'east' : 'west'; // 同じ高さなら主人公の負け（主人公を有利にしない）
+    // 負け＝先に箱の外へ出た方（10/17 バグ出し：相手を右の外へ高く打ち上げ、追って外へ出た主人公が先に下まで落ちて負けになった）。
+    // 落ちていない側がまだ箱の上なら、落ちた側の負け（今まで通り）。両方が外なら先に出た方・同じ時刻なら低い方（同じ高さなら主人公の負け＝主人公を有利にしない）
+    const outE = e.outAt === undefined ? Infinity : e.outAt, outW = w.outAt === undefined ? Infinity : w.outAt;
+    const bothOut = outE < Infinity && outW < Infinity;
+    const loser = bothOut && outE !== outW ? (outE < outW ? 'east' : 'west')
+      : e.fell && w.fell ? (e.y <= w.y ? 'east' : 'west')
+      : bothOut ? (e.y <= w.y ? 'east' : 'west')
+      : e.fell ? 'east' : 'west';
     st.winner = other(loser);
     const lf = st.f[loser];
     const win = st.finisherArch === 'hiki' ? 3 : 2; // 引きは倒してから落ちるまで時間がかかる

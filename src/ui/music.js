@@ -4,7 +4,7 @@
 // 取組の曲 nokotta（10/15 本人「のこったでもっとアップテンポの曲など」・設計書 §12）は、跳ねる拍 KAMI.BEAT（0.52秒）に拍の頭を合わせる＝beatLock。
 //   取組の画面が毎コマ musicBeat(st.t) を呼ぶ：曲の升 s が鳴る音の時刻 ＝ off ＋ g(s)（g＝その升が重なる取組の時刻・off＝音の時計 − 出口の遅れ − 取組の時刻）。
 //   拍の升（4升ごと）の g は必ず KAMI.BEAT の整数倍＝beatOffset(st) の 0 と同じ所。止め・コマ落ち・裏へ回った後のずれは、次の升を遅らせる／飛ばす（半拍以内の近い方）で直す
-import { KAMI } from '../core/kami.js?v=52';
+import { KAMI } from '../core/kami.js?v=53';
 let ctx = null;
 let broken = false;
 let master = null;
@@ -616,7 +616,7 @@ export function renderSong(id, seconds, level = 1) {
 // caution＝null は「わざと無音」（注意書きの札はまだ画面に触れていないので鳴らせない）。cover は記録を選ぶ画面と同じ曲で、そのまま記録を選ぶ画面へ流れる
 export const SCENE_SONG = {
   caution: null, cover: 'yagura',
-  guide: 'yagura', guidePick: 'yagura', setup: 'yagura', help: 'yagura', ladder: 'yagura', after: 'yagura', clear: 'yagura',
+  guide: 'yagura', guidePick: 'yagura', setup: 'yagura', help: 'yagura', ladder: 'yagura', after: 'yagura', clear: 'yagura', collection: 'yagura',
   learn: 'tsugaru', training: 'tsugaru', drill: 'tsugaru', // 10/12 夜 稽古が戻った＝津軽三味線（稽古の遊びも同じ曲を流し続ける）
   opponent: 'torikumi', strategy: 'torikumi', bout: 'torikumi', kensho: 'torikumi',
   kami: 'nokotta', // 10/15 本人「のこったでもっとアップテンポの曲など」＝取組の最中は明るく速い祭り囃子（暗い torikumi は相手の情報・懸賞旗に残す）

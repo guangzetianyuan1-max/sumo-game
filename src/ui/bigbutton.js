@@ -3,9 +3,9 @@
 // 形：地面の影 → 側面（厚み THICK px・面の色を暗くした円柱）→ 上の面（上が明るく下が暗い）＋つやの白い弧。押すと面が SINK px 沈み、側面が薄くなり、影が縮む
 // 押し：触れた瞬間に onDown → 音「カチッ」と振動 → 沈む／離すと SPRING_MS で少し行き過ぎて戻る。長押しの間は沈んだまま・連打は押すたびに沈んで戻る
 // 深さの計算は src/core/pressdepth.js（node で試験できる純粋な関数）
-import { pressDepth, SINK, MIN_HOLD_MS } from '../core/pressdepth.js?v=52';
-import { playBout } from './sfx.js?v=52';
-import { textStyle, fitText, COLORS } from './widgets.js?v=52';
+import { pressDepth, SINK, MIN_HOLD_MS } from '../core/pressdepth.js?v=53';
+import { playBout } from './sfx.js?v=53';
+import { textStyle, fitText, COLORS } from './widgets.js?v=53';
 
 export const THICK = 18; // 側面の厚み（押していない時）
 const FACE_TEX = 'bigbtn-face'; // 上の面の下地（白→灰の縦のグラデーション・色は tint で掛ける）
@@ -69,10 +69,10 @@ export function createBigButton(scene, opts) {
   const face = scene.add.image(x, y, faceTexture(scene)).setDepth(depth + 0.1);
   face.setScale(d / FACE_PX);
   const front = scene.add.graphics().setPosition(x, y).setDepth(depth + 0.2); // つや・ふちの輪・起き上がりの弧・虹
-  const label = scene.add.text(x, y, '', textStyle(opts.textSize || Math.round(d * 0.18), COLORS.ink, { stroke: '#141a2e', strokeThickness: 5 })).setOrigin(0.5).setDepth(depth + 0.3);
+  const label = scene.add.text(x, y, '', textStyle(opts.textSize || Math.round(d * 0.18), COLORS.ink, { stroke: '#141a2e', strokeThickness: 5, align: 'center' })).setOrigin(0.5).setDepth(depth + 0.3);
   // 小さな見出し（caption：字の上に小さく・例「決め技」）。無い時は隠す
   const capSize = Math.max(28, Math.round(d * 0.1));
-  const caption = scene.add.text(x, y, '', textStyle(capSize, COLORS.ink, { stroke: '#141a2e', strokeThickness: 4, fontStyle: '500' })).setOrigin(0.5).setDepth(depth + 0.3).setVisible(false);
+  const caption = scene.add.text(x, y, '', textStyle(capSize, COLORS.ink, { stroke: '#141a2e', strokeThickness: 4, fontStyle: '500', align: 'center' })).setOrigin(0.5).setDepth(depth + 0.3).setVisible(false);
   const CAP_DY = -Math.round(d * 0.17), CAP_LABEL_DY = Math.round(d * 0.06); // 見出しは上へ・字は少し下へ
 
   let look = { color: 0x5a5f6e, label: '', caption: '', pulse: 0, fill: 0, band: null, fillColor: null, arc: false, dim: false, throb: false, rainbow: false, halo: null, ink: null, raise: 1, throbRate: 14 };
