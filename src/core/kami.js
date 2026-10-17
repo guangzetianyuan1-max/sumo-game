@@ -1,11 +1,11 @@
 // 紙相撲の計算（10/13 本人「紙相撲に切り替える」・設計書 2026-10-13-sumo-kamizumo-design.md）
 // 画面から切り離した、型紙2枚の動き。単位＝画面の px と秒。x＝足もとの真ん中・y＝箱の面からの高さ（上が＋）
 // a＝傾き（＋＝自分の後ろへ反る）。東＝主人公＝左から右へ（dir +1）・西＝敵＝右から左へ（dir -1）
-import { makeRng } from './rng.js?v=49';
-import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=49';
-import { ON_BEAT } from './beat.js?v=49';
-import { IPPON } from './drills.js?v=49';
-import { KIME_INPUTS, tapJudge, mashJudge, holdJudge } from './kimeinput.js?v=49';
+import { makeRng } from './rng.js?v=50';
+import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=50';
+import { ON_BEAT } from './beat.js?v=50';
+import { IPPON } from './drills.js?v=50';
+import { KIME_INPUTS, tapJudge, mashJudge, holdJudge } from './kimeinput.js?v=50';
 
 export { ON_BEAT };
 

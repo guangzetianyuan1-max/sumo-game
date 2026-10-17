@@ -53,6 +53,9 @@
 "sori",
 "fall"
 ],
+"foe_fujin_honki": [
+"push"
+],
 "foe_haniwa_honki": [
 "push"
 ],
@@ -64,6 +67,9 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_kaminari_honki": [
+"push"
 ],
 "foe_kappa_honki": [
 "push"
@@ -96,6 +102,9 @@
 "fall"
 ],
 "foe_niwashi_normal": [
+"push"
+],
+"foe_odako_honki": [
 "push"
 ],
 "foe_okiagari_normal": [
@@ -164,6 +173,9 @@
 "foe_tengu_honki": [
 "push"
 ],
+"foe_umibozu_honki": [
+"push"
+],
 "foe_vending_normal": [
 "push",
 "shikiri",
@@ -181,5 +193,8 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_yukiotoko_honki": [
+"push"
 ]
 }

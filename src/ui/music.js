@@ -4,7 +4,7 @@
 // 取組の曲 nokotta（10/15 本人「のこったでもっとアップテンポの曲など」・設計書 §12）は、跳ねる拍 KAMI.BEAT（0.52秒）に拍の頭を合わせる＝beatLock。
 //   取組の画面が毎コマ musicBeat(st.t) を呼ぶ：曲の升 s が鳴る音の時刻 ＝ off ＋ g(s)（g＝その升が重なる取組の時刻・off＝音の時計 − 出口の遅れ − 取組の時刻）。
 //   拍の升（4升ごと）の g は必ず KAMI.BEAT の整数倍＝beatOffset(st) の 0 と同じ所。止め・コマ落ち・裏へ回った後のずれは、次の升を遅らせる／飛ばす（半拍以内の近い方）で直す
-import { KAMI } from '../core/kami.js?v=49';
+import { KAMI } from '../core/kami.js?v=50';
 let ctx = null;
 let broken = false;
 let master = null;

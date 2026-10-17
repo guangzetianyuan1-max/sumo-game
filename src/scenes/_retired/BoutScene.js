@@ -6,24 +6,24 @@
 // 土俵：横に広い世界（WORLD.w）を container に入れ、触れ合う所を追って横に動かす（屋根と四房は画面に止めたまま）
 // 力士：assets/bout/<east|west>/<姿勢>.png（tools/prep_bout.py）。姿勢の選びと位置の計算は src/core/boutanim.js
 // 決まり方：突き押しの「出し」＝俵の外へ押し出して土俵の下へ／「倒し」＝俵際で倒れる／ほか＝踏ん張る勝ちと倒れる負け（技ごとの動きは後の段で1つずつ）
-import { runBout } from '../core/bout.js?v=49';
-import { makeWrestler } from '../core/wrestler.js?v=49';
-import { currentFoe } from '../core/run.js?v=49';
-import { foeArt, foePose, foeFrame, foePoseArt, stageAura, stageScale } from '../core/foeart.js?v=49';
-import { boutStats } from '../core/career.js?v=49';
-import { kumiPlan } from '../core/kumi.js?v=49';
+import { runBout } from '../core/bout.js?v=50';
+import { makeWrestler } from '../core/wrestler.js?v=50';
+import { currentFoe } from '../core/run.js?v=50';
+import { foeArt, foePose, foeFrame, foePoseArt, stageAura, stageScale } from '../core/foeart.js?v=50';
+import { boutStats } from '../core/career.js?v=50';
+import { kumiPlan } from '../core/kumi.js?v=50';
 import {
   POSE_NAMES, WORLD, OVERLAP, stepPoses, finishKind, isThrust, contactX, clampContact, viewScroll, bodyLeft, bodyScale,
-} from '../core/boutanim.js?v=49';
-import { t, techLabel, getLang, heroName, foeLabel } from '../i18n/i18n.js?v=49';
-import { session, recordNow, boutSeed } from '../state.js?v=49';
-import { boutComment } from '../core/advice.js?v=49';
-import { WORD_COLOR, wordArt } from '../data/words.js?v=49';
-import { playBout } from '../ui/sfx.js?v=49';
+} from '../core/boutanim.js?v=50';
+import { t, techLabel, getLang, heroName, foeLabel } from '../i18n/i18n.js?v=50';
+import { session, recordNow, boutSeed } from '../state.js?v=50';
+import { boutComment } from '../core/advice.js?v=50';
+import { WORD_COLOR, wordArt } from '../data/words.js?v=50';
+import { playBout } from '../ui/sfx.js?v=50';
 import {
   button, backButton, fitText, textStyle, statBars, speakerFace, speechBubble, preloadGuideArt, preloadOyakataArt,
   preloadWordsIndex, loadWordsArt, addAura, COLORS,
-} from '../ui/widgets.js?v=49';
+} from '../ui/widgets.js?v=50';
 
 const STEP_MS = { normal: 1200, fast: 500 };
 const SPEEDS = ['normal', 'fast', 'result'];
