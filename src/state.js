@@ -1,17 +1,17 @@
 // src/state.js — 場面をまたぐ選び。run は勝ち抜き（入門を終えるまで null）。移り変わりはここの関数で行い、そのたびに保存する
 // 10/12 夜 場所をやめて100体の勝ち抜きへ（設計書 §3）。場所の頃の関数は basho.js・career.js に残る（使わない）
-import { TYPE_IDS, TYPES } from './data/types.js?v=58';
-import { recommendStrategy } from './core/recommend.js?v=58';
-import { defaultStrategy } from './core/strategy.js?v=58';
-import { CAREER_KEY } from './core/career.js?v=58';
-import { learnMove } from './core/learn.js?v=58';
-import { rankOf } from './core/ladder.js?v=58';
-import { HERO_TYPE } from './data/heroes.js?v=58';
-import { trainingAdvice } from './core/training.js?v=58';
-import { platformStore } from './platform.js?v=58';
+import { TYPE_IDS, TYPES } from './data/types.js?v=59';
+import { recommendStrategy } from './core/recommend.js?v=59';
+import { defaultStrategy } from './core/strategy.js?v=59';
+import { CAREER_KEY } from './core/career.js?v=59';
+import { learnMove } from './core/learn.js?v=59';
+import { rankOf } from './core/ladder.js?v=59';
+import { HERO_TYPE } from './data/heroes.js?v=59';
+import { trainingAdvice } from './core/training.js?v=59';
+import { platformStore } from './platform.js?v=59';
 import {
   newRun, currentFoe, recordResult, startTraining, leaveTraining, trainStat, trainKimete, serializeRun, deserializeRun, markTacticSeen, HELP_VER,
-} from './core/run.js?v=58';
+} from './core/run.js?v=59';
 
 export const session = {
   you: HERO_TYPE,

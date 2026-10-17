@@ -1,8 +1,8 @@
 // src/data/words.js — 稽古の絵に重ねる「アニメの効果文字」（10/11 本人「ぶつかるときもアニメの挿絵『バチーン！』など」）
 // 絵＝assets/words/<id>.png（目録 assets/words/index.json）。無い時は言葉の表の字（word.<id>）を太い字で代わりに出す。
 // 稽古の声＝assets/voice/<言葉>/<タイプ>/train_<kind>.mp3（目録 assets/voice/index.json）。英語の絵＝assets/words/en/<id>.png（目録 en/index.json）。ここは画面を使わない部分（node で試せる）。
-import { TRAININGS } from '../core/career.js?v=58';
-import { TYPE_IDS } from './types.js?v=58';
+import { TRAININGS } from '../core/career.js?v=59';
+import { TYPE_IDS } from './types.js?v=59';
 
 export const WORD_IDS = ['dosun', 'bashi', 'bachiin', 'doon', 'gottsan', 'gui', 'zuzaza', 'guugu'];
 

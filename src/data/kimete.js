@@ -1,5 +1,5 @@
 // 決め技5つ（10/13 本人「A」・50体版で解禁を10体ごとに）。系統（arch）で紙相撲の動きと相性が決まる。名前は i18n の newtech.<id>
-import { TYPES } from './types.js?v=58';
+import { TYPES } from './types.js?v=59';
 
 // drill＝覚える時の稽古の遊び（src/core/drills.js の DRILLS・10/14 本人「稽古の出来で決め技を習得」）・
 // input＝取組の出し方（設計書 2026-10-16 §6：覚えた稽古と同じ）：mash 連打（左）・hold 長押し（右・緑で離す）・tap 一押し（右・〇）

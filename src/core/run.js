@@ -1,14 +1,14 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=58';
-import { GUIDE_IDS } from '../data/guides.js?v=58';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=58';
-import { foeAt } from '../data/foes.js?v=58';
-import { inGame } from '../data/kimarite.js?v=58';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt, rankIndexOf } from './ladder.js?v=58';
-import { startStats, growthMult, diminish } from './career.js?v=58';
-import { GROWTH, FOE_TOTAL, TRAIN, CEILING } from './tuning.js?v=58';
-import { kimeteGain } from './drills.js?v=58';
-import { isTactic, FOE_KIME_ID } from './tactics.js?v=58';
+import { TYPES } from '../data/types.js?v=59';
+import { GUIDE_IDS } from '../data/guides.js?v=59';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=59';
+import { foeAt } from '../data/foes.js?v=59';
+import { inGame } from '../data/kimarite.js?v=59';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt, rankIndexOf } from './ladder.js?v=59';
+import { startStats, growthMult, diminish } from './career.js?v=59';
+import { GROWTH, FOE_TOTAL, TRAIN, CEILING } from './tuning.js?v=59';
+import { kimeteGain } from './drills.js?v=59';
+import { isTactic, FOE_KIME_ID } from './tactics.js?v=59';
 
 // はじめて見た時に ことねが返し方を教える攻め：相手の攻め4つと、敵の必殺技（foeKime・ボタン1つ Task 3）。記録の seenTactics はこれだけを残す
 const seenable = (id) => isTactic(id) || id === FOE_KIME_ID;
@@ -125,7 +125,15 @@ export function startTraining(run, { voluntary = false } = {}) {
 }
 
 // 番付から入った稽古は、どのコマでも番付へ戻れる（残りのコマは捨てる）。負けた後の稽古は終えるまで抜けない（同じ物を返す）
-export const canLeaveTraining = (run) => !!(run.training && run.training.voluntary);
+// 稽古で伸ばせる物が無い（心技体が3つとも今の番付の天井・解禁した決め技も全部覚えた）
+// 10/17 本人「稽古が終わって、取組のボタンが無い」＝負けた後の稽古の1コマ目で天井に届くと、残り2コマは何も伸びないのに抜けられなかった
+//   ⇒ 伸ばせる物が無くなったら、負けた後の稽古でも抜けてよい（番付へ戻る・次の相手へ）
+export const learnableLeft = (run) => {
+  const unlocked = Array.isArray(run.unlocked) ? run.unlocked : [], known = Array.isArray(run.newKnown) ? run.newKnown : [];
+  return newTechIds(run.type).some((id) => unlocked.indexOf(id) >= 0 && known.indexOf(id) < 0);
+};
+export const nothingLeftToTrain = (run) => allAtCeiling(run) && !learnableLeft(run);
+export const canLeaveTraining = (run) => !!(run.training && (run.training.voluntary || nothingLeftToTrain(run)));
 export function leaveTraining(run) {
   return canLeaveTraining(run) ? { ...run, training: null } : run;
 }
