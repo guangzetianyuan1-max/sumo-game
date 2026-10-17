@@ -11,6 +11,9 @@
 "sori",
 "fall"
 ],
+"foe_aone_normal": [
+"push"
+],
 "foe_astronaut_honki": [
 "push"
 ],
@@ -19,6 +22,9 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_benishima_honki": [
+"push"
 ],
 "foe_boss": [
 "push"
@@ -35,11 +41,17 @@
 "foe_daruma_normal": [
 "push"
 ],
+"foe_dino_honki": [
+"push"
+],
 "foe_dino_normal": [
 "push",
 "shikiri",
 "sori",
 "fall"
+],
+"foe_ekiin_normal": [
+"push"
 ],
 "foe_farmer_normal": [
 "push",
@@ -56,6 +68,12 @@
 "foe_fujin_honki": [
 "push"
 ],
+"foe_geniwa_honki": [
+"push"
+],
+"foe_hagikawa_normal": [
+"push"
+],
 "foe_haniwa_honki": [
 "push"
 ],
@@ -68,6 +86,9 @@
 "sori",
 "fall"
 ],
+"foe_kaedesato_normal": [
+"push"
+],
 "foe_kaminari_honki": [
 "push"
 ],
@@ -79,6 +100,9 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_kashitani_normal": [
+"push"
 ],
 "foe_kokeshi_normal": [
 "push"
@@ -94,6 +118,9 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_ninja_honki": [
+"push"
 ],
 "foe_ninja_normal": [
 "push",
@@ -116,6 +143,12 @@
 "foe_onigawara_honki": [
 "push"
 ],
+"foe_pan_normal": [
+"push"
+],
+"foe_pirate_honki": [
+"push"
+],
 "foe_pirate_normal": [
 "push",
 "shikiri",
@@ -130,6 +163,9 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_raine_honki": [
+"push"
 ],
 "foe_robot_honki": [
 "push"
@@ -152,6 +188,9 @@
 "sori",
 "fall"
 ],
+"foe_shobo_honki": [
+"push"
+],
 "foe_shobo_normal": [
 "push",
 "shikiri",
@@ -167,6 +206,9 @@
 "sori",
 "fall"
 ],
+"foe_snowman_honki": [
+"push"
+],
 "foe_snowman_normal": [
 "push",
 "shikiri",
@@ -179,6 +221,12 @@
 "foe_tengu_honki": [
 "push"
 ],
+"foe_torakaze_honki": [
+"push"
+],
+"foe_tsubakinami_normal": [
+"push"
+],
 "foe_umibozu_honki": [
 "push"
 ],
@@ -187,6 +235,12 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_washiumi_honki": [
+"push"
+],
+"foe_wizard_honki": [
+"push"
 ],
 "foe_wizard_normal": [
 "push",

@@ -1,6 +1,6 @@
 // src/ui/finisherfx.js — 必殺技の演出の飾りを描く（設計書 2026-10-16 §6.5）。形と時間は src/core/finisherfx.js（純粋な関数）が決める。ここは描くだけ
 // 型紙の動き（回る・跳ぶ）と残像は取組の画面（KamiScene）が型紙の絵に掛ける。画面全体は回さない・光は 0.5 以下
-import { decorAt } from '../core/finisherfx.js?v=51';
+import { decorAt } from '../core/finisherfx.js?v=52';
 
 const DEPTH = { decor: 6.5, edge: 29 }; // 飾り＝型紙（0）と座布団（8）の間・縁の光＝白い光（30）の下
 const EDGE_ALPHA = 0.45; // 画面の縁の色の光（4段目から・山でもこの濃さまで）

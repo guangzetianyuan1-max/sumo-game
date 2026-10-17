@@ -3,8 +3,8 @@
 // 画面（KamiScene）は毎コマ clockTick で実の秒を「計算の秒」に直し、機械のたたき手と step の両方にその秒を渡す＝
 // 両方の型紙・〇・バー・相手の攻めが同じだけ止まる／遅くなる（〇とバーの判定は計算の時刻 st.t で決まる＝止まっている間に押しても、見えている〇・バーのとおりに判定される）。
 // 強さの計算（kami.js）は何も変えない。足す遅れは1番で FEEL.budget 秒まで（ヒットストップは stopBudget まで・スローの分は残す）
-import { KAMI } from './kami.js?v=51';
-import { PLAY_COUNT } from './ladder.js?v=51';
+import { KAMI } from './kami.js?v=52';
+import { PLAY_COUNT } from './ladder.js?v=52';
 
 export const FEEL = {
   // 〇の判定ごと（2＝◎・1＝○）：stop＝止まる秒・flash＝白い光の濃さ（0.5 以下・1回）・shake＝揺れ（px・秒＝0.2 以下）・vol＝「バシッ」の大きさ

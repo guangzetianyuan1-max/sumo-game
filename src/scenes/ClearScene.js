@@ -1,13 +1,13 @@
 // src/scenes/ClearScene.js — クリアの画面（20体版 Task 5・10/13）：横綱の土俵入り風。箱の土俵の真ん中に主人公の型紙を大きく立て、少しずつ揺らす
 // 上に「横綱 誠ノ里 誕生！」とここまでの成績（倒した数・負け・稽古の回数）・続きは近日・はじめの画面へ（v43 本人「全勝後のLINEで送るは無しで」＝LINEの共有は消した）
 // 型紙＝正面の立ち絵に白い縁（紙の切り抜き）と小さな台。露払い・太刀持ちは置かない
-import { HERO_TYPE } from '../data/heroes.js?v=51';
-import { heroArt } from '../core/foeart.js?v=51';
-import { t, heroName } from '../i18n/i18n.js?v=51';
-import { session } from '../state.js?v=51';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=51';
-import { drawWaUnder } from '../ui/backdrop.js?v=51';
-import { button, addAura, preloadHeroFigures, textStyle, fitText, roundBox, COLORS } from '../ui/widgets.js?v=51';
+import { HERO_TYPE } from '../data/heroes.js?v=52';
+import { heroArt } from '../core/foeart.js?v=52';
+import { t, heroName } from '../i18n/i18n.js?v=52';
+import { session } from '../state.js?v=52';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=52';
+import { drawWaUnder } from '../ui/backdrop.js?v=52';
+import { button, addAura, preloadHeroFigures, textStyle, fitText, roundBox, COLORS } from '../ui/widgets.js?v=52';
 
 const FIG_H = 500; // 型紙の高さ（取組の 330 より大きく）
 const EDGE = 8; // 紙の白い縁の太さ

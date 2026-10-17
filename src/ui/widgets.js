@@ -1,16 +1,16 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=51';
-import { HERO_IDS } from '../data/heroes.js?v=51';
-import { heroArt } from '../core/foeart.js?v=51';
-import { GUIDE_IDS } from '../data/guides.js?v=51';
-import { HEYA_IDS } from '../data/heya.js?v=51';
-import { t, getLang } from '../i18n/i18n.js?v=51';
-import { jaWrap, jaWrapBalanced } from '../data/wrap.js?v=51';
-import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=51';
-import { TRAININGS } from '../core/career.js?v=51';
-import { saveNow } from '../state.js?v=51';
-import { playBout } from './sfx.js?v=51';
-import { armOpenGuard, openGuarded } from './openguard.js?v=51';
+import { TYPE_IDS } from '../data/types.js?v=52';
+import { HERO_IDS } from '../data/heroes.js?v=52';
+import { heroArt } from '../core/foeart.js?v=52';
+import { GUIDE_IDS } from '../data/guides.js?v=52';
+import { HEYA_IDS } from '../data/heya.js?v=52';
+import { t, getLang } from '../i18n/i18n.js?v=52';
+import { jaWrap, jaWrapBalanced } from '../data/wrap.js?v=52';
+import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=52';
+import { TRAININGS } from '../core/career.js?v=52';
+import { saveNow } from '../state.js?v=52';
+import { playBout } from './sfx.js?v=52';
+import { armOpenGuard, openGuarded } from './openguard.js?v=52';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
