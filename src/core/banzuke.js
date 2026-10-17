@@ -1,5 +1,5 @@
 // 席（0＝一番上）⇄ 番付・次の場所の席・大関と横綱の条件（設計書 §1）
-import { DIVISIONS, LADDER_SIZE } from '../data/ranks.js?v=53';
+import { DIVISIONS, LADDER_SIZE } from '../data/ranks.js?v=54';
 
 const FIRST = {};
 {

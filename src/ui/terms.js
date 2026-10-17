@@ -3,8 +3,8 @@
 // 同意したことは 端末の中（localStorage の sumo.terms）に 版と日時で残す（src/core/terms.js）。残せない・読めない端末では 毎回 たずねる
 // 画面は Phaser でなく ふつうの HTML の上掛け（長い文を読みやすく・指でなぞって送れるように）。文は i18n の terms.*
 // 字の大きさ：遊ぶ画面（720×1280 を画面に合わせて縮めた物）の 30px 相当以上（字は28以上の決まり）。携帯の幅 375 で 約16px
-import { t } from '../i18n/i18n.js?v=53';
-import { TERMS_SECTIONS, TERMS_VERSION, OFFICIAL_URL, needTerms, saveAgreement } from '../core/terms.js?v=53';
+import { t } from '../i18n/i18n.js?v=54';
+import { TERMS_SECTIONS, TERMS_VERSION, OFFICIAL_URL, needTerms, saveAgreement } from '../core/terms.js?v=54';
 
 const FONT = "'M PLUS Rounded 1c', sans-serif";
 // 遊ぶ画面の n px 相当の CSS の大きさ（画面の幅か、高さ×720/1280 の小さい方を 720 として）。下限 min px

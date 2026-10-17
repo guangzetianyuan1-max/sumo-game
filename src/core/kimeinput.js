@@ -1,8 +1,8 @@
 // 取組の決め技の出し方（設計書 2026-10-16-sumo-50-foes-design.md §6・Ruling R1〜R4）：技ごとに 連打（mash・左）・長押し（hold・右で緑で離す）・一押し（tap・右で〇）。
 // 難しさは敵の番号 0〜49 でなだらかに（連打の回数は増え・長押しの緑と一押しの〇の当たりの幅は狭く）。数は強さ合わせ（tools/kami_tune.mjs）で動かしてよい
 // 判定の段は今の〇と同じ（2＝◎・1＝○・0＝×）。画面と Phaser から切り離した純粋な関数
-import { ipponJudge } from './drills.js?v=53';
-import { BAR } from './tactics.js?v=53';
+import { ipponJudge } from './drills.js?v=54';
+import { BAR } from './tactics.js?v=54';
 
 export const KIME_INPUTS = ['tap', 'mash', 'hold'];
 export const KIME_INPUT = {
@@ -22,8 +22,9 @@ export const KIME_INPUT = {
   mash: { window: 2.5, need: [4, 6], good: 0.75, rearm: 0.4 },
   // 長押し：fillMs で満タン・緑＝center ± half×scale（1体目→50体目）・その中の half×core の内＝◎・limit 秒 押さなければ消える（Ruling R1・R3・R4）
   hold: { fillMs: 1500, center: 0.75, half: BAR.half[0], scale: [1, 0.7], core: 0.5, limit: 3.0 },
-  // 一押し：今の〇の当たりの幅（◎±70ms・○±170ms）に掛ける倍率（1体目→50体目）
-  tap: { scale: [1, 0.7] },
+  // 一押し：〇の当たりの幅（10/17 から見た目の px＝kami.js RING_PX：○ 金の輪が帯に触れる 21・◎ 白い線に重なる 8）に掛ける倍率（1体目→50体目）
+  //   10/17 見た目どおりの判定に替えた時の強さ合わせ：[1, 0.7] は反応の遅い人が大ボスで 13点不利（目標 12点以内）→ [1, 0.8]
+  tap: { scale: [1, 0.8] },
 };
 
 const clamp01 = (x) => Math.max(0, Math.min(1, x));

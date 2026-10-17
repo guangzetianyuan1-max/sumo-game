@@ -1,11 +1,11 @@
 // 紙相撲の計算（10/13 本人「紙相撲に切り替える」・設計書 2026-10-13-sumo-kamizumo-design.md）
 // 画面から切り離した、型紙2枚の動き。単位＝画面の px と秒。x＝足もとの真ん中・y＝箱の面からの高さ（上が＋）
 // a＝傾き（＋＝自分の後ろへ反る）。東＝主人公＝左から右へ（dir +1）・西＝敵＝右から左へ（dir -1）
-import { makeRng } from './rng.js?v=53';
-import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=53';
-import { ON_BEAT } from './beat.js?v=53';
-import { IPPON } from './drills.js?v=53';
-import { KIME_INPUTS, tapJudge, mashJudge, holdJudge } from './kimeinput.js?v=53';
+import { makeRng } from './rng.js?v=54';
+import { TACTICS, isTactic, tacticTiming, TACTIC_START, BAR, TACTIC_TYPE, barSpec, barWarn, FOE_KIME_ID, FOE_KIME, KIME_TYPE } from './tactics.js?v=54';
+import { ON_BEAT } from './beat.js?v=54';
+import { IPPON } from './drills.js?v=54';
+import { KIME_INPUTS, tapJudge, mashJudge, holdJudge } from './kimeinput.js?v=54';
 
 export { ON_BEAT };
 
@@ -52,13 +52,23 @@ const ARCHS = Object.keys(KIMETE_FX);
 // tachiaiHit＝合図から的に重なるまで（秒）・kimeHit＝光ってから重なるまで＝max(kimeMin, gaugeTime×kimeHit)（技が高いほど ゆっくり・稽古の 0.8〜1.3 秒に近く）
 // 10/14 Task 2（Ruling 3）：kimeHit 0.6→0.9・最短 kimeMin 0.8 秒（0.36 秒では見てから押せなかった）
 // 10/15（〇が押すか時間切れまで消えない）：kimeHit 0.9→0.7（〇の間は跳ねない＝長い〇は鍛えた主人公ほど損。大ボスの初挑戦が 20% に落ちた・kami_tune で 31%／最初の心技体 6%）
-// charge＝立ち合いの当たりの強さ（判定 0・1・2 ごと。合図の前の早押しも 0.5）・kimeK＝決め技の強さ（判定 1・2・0 は出ない）・missStun＝決め技の外れの すき
+// charge＝立ち合いの当たりの強さ（判定 0・1・2 ごと。合図の前の早押しも 0.5）・kimeK＝決め技の強さ（判定 1・2・0 は出ない・10/17 見た目どおりの判定に替えた時に ○ を 0.6→0.7）・missStun＝決め技の外れの すき
 // cool＝決め技の〇の終わり（until＝光った時に決まる・長押しは押し始めで満タンまで延びる）から次に光るまでの秒。早く決めても数え始めは until のまま（3つの出し方で同じ）。
 //   Task 7 で「決めた時刻から数える」を試した：連打と長押しの〇が早く光り直す分、〇の間は押せない時間が増え、一生の40秒超が 5.1%→7.3%・満月寄りの勝ちが 67%→62%＝今のままにした
 // reachSlack＝押した時の届く距離の余裕（px・10/15）：主人公の〇は相手が離れても消えない（押すか時間切れまで）。押した時に相手が
 // KIMETE_REACH＋reachSlack の外（うっちゃりは自分の背中側の端から EDGE_SELF＋reachSlack の外も）なら「届かない」＝決め技無し・すき無し
-export const RING = { tachiaiHit: 0.9, kimeHit: 0.7, kimeMin: 0.8, charge: [0.5, 1.0, 1.6], kimeK: [0, 0.6, 1], missStun: 0.3, cool: 1.5, reachSlack: 40 };
+export const RING = { tachiaiHit: 0.9, kimeHit: 0.7, kimeMin: 0.8, charge: [0.5, 1.0, 1.6], kimeK: [0, 0.7, 1], missStun: 0.3, cool: 1.5, reachSlack: 40 };
 const RING_NEAR = IPPON.nearMs / 1000; // 押さないまま hitAt からこれを過ぎたら外れ（〇が消える）
+// 決め技の一押しの〇は、見た目どおりに判定する（10/17 本人「一押しの必殺技、〇から外れても決まりませんか？」→ A）：
+//   前は時刻のずれ（○ ±0.17秒）で決め、金の輪が白い的から約30px離れて見えても決まった。
+//   今は金の輪（半径 r・線の太さ 10）と白い的（半径 IPPON.targetR）の間の px で決める：○＝金の輪が的のまわりの薄い帯に触れる・◎＝白い線に重なる。
+//   帯の太さは判定と同じ（hud.js の drawRing が RING_PX.near から描く）。幅は scale 倍（相手が進むほど狭い）
+export const RING_PX = { near: 21, perfect: 8 };
+const ringSpeed = (r) => (IPPON.startR - IPPON.targetR) / Math.max(1e-3, r.hitAt - r.from); // 金の輪が縮む速さ（px／秒）
+export function kimeRingJudge(r, t) {
+  const k = r.scale > 0 ? r.scale : 1, d = Math.abs(t - r.hitAt) * ringSpeed(r);
+  return d <= RING_PX.perfect * k ? 2 : d <= RING_PX.near * k ? 1 : 0;
+}
 
 // 決め技の〇の出し方（input の無い〇＝試験が手で作る物と立ち合いは一押し）と、消える時刻（until の無い〇は hitAt＋近いの幅）
 const ringInput = (r) => (r && r.input ? r.input : 'tap');
@@ -76,7 +86,9 @@ function kimeRing(st, side, me) {
     return { side, kind: 'kime', input: 'hold', from, hitAt: until, until, fillMs: inp.fillMs, center: inp.center, half: inp.half, core: inp.core, heldFrom: null };
   }
   const hitAt = from + Math.max(RING.kimeMin, me.gaugeTime * RING.kimeHit), scale = inp && inp.scale > 0 ? inp.scale : 1;
-  return { side, kind: 'kime', input: 'tap', scale, from, hitAt, until: hitAt + RING_NEAR * scale }; // 消える時刻も幅と同じ倍率（○の外の遅い押しは、幅 1 と同じく〇が消えた後＝すき無し）
+  const ring = { side, kind: 'kime', input: 'tap', scale, from, hitAt };
+  ring.until = hitAt + (RING_PX.near * scale) / ringSpeed(ring); // 消えるのは ○ の帯を金の輪が内側へ抜けた時（○の外の遅い押しは〇が消えた後＝すき無し）
+  return ring;
 }
 
 const SIDES = ['east', 'west'];
@@ -216,6 +228,7 @@ function updateGauge(st, side) {
 export function ringJudge(st, side) {
   const r = st.f[side].ring;
   if (!r || ringInput(r) !== 'tap') return 0;
+  if (r.kind === 'kime') return kimeRingJudge(r, st.t); // 決め技は見た目どおり（px）・立ち合いは今まで通り時刻
   return tapJudge((st.t - r.hitAt) * 1000, r.scale > 0 ? r.scale : 1);
 }
 

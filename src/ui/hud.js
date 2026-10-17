@@ -3,7 +3,8 @@
 // 〇＝中央上：白い的の輪に、外から金の輪が縮んでくる（一押し稽古と同じ絵・同じ大きさ IPPON.startR→targetR）
 // バー＝左端の縦長：下から上へたまり、上の方に緑の帯（center±half）。満タンは押しすぎ
 // 形の計算（ringShape・barShape）は Phaser を使わない純粋な関数（node で試験する）。描くのは graphics を渡す drawRing・drawBar
-import { IPPON, ipponRadius } from '../core/drills.js?v=53';
+import { IPPON, ipponRadius } from '../core/drills.js?v=54';
+import { RING_PX } from '../core/kami.js?v=54';
 
 export const HUD = { ring: { x: 360, y: 260 }, bar: { x: 70, top: 300, h: 460, w: 46 } };
 // 〇とバーそのものをさわっても、下のボタンと同じ押し・長押しになる所（最終点検の直し 1）：バー＝左端の縦長の帯（枠より広め）・〇＝中央上の円（縮み始めの金の輪より少し広め）
@@ -29,6 +30,7 @@ export function hudTouch(st, p, side = 'east') {
 
 const RING_TARGET = 0xffffff; // 的の輪（白）
 const RING_GOLD = 0xe3b23c; // 縮む金の輪
+const GOLD_HALF = 5; // 金の輪の線の太さ 10 の半分
 const BAR_BACK = 0x141a2e;
 const BAR_BAND = 0x6fcf7f; // 緑の帯
 const BAR_FILL = 0xe3b23c; // たまり（金）
@@ -39,7 +41,9 @@ const BAR_FRAME = 0xe3c27a;
 export function ringShape(ring, t, at = HUD.ring, k = 1) {
   if (!ring) return null;
   const hitMs = Math.max(1, (ring.hitAt - ring.from) * 1000);
-  return { x: at.x, y: at.y, target: IPPON.targetR * k, r: ipponRadius((t - ring.from) * 1000, hitMs) * k };
+  // 決め技の〇＝的のまわりの薄い帯を判定の ○ の幅で描く（金の輪の線の半分 5 を引いた太さ・10/17 見た目どおりの判定）
+  const band = ring.kind === 'kime' ? Math.max(2, RING_PX.near * (ring.scale > 0 ? ring.scale : 1) - GOLD_HALF) * k : null;
+  return { x: at.x, y: at.y, target: IPPON.targetR * k, r: ipponRadius((t - ring.from) * 1000, hitMs) * k, band };
 }
 
 // バーの形：bar＝{ center, half }・gauge＝今のたまり 0〜1。y は画面の座標（下の端が 0・上の端が 1）
@@ -55,7 +59,8 @@ export function barShape(bar, gauge, box = HUD.bar) {
 // 〇を描く（稽古の一押しと同じ線の太さと色。s.r が null なら的の輪だけ）
 export function drawRing(g, s) {
   if (!s) return;
-  g.lineStyle(20, RING_TARGET, 0.18).strokeCircle(s.x, s.y, s.target);
+  if (s.band) g.lineStyle(s.band * 2, RING_TARGET, 0.28).strokeCircle(s.x, s.y, s.target); // 決め技：金の輪がこの帯に触れたら ○
+  else g.lineStyle(20, RING_TARGET, 0.18).strokeCircle(s.x, s.y, s.target);
   g.lineStyle(5, RING_TARGET, 0.95).strokeCircle(s.x, s.y, s.target);
   if (s.r !== null) g.lineStyle(10, RING_GOLD, 1).strokeCircle(s.x, s.y, Math.max(2, s.r)); // r が null＝的だけ（稽古の輪と輪の間）
 }
