@@ -3,7 +3,7 @@
 // 〇＝中央上：白い的の輪に、外から金の輪が縮んでくる（一押し稽古と同じ絵・同じ大きさ IPPON.startR→targetR）
 // バー＝左端の縦長：下から上へたまり、上の方に緑の帯（center±half）。満タンは押しすぎ
 // 形の計算（ringShape・barShape）は Phaser を使わない純粋な関数（node で試験する）。描くのは graphics を渡す drawRing・drawBar
-import { IPPON, ipponRadius } from '../core/drills.js?v=50';
+import { IPPON, ipponRadius } from '../core/drills.js?v=51';
 
 export const HUD = { ring: { x: 360, y: 260 }, bar: { x: 70, top: 300, h: 460, w: 46 } };
 // 〇とバーそのものをさわっても、下のボタンと同じ押し・長押しになる所（最終点検の直し 1）：バー＝左端の縦長の帯（枠より広め）・〇＝中央上の円（縮み始めの金の輪より少し広め）

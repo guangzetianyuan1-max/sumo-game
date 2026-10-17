@@ -1,10 +1,10 @@
 // src/ui/voice.js — 取組の声を鳴らす（どの声をいつ・重ならない決まりは src/core/voice.js・ここは Phaser の音に渡すだけ）
 // 声の並びはゲーム全体で1つ（取組の画面の勝ちの声が、次の画面へ変わってもそのまま最後まで鳴る・行司の声も同じ並びで重ならない）
 // 鳴らせない所（音が出ない端末・♪を消した時・声が読めていない時）は何もしない。遊びは止めない
-import { getLang } from '../i18n/i18n.js?v=50';
-import { isMuted } from './music.js?v=50';
-import { hushVoices } from '../core/gyoji.js?v=50';
-import { voiceFile, voiceLen, voiceKey, voiceVolume, boutVoiceIds, afterVoiceIds, linesFor, newVoiceQueue, claimVoice, releaseVoice, offerVoices, nextVoice, clearVoices } from '../core/voice.js?v=50';
+import { getLang } from '../i18n/i18n.js?v=51';
+import { isMuted } from './music.js?v=51';
+import { hushVoices } from '../core/gyoji.js?v=51';
+import { voiceFile, voiceLen, voiceKey, voiceVolume, boutVoiceIds, afterVoiceIds, linesFor, newVoiceQueue, claimVoice, releaseVoice, offerVoices, nextVoice, clearVoices } from '../core/voice.js?v=51';
 
 export { boutVoiceIds, afterVoiceIds, linesFor };
 const states = new WeakMap(); // game → { q, sounds, hooked }

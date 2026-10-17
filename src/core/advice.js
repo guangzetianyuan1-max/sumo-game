@@ -1,10 +1,10 @@
 // src/core/advice.js — 相手の情報の吹き出しで、案内役が言う2行を選ぶ（純粋な関数・文は i18n の表）
 // 10/11 本人「すずはイケイケコメント、琴音は慎重なコメント、千鶴は中間のコメントで」
 // 1行目＝相手の弱み（弱みの無いバランス型は noweak）・2行目＝不調なら疲れの一言、そうでなければ力の比べ（取組の値の合計の比）
-import { TYPES } from '../data/types.js?v=50';
-import { heyaOfGuide } from '../data/heya.js?v=50';
-import { canPlace } from './strategy.js?v=50';
-import { effectiveAgainst, recommendStrategy } from './recommend.js?v=50';
+import { TYPES } from '../data/types.js?v=51';
+import { heyaOfGuide } from '../data/heya.js?v=51';
+import { canPlace } from './strategy.js?v=51';
+import { effectiveAgainst, recommendStrategy } from './recommend.js?v=51';
 
 export const GUIDE_ADVICE = ['chizuru', 'suzu', 'kotone'];
 const STRONGER = 1.15; // 自分÷相手がこれ以上なら「こっちが上」

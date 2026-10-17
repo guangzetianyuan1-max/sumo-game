@@ -1,5 +1,5 @@
 // しこ名を作る（上の字＋自然の字・200通り）。同じ名前を2度出さない
-import { PRE, SUF, REAL_NAMES } from '../data/shikona_parts.js?v=50';
+import { PRE, SUF, REAL_NAMES } from '../data/shikona_parts.js?v=51';
 
 export function makeShikona(rng, taken) {
   const total = PRE.length * SUF.length;

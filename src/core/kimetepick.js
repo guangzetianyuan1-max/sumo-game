@@ -1,8 +1,8 @@
 // 決め技を選ぶ（相手の情報の画面・20体版 Task 4）。画面から切り離した純粋な関数
 // 覚えた決め技＝run.newKnown のうち KIMETE にある物。勧め＝recommendKimete（相性→敵の型に合う系統→相手ごとの種。v42）
 // 一生の通し（careersim.bestKimete）も同じ勧めを使う＝試しと本番で同じ物を持っていく
-import { KIMETE, affinity, typeFit } from '../data/kimete.js?v=50';
-import { makeRng } from './rng.js?v=50';
+import { KIMETE, affinity, typeFit } from '../data/kimete.js?v=51';
+import { makeRng } from './rng.js?v=51';
 
 const known = (run) => (run && Array.isArray(run.newKnown) ? run.newKnown : []);
 

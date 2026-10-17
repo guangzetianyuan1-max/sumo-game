@@ -5,22 +5,22 @@
 // v49：新しい記録は風車投げを覚えて始まる＝新しい記録でも「まず覚える」は付かない
 // 各枚に紙相撲の画面の小さな見本（箱・型紙・下の大きなボタン2つ・中央上の〇・左端のバー）を、本番と同じ絵（src/ui/hud.js・ボタンの色）で小さく描く。使う方だけ明るく、使わない方は暗い
 // 入門の直後と、番付の「遊び方」から来る。どちらも閉じたら（はじめる・飛ばす）記録の seenHelp を true にして番付へ
-import { KAMI } from '../core/kami.js?v=50';
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=50';
-import { kamiArt, foeArt } from '../core/foeart.js?v=50';
-import { foeAt } from '../data/foes.js?v=50';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=50';
-import { t, getLang } from '../i18n/i18n.js?v=50';
-import { session, markHelpSeen } from '../state.js?v=50';
-import { ringShape, barShape, drawRing, drawBar, hitMarkFit, drawMash, drawKimeHold, MASH_COUNT } from '../ui/hud.js?v=50';
-import { helpKimete } from '../core/kimetepick.js?v=50';
-import { IPPON } from '../core/drills.js?v=50';
-import { menuBgKey } from '../core/bgkey.js?v=50';
-import { newChime, demoChime } from '../core/chime.js?v=50';
-import { playBout } from '../ui/sfx.js?v=50';
-import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=50';
-import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=50';
-import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=50';
+import { KAMI } from '../core/kami.js?v=51';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=51';
+import { kamiArt, foeArt } from '../core/foeart.js?v=51';
+import { foeAt } from '../data/foes.js?v=51';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=51';
+import { t, getLang } from '../i18n/i18n.js?v=51';
+import { session, markHelpSeen } from '../state.js?v=51';
+import { ringShape, barShape, drawRing, drawBar, hitMarkFit, drawMash, drawKimeHold, MASH_COUNT } from '../ui/hud.js?v=51';
+import { helpKimete } from '../core/kimetepick.js?v=51';
+import { IPPON } from '../core/drills.js?v=51';
+import { menuBgKey } from '../core/bgkey.js?v=51';
+import { newChime, demoChime } from '../core/chime.js?v=51';
+import { playBout } from '../ui/sfx.js?v=51';
+import { guardOpen, OPEN_GUARD_MS, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=51';
+import { preloadBackdrop, drawBackdrop } from '../ui/backdrop.js?v=51';
+import { button, topTitle, fitText, roundBox, textStyle, speakerFace, speechBubble, preloadGuideArt, clearScene, COLORS } from '../ui/widgets.js?v=51';
 
 const PAGES = 3;
 const PANEL = { y: 470, w: 640, h: 560 }; // 見本の札（190〜750）

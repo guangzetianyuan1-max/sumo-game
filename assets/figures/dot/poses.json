@@ -110,6 +110,9 @@
 "foe_okiagari_normal": [
 "push"
 ],
+"foe_oni_boss": [
+"push"
+],
 "foe_onigawara_honki": [
 "push"
 ],
@@ -136,6 +139,9 @@
 "shikiri",
 "sori",
 "fall"
+],
+"foe_ryujin_honki": [
+"push"
 ],
 "foe_samurai_honki": [
 "push"
