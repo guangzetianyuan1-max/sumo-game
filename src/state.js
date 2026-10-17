@@ -1,16 +1,17 @@
 // src/state.js — 場面をまたぐ選び。run は勝ち抜き（入門を終えるまで null）。移り変わりはここの関数で行い、そのたびに保存する
 // 10/12 夜 場所をやめて100体の勝ち抜きへ（設計書 §3）。場所の頃の関数は basho.js・career.js に残る（使わない）
-import { TYPE_IDS, TYPES } from './data/types.js?v=57';
-import { recommendStrategy } from './core/recommend.js?v=57';
-import { defaultStrategy } from './core/strategy.js?v=57';
-import { CAREER_KEY } from './core/career.js?v=57';
-import { learnMove } from './core/learn.js?v=57';
-import { rankOf } from './core/ladder.js?v=57';
-import { HERO_TYPE } from './data/heroes.js?v=57';
-import { trainingAdvice } from './core/training.js?v=57';
+import { TYPE_IDS, TYPES } from './data/types.js?v=58';
+import { recommendStrategy } from './core/recommend.js?v=58';
+import { defaultStrategy } from './core/strategy.js?v=58';
+import { CAREER_KEY } from './core/career.js?v=58';
+import { learnMove } from './core/learn.js?v=58';
+import { rankOf } from './core/ladder.js?v=58';
+import { HERO_TYPE } from './data/heroes.js?v=58';
+import { trainingAdvice } from './core/training.js?v=58';
+import { platformStore } from './platform.js?v=58';
 import {
   newRun, currentFoe, recordResult, startTraining, leaveTraining, trainStat, trainKimete, serializeRun, deserializeRun, markTacticSeen, HELP_VER,
-} from './core/run.js?v=57';
+} from './core/run.js?v=58';
 
 export const session = {
   you: HERO_TYPE,
@@ -35,12 +36,9 @@ export function nextOpponent(rand = Math.random) {
   return session.opp;
 }
 
+// 記録の置き場（Playables 版は YouTube のクラウドの箱・ほかは localStorage・src/platform.js）
 export function localStore() {
-  try {
-    return typeof window !== 'undefined' ? window.localStorage : null;
-  } catch {
-    return null;
-  }
+  return platformStore();
 }
 
 export const SLOT_COUNT = 3;

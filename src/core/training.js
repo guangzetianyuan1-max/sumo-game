@@ -1,7 +1,7 @@
 // 稽古の新技の札（10/13：新技が15になり、溜まると画面からはみ出す＝早い物から3枚まで・残りは数だけ）
-import { newTechIds, NEW_TECH_AT } from '../data/heroes.js?v=57';
-import { STATS, atCeiling } from './run.js?v=57';
-import { STAT_DRILL } from './drills.js?v=57';
+import { newTechIds, NEW_TECH_AT } from '../data/heroes.js?v=58';
+import { STATS, atCeiling } from './run.js?v=58';
+import { STAT_DRILL } from './drills.js?v=58';
 
 export const TECH_CARD_LIMIT = 3;
 

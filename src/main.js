@@ -1,29 +1,38 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { CautionScene } from './scenes/CautionScene.js?v=57';
-import { CoverScene } from './scenes/CoverScene.js?v=57';
-import { GuideScene } from './scenes/GuideScene.js?v=57';
-import { LadderScene } from './scenes/LadderScene.js?v=57';
-import { OpponentScene } from './scenes/OpponentScene.js?v=57';
-import { AfterScene } from './scenes/AfterScene.js?v=57';
-import { TrainingScene } from './scenes/TrainingScene.js?v=57';
-import { DrillScene } from './scenes/DrillScene.js?v=57';
-import { KamiScene } from './scenes/KamiScene.js?v=57';
-import { HelpScene } from './scenes/HelpScene.js?v=57';
-import { KenshoScene } from './scenes/KenshoScene.js?v=57';
-import { ClearScene } from './scenes/ClearScene.js?v=57';
-import { CollectionScene } from './scenes/CollectionScene.js?v=57';
-import { initLang, t } from './i18n/i18n.js?v=57';
-import { storage } from './ui/widgets.js?v=57';
-import { session, lastSlot, onSaveFail } from './state.js?v=57';
-import { setScene, setMuted, isMuted, unlockOnGesture, musicHidden } from './ui/music.js?v=57';
-import { sfxHidden, sfxWake } from './ui/sfx.js?v=57';
-import { askTerms, askTermsPlain } from './ui/terms.js?v=57';
-import { showNotice } from './ui/notice.js?v=57';
+import { CautionScene } from './scenes/CautionScene.js?v=58';
+import { CoverScene } from './scenes/CoverScene.js?v=58';
+import { GuideScene } from './scenes/GuideScene.js?v=58';
+import { LadderScene } from './scenes/LadderScene.js?v=58';
+import { OpponentScene } from './scenes/OpponentScene.js?v=58';
+import { AfterScene } from './scenes/AfterScene.js?v=58';
+import { TrainingScene } from './scenes/TrainingScene.js?v=58';
+import { DrillScene } from './scenes/DrillScene.js?v=58';
+import { KamiScene } from './scenes/KamiScene.js?v=58';
+import { HelpScene } from './scenes/HelpScene.js?v=58';
+import { KenshoScene } from './scenes/KenshoScene.js?v=58';
+import { ClearScene } from './scenes/ClearScene.js?v=58';
+import { CollectionScene } from './scenes/CollectionScene.js?v=58';
+import { initLang, setLang, t } from './i18n/i18n.js?v=58';
+import { isPlayables, initPlatform, playablesLang, onYtAudioChange, onYtPause } from './platform.js?v=58';
+import { storage } from './ui/widgets.js?v=58';
+import { session, lastSlot, onSaveFail } from './state.js?v=58';
+import { setScene, setMuted, isMuted, unlockOnGesture, musicHidden } from './ui/music.js?v=58';
+import { sfxHidden, sfxWake } from './ui/sfx.js?v=58';
+import { askTerms, askTermsPlain } from './ui/terms.js?v=58';
+import { showNotice } from './ui/notice.js?v=58';
 
-const lang = initLang(storage(), navigator.language);
-document.documentElement.lang = lang;
-session.slot = lastSlot(storage()); // 前に使った記録（初めの画面で札を押すと決め直す）
-onSaveFail(() => showNotice(t('save.cannot'))); // v44：記録を残せない端末では一度だけ知らせる（記録の画面は memory の勝ち抜きを出す）
+// 言葉と前に使った記録を決める（Playables 版は initPlatform の後＝記録と言葉を YouTube から読んでから）
+function boot() {
+  let lang;
+  if (isPlayables()) {
+    initLang(null, 'en'); // ブラウザの言語の設定は使わない（認定の MUST）
+    setLang(playablesLang() || 'en', null); // YouTube の言葉（記録には残さない）
+    lang = playablesLang() || 'en';
+  } else lang = initLang(storage(), navigator.language);
+  document.documentElement.lang = lang;
+  session.slot = lastSlot(storage()); // 前に使った記録（初めの画面で札を押すと決め直す）
+  onSaveFail(() => showNotice(t('save.cannot'))); // v44：記録を残せない端末では一度だけ知らせる（記録の画面は memory の勝ち抜きを出す）
+}
 
 // 音楽：画面が始まるたびにその画面の曲へ（同じ曲なら流し続ける）・最初に触れた時に鳴り始める・右下の札で消す／鳴らす（覚えておく）
 function hookMusic(game) {
@@ -31,10 +40,15 @@ function hookMusic(game) {
     game.scene.scenes.forEach((s) => s.events.on('create', () => setScene(s.scene.key)));
   });
   unlockOnGesture(window);
-  // v44：曲と効果音は Phaser と別の音（AudioContext）＝裏へ回っても止まらなかった。隠れたら止め、戻ったら（消音でなければ）起こす。
-  // 触れるたびに効果音の音も起こす（iPhone の 'interrupted' から戻す）
+  ['pointerdown', 'touchend', 'keydown'].forEach((ev) => window.addEventListener(ev, sfxWake, { passive: true })); // 触れるたびに効果音の音も起こす（iPhone の 'interrupted' から戻す）
+  if (isPlayables()) {
+    // Playables 版：一時停止は YouTube の onPause／onResume（画面の見え隠れの合図は使わない＝認定の MUST）・音は YouTube の消音に従う（♪ は出さない）
+    onYtPause(() => { game.loop.sleep(); musicHidden(true); sfxHidden(true); }, () => { game.loop.wake(); musicHidden(false); sfxHidden(false); });
+    onYtAudioChange((on) => setMuted(!on));
+    return;
+  }
+  // v44：曲と効果音は Phaser と別の音（AudioContext）＝裏へ回っても止まらなかった。隠れたら止め、戻ったら（消音でなければ）起こす
   document.addEventListener('visibilitychange', () => { const h = !!document.hidden; musicHidden(h); sfxHidden(h); });
-  ['pointerdown', 'touchend', 'keydown'].forEach((ev) => window.addEventListener(ev, sfxWake, { passive: true }));
   const btn = document.getElementById('music');
   if (!btn) return;
   const paint = () => { btn.textContent = isMuted() ? '♪×' : '♪'; btn.style.opacity = isMuted() ? '0.45' : '0.85'; };
@@ -83,5 +97,13 @@ const FONT_WAIT_MS = 3000;
 const fontsReady = document.fonts
   ? Promise.all([document.fonts.load('800 32px "M PLUS Rounded 1c"'), document.fonts.load('500 24px "M PLUS Rounded 1c"')])
   : Promise.resolve();
-Promise.race([fontsReady, new Promise((r) => setTimeout(r, FONT_WAIT_MS))])
-  .catch(() => {}).then(() => askTerms()).catch(() => askTermsPlain()).then(start, () => {});
+// Playables 版：記録と言葉を YouTube から読んでから始める・同意書は出さない（追加の同意書は不可＝認定の MUST・注意書きの札は出す）
+// 公開版：今まで通り（言葉を先に決める＝同意書もその言葉で出す）
+if (isPlayables()) {
+  Promise.all([initPlatform().catch(() => {}), Promise.race([fontsReady, new Promise((r) => setTimeout(r, FONT_WAIT_MS))]).catch(() => {})])
+    .then(() => { boot(); start(); });
+} else {
+  boot();
+  Promise.race([fontsReady, new Promise((r) => setTimeout(r, FONT_WAIT_MS))])
+    .catch(() => {}).then(() => askTerms()).catch(() => askTermsPlain()).then(start, () => {});
+}

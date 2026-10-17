@@ -1,16 +1,17 @@
 // src/ui/widgets.js — 字体・色・丸い箱・ボタン・字を枠に収める・保存の口
-import { TYPE_IDS } from '../data/types.js?v=57';
-import { HERO_IDS } from '../data/heroes.js?v=57';
-import { heroArt } from '../core/foeart.js?v=57';
-import { GUIDE_IDS } from '../data/guides.js?v=57';
-import { HEYA_IDS } from '../data/heya.js?v=57';
-import { t, getLang } from '../i18n/i18n.js?v=57';
-import { jaWrap, jaWrapBalanced } from '../data/wrap.js?v=57';
-import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=57';
-import { TRAININGS } from '../core/career.js?v=57';
-import { saveNow } from '../state.js?v=57';
-import { playBout } from './sfx.js?v=57';
-import { armOpenGuard, openGuarded } from './openguard.js?v=57';
+import { TYPE_IDS } from '../data/types.js?v=58';
+import { HERO_IDS } from '../data/heroes.js?v=58';
+import { heroArt } from '../core/foeart.js?v=58';
+import { GUIDE_IDS } from '../data/guides.js?v=58';
+import { HEYA_IDS } from '../data/heya.js?v=58';
+import { t, getLang } from '../i18n/i18n.js?v=58';
+import { jaWrap, jaWrapBalanced } from '../data/wrap.js?v=58';
+import { WORD_IDS, wordArt, voiceSet, voiceKey, voicePath } from '../data/words.js?v=58';
+import { TRAININGS } from '../core/career.js?v=58';
+import { saveNow } from '../state.js?v=58';
+import { playBout } from './sfx.js?v=58';
+import { armOpenGuard, openGuarded } from './openguard.js?v=58';
+import { platformStore } from '../platform.js?v=58';
 export const FONT = '"M PLUS Rounded 1c", sans-serif';
 
 // 夜の藍の地に、生成りの字・金の縁・朱の決め色（10/10 本人「色をおしゃれに」）
@@ -220,12 +221,9 @@ export const textStyle = (size, color, extra = {}) => ({
   fontFamily: FONT, fontSize: size, fontStyle: '800', color, ...extra,
 });
 
+// 記録の置き場（Playables 版は YouTube のクラウドの箱・ほかは localStorage・src/platform.js）
 export function storage() {
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
+  return platformStore();
 }
 
 // 字が maxW を越えたら縮める（英語の長いローマ字を四角に収める）

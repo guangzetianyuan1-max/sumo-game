@@ -1,10 +1,10 @@
 // src/scenes/LearnScene.js — 節目で技を覚える（10/12 作り直し）：候補（run.pendingLearn・3つまで）を札で縦に並べ、1つ選んで覚える → 番付表（ladder）
 // 候補は記録に書いてある＝途中で閉じても同じ候補が出る。候補が無ければすぐ番付へ
-import { t, techLabel, getLang } from '../i18n/i18n.js?v=57';
-import { session, learnNow } from '../state.js?v=57';
-import { KIMARITE } from '../data/kimarite.js?v=57';
-import { KIMARITE_DESC_JA } from '../data/kimarite_desc.js?v=57';
-import { button, topTitle, fitText, roundBox, hitZone, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=57';
+import { t, techLabel, getLang } from '../i18n/i18n.js?v=58';
+import { session, learnNow } from '../state.js?v=58';
+import { KIMARITE } from '../data/kimarite.js?v=58';
+import { KIMARITE_DESC_JA } from '../data/kimarite_desc.js?v=58';
+import { button, topTitle, fitText, roundBox, hitZone, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=58';
 
 const CARD_W = 620;
 const CARD_H = 200;

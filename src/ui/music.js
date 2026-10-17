@@ -4,7 +4,8 @@
 // 取組の曲 nokotta（10/15 本人「のこったでもっとアップテンポの曲など」・設計書 §12）は、跳ねる拍 KAMI.BEAT（0.52秒）に拍の頭を合わせる＝beatLock。
 //   取組の画面が毎コマ musicBeat(st.t) を呼ぶ：曲の升 s が鳴る音の時刻 ＝ off ＋ g(s)（g＝その升が重なる取組の時刻・off＝音の時計 − 出口の遅れ − 取組の時刻）。
 //   拍の升（4升ごと）の g は必ず KAMI.BEAT の整数倍＝beatOffset(st) の 0 と同じ所。止め・コマ落ち・裏へ回った後のずれは、次の升を遅らせる／飛ばす（半拍以内の近い方）で直す
-import { KAMI } from '../core/kami.js?v=57';
+import { KAMI } from '../core/kami.js?v=58';
+import { isPlayables, ytAudioEnabled, platformStore } from '../platform.js?v=58';
 let ctx = null;
 let broken = false;
 let master = null;
@@ -623,11 +624,13 @@ export const SCENE_SONG = {
 };
 const MUTE_KEY = 'sumo.music';
 
+// 消音の印の置き場（Playables 版はクラウドの箱＝この鍵は残さない・ほかは localStorage・src/platform.js）
 function store() {
-  try { return typeof localStorage !== 'undefined' ? localStorage : null; } catch { return null; }
+  return platformStore();
 }
 export function isMuted() {
   if (muted !== null) return muted;
+  if (isPlayables()) return !ytAudioEnabled(); // Playables 版は YouTube の消音に従う（変わった時は main.js が setMuted を呼ぶ）
   const s = store();
   try { return !!s && s.getItem(MUTE_KEY) === 'off'; } catch { return false; }
 }

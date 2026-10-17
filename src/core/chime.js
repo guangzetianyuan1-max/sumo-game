@@ -2,8 +2,8 @@
 // v45 本人（10/16）「長押し、緑の帯に入って効果音」「稽古連打、目標達成で効果音」
 //   長押し：ためているバーが緑の帯に入った瞬間に1度だけ。帯の中にいる間は鳴らし直さない・新しい押し（押し直し・次の予告・次の回）でまた鳴る
 //   連打：数が目標（RENDA.full＝30）に届いたたたきで1度だけ（1回の5秒の中で数は増えるだけ＝越えるのは1度）
-import { barGauge, barInBand, kimeHoldGauge } from './kami.js?v=57';
-import { RENDA, nagaoshiInBand } from './drills.js?v=57';
+import { barGauge, barInBand, kimeHoldGauge } from './kami.js?v=58';
+import { RENDA, nagaoshiInBand } from './drills.js?v=58';
 
 // 押しごとの覚え：key＝今の押しの印（押し始めの時刻など・押していない＝null）・rung＝この押しでもう鳴らした
 export const newChime = () => ({ key: null, rung: false });

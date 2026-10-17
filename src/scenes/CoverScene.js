@@ -1,14 +1,15 @@
 // src/scenes/CoverScene.js — 表紙（10/14 本人「表紙を…冒頭に」）：土俵の絵の上に題名・主人公と50体目の大ボスの型紙が向き合う・「画面をたたいて はじめる」
 // 新しい絵は無し（今ある土俵の背景と型紙だけ）。たたくと音を起こし（最初の手ざわり＝main.js の unlockOnGesture が音楽を起こす）、ぽんを鳴らして記録を選ぶ画面（guide）へ
-import { t } from '../i18n/i18n.js?v=57';
-import { kamiArt, foeArt, foeAura } from '../core/foeart.js?v=57';
-import { PLAY_COUNT } from '../core/ladder.js?v=57';
-import { foeAt } from '../data/foes.js?v=57';
-import { HERO_TYPE } from '../data/heroes.js?v=57';
-import { preloadArena } from '../ui/arena.js?v=57';
-import { edgeFade } from '../ui/backdrop.js?v=57';
-import { addAura, fitText, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=57';
-import { playBout } from '../ui/sfx.js?v=57';
+import { t } from '../i18n/i18n.js?v=58';
+import { signalGameReady } from '../platform.js?v=58';
+import { kamiArt, foeArt, foeAura } from '../core/foeart.js?v=58';
+import { PLAY_COUNT } from '../core/ladder.js?v=58';
+import { foeAt } from '../data/foes.js?v=58';
+import { HERO_TYPE } from '../data/heroes.js?v=58';
+import { preloadArena } from '../ui/arena.js?v=58';
+import { edgeFade } from '../ui/backdrop.js?v=58';
+import { addAura, fitText, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=58';
+import { playBout } from '../ui/sfx.js?v=58';
 
 const BOSS = foeAt(PLAY_COUNT - 1); // 50体目の大ボス（鬼の大横綱・foeArt・foeAura は index と段階と id で絵と光を決める）
 const GROUND_Y = 905; // 型紙の足もと（土俵の絵の楕円の下のあたり）
@@ -31,6 +32,7 @@ export class CoverScene extends Phaser.Scene {
 
   create() {
     this.leaving = false;
+    signalGameReady(); // Playables 版：表紙＝たたいて始められる＝ YouTube へ gameReady（注意書きの札の間は送らない）
     this.guardUntil = Date.now() + OPEN_GUARD_MS;
     clearScene(this);
     const { width, height } = this.scale;
