@@ -2,16 +2,16 @@
 // 福島昔話クエストの図鑑と同じ形：3列×3段の札（1ページ9体）・倒した相手は姿と名前と朱の判子・まだの相手は黒い影と「？？？」（番号だけ）・
 // 倒した札をさわると1体を大きく（姿・名前・何体目・種類・型・必殺技）。勝った直後は取組の後の画面から開き、その相手の札に判子を押す
 // 開き方：this.scene.start('collection', { stamp: 相手の id（判子を押す札・無ければ null）, then: 閉じた後の画面（'ladder' | 'clear'） })
-import { t, foeLabel } from '../i18n/i18n.js?v=55';
-import { session } from '../state.js?v=55';
-import { collectionOf, pageOf, PER_PAGE } from '../core/collection.js?v=55';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=55';
-import { foeKimeteAt } from '../core/kamiai.js?v=55';
-import { menuBgKey } from '../core/bgkey.js?v=55';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=55';
-import { playBout } from '../ui/sfx.js?v=55';
-import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=55';
-import { button, bindPress, backButton, topTitle, fitText, roundBox, hitZone, textStyle, addAura, clearScene, COLORS } from '../ui/widgets.js?v=55';
+import { t, foeLabel } from '../i18n/i18n.js?v=56';
+import { session } from '../state.js?v=56';
+import { collectionOf, pageOf, PER_PAGE } from '../core/collection.js?v=56';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=56';
+import { foeKimeteAt } from '../core/kamiai.js?v=56';
+import { menuBgKey } from '../core/bgkey.js?v=56';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=56';
+import { playBout } from '../ui/sfx.js?v=56';
+import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=56';
+import { button, bindPress, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, addAura, clearScene, COLORS } from '../ui/widgets.js?v=56';
 
 const CARD = { w: 212, h: 298, top: 168, gapY: 14 }; // 札（3列×3段：168〜1094）
 const FIG = { dy: 112, h: 188, w: 190 }; // 札の中の姿（札の上の端から姿の真ん中まで・高さ・幅）
@@ -23,6 +23,7 @@ const SEAL = { r: 30, big: 64 }; // 判子（札の右上の小さな判子・�
 const SEAL_RED = 0xc8302a;
 const BAND = 140; // 見出しの帯の下の端（集めた数の行 120 の下）
 const STAMP_GUARD_MS = 1000;
+const DESC = { y: 990, w: 620 }; // 大きな札の説明（必殺技の行 940 の下〜「さわると もどる」1210 の上）
 
 export class CollectionScene extends Phaser.Scene {
   constructor() {
@@ -197,6 +198,9 @@ export class CollectionScene extends Phaser.Scene {
     line(800, t('career.who', { name: t('opp.foeNo', { n: it.index + 1 }), rank: t(`col.kind.${it.kind}`) }), 34, COLORS.ink);
     line(860, t(`type.${it.type}.name`), 34, COLORS.ink);
     line(940, t('opp.foeKime', { name: t(`foekime.${foeKimeteAt(it.index).id}`) }), 34, COLORS.gold);
+    // 説明（10/17 本人「日本をテーマに英語で」：郷土の物・昔話の物は本当の事を出典つきで・ほかはゲームの中の戦い方）。日本語は60字・英語は120字まで＝字30で4行に収まる
+    const desc = `col.desc.${it.id}`;
+    if (t(desc) !== desc) box.add(wrapText(this, width / 2, DESC.y, t(desc), DESC.w, 30, COLORS.ink, { fontStyle: '500' }));
     line(1210, t('col.tapBack'), 30, COLORS.sub);
     playBout('pon');
     // 開いた指の離しで閉じない＝0.25秒たってからの押しだけ

@@ -1,15 +1,15 @@
 // src/scenes/GuideScene.js — 最初の画面：題・言葉の切り替え・記録①〜③の札（10/11 本人「昔話と同じように最大3つの四股名ですすめられるように」）。
 // 中身のある札を押す＝その記録のつづきへ（その時の画面へ）。空きの札を押す＝その記録でそのまま入門（10/13〜主人公はバランス型・案内役は若女将に固定＝選ぶ画面なし → 遊び方の3枚 → 番付表）。
 // 中身のある札の「はじめから」は2度押し（1度目は知らせるだけ・指1本の二重発火は数えない）で、その記録を消して入門へ
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=55';
-import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=55';
-import { session, startRun, SLOT_COUNT, slotView, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=55';
-import { button, bindPress, fitText, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=55';
-import { secondPress } from '../ui/press.js?v=55';
-import { menuBgKey } from '../core/bgkey.js?v=55';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=55';
-import { playBout } from '../ui/sfx.js?v=55';
-import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=55';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=56';
+import { t, getLang, setLang, heroName } from '../i18n/i18n.js?v=56';
+import { session, startRun, SLOT_COUNT, slotView, useRun, resumeScene, rememberSlot, lastSlot, clearSlot, slotSummary } from '../state.js?v=56';
+import { button, bindPress, fitText, hitZone, textStyle, preloadTypeArt, preloadHeroFigures, heroKey, COLORS, storage, clearScene } from '../ui/widgets.js?v=56';
+import { secondPress } from '../ui/press.js?v=56';
+import { menuBgKey } from '../core/bgkey.js?v=56';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=56';
+import { playBout } from '../ui/sfx.js?v=56';
+import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=56';
 
 const CARD = { w: 640, h: 300, top: 210, gap: 40 }; // 札3枚：210〜1190（下に知らせの1行）
 const NEW = { w: 200, h: 64 }; // 札の右下の「はじめから」

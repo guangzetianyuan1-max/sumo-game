@@ -1,8 +1,8 @@
 // src/scenes/CautionScene.js — ゲームの一番はじめの「注意書きの札」（10/14 本人「注意書きのサインも冒頭に付けて欲しい」）
 // 起動のたびに出す。約3.5秒で表紙へ・たたけばすぐ表紙へ。音楽は鳴らさない（まだ画面に触れていないので鳴らせない・SCENE_SONG.caution = null）
 // 絵は使わない：木の板の色の札（Graphics）・黄色い三角の注意の印・字（本文は30px以上＝シニア向け）
-import { t } from '../i18n/i18n.js?v=55';
-import { roundBox, bubbleText, fitText, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=55';
+import { t } from '../i18n/i18n.js?v=56';
+import { roundBox, bubbleText, fitText, textStyle, COLORS, clearScene } from '../ui/widgets.js?v=56';
 
 export const CAUTION_MS = 3500; // 自動で表紙へ進むまで
 const CARD = { x: 360, top: 150, w: 640, h: 940 };

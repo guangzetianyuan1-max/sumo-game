@@ -2,12 +2,12 @@
 // 勝てば次の敵へ・負けたら稽古（3コマ）：解禁していて覚えていない決め技があれば、ふつうの出来（6割＝ゲージ満タン）の1コマで覚え、残りは一番低い心技体を伸ばす。
 // 取組ごとに、覚えた決め技の中から相手の情報の画面の勧め（kimetepick.recommendKimete：相性→敵の型に合う系統→相手ごとの種）を持っていく。
 // 最初の決め技（v47 から風車投げ）は、v49 から新しい記録で覚えて始まる（newRun）＝1体目から風車投げを持っていく。覚える稽古は10勝の五月雨突きから
-import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=55';
-import { autoBout } from './kamiai.js?v=55';
-import { recommendKimete } from './kimetepick.js?v=55';
-import { PLAY_COUNT } from './ladder.js?v=55';
-import { drillMult, NORMAL_SCORE } from './drills.js?v=55';
-import { GATE_INDEXES } from '../data/foes.js?v=55';
+import { newRun, currentFoe, recordResult, startTraining, trainStat, trainKimete, STATS } from './run.js?v=56';
+import { autoBout } from './kamiai.js?v=56';
+import { recommendKimete } from './kimetepick.js?v=56';
+import { PLAY_COUNT } from './ladder.js?v=56';
+import { drillMult, NORMAL_SCORE } from './drills.js?v=56';
+import { GATE_INDEXES } from '../data/foes.js?v=56';
 
 export const MAX_BOUTS = 600; // 50体ぶん
 
