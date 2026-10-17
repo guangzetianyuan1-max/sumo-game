@@ -1,7 +1,7 @@
 // 相手の型ごとの攻め（設計書 2026-10-14-sumo-two-buttons-and-foe-tactics-design.md §3）
 // 攻めは敵（西）だけが持つ。どれも 予告 warn → 実行 act → 後始末 after → 間 gap → 次の予告。一度に1つ。
 // 数字は Task 3 で強さを合わせる時に動かすので、全部ここに並べる。画面の字は i18n（tactic.<id>）。
-import { makeRng } from './rng.js?v=56';
+import { makeRng } from './rng.js?v=57';
 
 export const TACTIC_IDS = ['fumbari', 'hataki', 'tsuppari', 'kumi'];
 export const TACTIC_START = 2.5;   // 押し合いが始まってから、最初の予告まで（秒）

@@ -22,36 +22,36 @@
 //   守り成功＝主人公の踏ん張りの目の帯（v45・0.7秒・時計は止めない・入力を取らない・4秒以内の2回目は出さない）。v45b：置き場所は箱の前の面（〇・バー・型紙の頭・ボタンにかからない＝〇が出ても消さない）。
 //   絵が読めない時は何も出さない（「守り成功！」の字は出る）。
 //   止めるのは画面の時計だけ（kami.js の物理と careersim の数は変えない）
-import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge, kimeHoldGauge } from '../core/kami.js?v=56';
-import { isTactic, FOE_KIME_ID, BAR } from '../core/tactics.js?v=56';
-import { leftLook, rightLook, neutralLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey, attackScene, bossAlert, tipStep, eyeDeferDue, kimeCall } from '../core/kamibutton.js?v=56';
-import { cutinArt, eyeArt, EYE_HERO, EYE_FUNBARI, EYE_MS, funbariDue, cutinCloses, cutinNeutral } from '../core/cutin.js?v=56';
-import { newChime, greenChime, boutGreen } from '../core/chime.js?v=56';
-import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=56';
-import { chosenKimete } from '../core/kimetepick.js?v=56';
-import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=56';
-import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=56';
-import { currentFoe } from '../core/run.js?v=56';
-import { PLAY_COUNT } from '../core/ladder.js?v=56';
-import { makeRng } from '../core/rng.js?v=56';
-import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=56';
-import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=56';
-import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=56';
-import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=56';
-import { playBout, whine, whineStop } from '../ui/sfx.js?v=56';
-import { boutWhine } from '../core/whine.js?v=56';
-import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=56';
-import { GYOJI, tachiaiVoiceAt, tachiaiPreRoll, nokottaDue, hushVoices } from '../core/gyoji.js?v=56';
-import { ringEvent } from '../core/voice.js?v=56';
-import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=56';
-import { createBigButton } from '../ui/bigbutton.js?v=56';
-import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing, clockHold } from '../core/feel.js?v=56';
-import { createFx } from '../ui/fx.js?v=56';
-import { finisherPlan, finisherPose, ghostPoses, weakFinisher, pivotOffset } from '../core/finisherfx.js?v=56';
-import { createFinisherFx } from '../ui/finisherfx.js?v=56';
-import { drawCutinBand, drawEyeBand, drawFunbariBand } from '../ui/cutinband.js?v=56';
-import { HUD, HIT_MARK, MASH_COUNT, ringShape, barShape, drawRing, drawBar, hudTouch, mashShape, kimeHoldShape, drawMash, drawKimeHold } from '../ui/hud.js?v=56';
-import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=56';
+import { KAMI, ON_BEAT, newBout, step, mash, strike, hold, beatOffset, barGauge, kimeHoldGauge } from '../core/kami.js?v=57';
+import { isTactic, FOE_KIME_ID, BAR } from '../core/tactics.js?v=57';
+import { leftLook, rightLook, neutralLook, hintKey, coachKey, gaugeTierOf, tacticPlate, ringFlash, barSayKey, attackScene, bossAlert, tipStep, eyeDeferDue, kimeCall } from '../core/kamibutton.js?v=57';
+import { cutinArt, eyeArt, EYE_HERO, EYE_FUNBARI, EYE_MS, funbariDue, cutinCloses, cutinNeutral } from '../core/cutin.js?v=57';
+import { newChime, greenChime, boutGreen } from '../core/chime.js?v=57';
+import { boutParams, cpuParams, driver, ringRngFor, barRngFor } from '../core/kamiai.js?v=57';
+import { chosenKimete } from '../core/kimetepick.js?v=57';
+import { kimariteOf, foeKimeOf } from '../core/kamiresult.js?v=57';
+import { foeArt, kamiArt, heroArt, foeAura, stageScale } from '../core/foeart.js?v=57';
+import { currentFoe } from '../core/run.js?v=57';
+import { PLAY_COUNT } from '../core/ladder.js?v=57';
+import { makeRng } from '../core/rng.js?v=57';
+import { HERO_TYPE, OKAMI } from '../data/heroes.js?v=57';
+import { t, foeLabel, kimariteLabel, getLang } from '../i18n/i18n.js?v=57';
+import { GROUND, BOX_H, preloadArena, drawArena } from '../ui/arena.js?v=57';
+import { session, prepareOpponent, boutSeed, recordNow, noteTacticSeen } from '../state.js?v=57';
+import { playBout, whine, whineStop } from '../ui/sfx.js?v=57';
+import { boutWhine } from '../core/whine.js?v=57';
+import { isMuted, musicBeat, musicEnd } from '../ui/music.js?v=57';
+import { GYOJI, tachiaiVoiceAt, tachiaiPreRoll, nokottaDue, hushVoices } from '../core/gyoji.js?v=57';
+import { ringEvent } from '../core/voice.js?v=57';
+import { preloadVoices, boutVoiceIds, sayVoice, claimVoiceSlot, releaseVoiceSlot, hushGameVoices } from '../ui/voice.js?v=57';
+import { createBigButton } from '../ui/bigbutton.js?v=57';
+import { feelFor, slowFor, mashFeel, cheerLevel, pastEdge, musicLevel, newClock, clockHit, clockSlow, clockSkip, clockTick, clockStopped, clockSlowing, clockHold } from '../core/feel.js?v=57';
+import { createFx } from '../ui/fx.js?v=57';
+import { finisherPlan, finisherPose, ghostPoses, weakFinisher, pivotOffset } from '../core/finisherfx.js?v=57';
+import { createFinisherFx } from '../ui/finisherfx.js?v=57';
+import { drawCutinBand, drawEyeBand, drawFunbariBand } from '../ui/cutinband.js?v=57';
+import { HUD, HIT_MARK, MASH_COUNT, ringShape, barShape, drawRing, drawBar, hudTouch, mashShape, kimeHoldShape, drawMash, drawKimeHold } from '../ui/hud.js?v=57';
+import { preloadHeroFigures, preloadGuideArt, addAura, textStyle, fitText, speakerFace, speechBubble, COLORS } from '../ui/widgets.js?v=57';
 
 const FIG_H = 330; // 型紙の高さ（敵は段階の倍率を掛ける）
 const VIS = FIG_H / 230; // 見た目の大きさの倍率（計算の座標は変えない・縦方向の跳ね・落ちは同じ比で描く）
@@ -199,8 +199,9 @@ export class KamiScene extends Phaser.Scene {
     // 上：見出しと相手の名前
     // ことねの吹き出し（いちばん上）が出ている間は隠す（吹き出しの下から字がはみ出さない）
     this.heads = [
-      fitText(this.add.text(width / 2, 70, t('kami.title'), textStyle(52, COLORS.gold)).setOrigin(0.5).setShadow(...TXT_SHADOW), width - 80),
-      fitText(this.add.text(width / 2, 132, foeLabel(foe), textStyle(34, COLORS.ink)).setOrigin(0.5).setShadow(...TXT_SHADOW), width - 80),
+      // 10/17 本人「敵の名前が小さすぎ、『紙相撲』より大きな字に」＝見出し 52→34・名前 34→60（金）。上下の範囲は前と同じ（約 45〜155）
+      fitText(this.add.text(width / 2, 62, t('kami.title'), textStyle(34, COLORS.ink)).setOrigin(0.5).setShadow(...TXT_SHADOW), width - 80),
+      fitText(this.add.text(width / 2, 120, foeLabel(foe), textStyle(60, COLORS.gold)).setOrigin(0.5).setShadow(...TXT_SHADOW), width - 80),
     ];
 
     // 型紙2枚（足もとが計算の x・箱の面からの高さ）と足もとの影
