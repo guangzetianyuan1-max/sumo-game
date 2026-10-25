@@ -708,7 +708,7 @@ export default {
   'terms.about.head': 'About this game',
   'terms.about.body': '"Ton-Ton Paper Sumo" (the "Game") is a free game you play in your browser. It installs nothing and does not read or write your photos, contacts or files.',
   'terms.data.head': 'Information we collect',
-  'terms.data.body': 'The maker does not collect personal information such as your name or email address. Your progress is saved only inside the browser on your device. To load game parts and fonts, the Game connects to cdnjs (Cloudflare) and Google Fonts.',
+  'terms.data.body': 'The maker does not collect personal information such as your name or email address. Your progress is saved only inside the browser on your device. To load game parts, the Game connects to cdnjs (Cloudflare). Fonts are served from the same site as the Game.',
   'terms.official.head': 'Official place',
   'terms.official.body': 'The only official place of the Game is {url}. Copies handed out elsewhere, or altered copies, are not made by the maker.',
   'terms.warranty.head': 'No warranty',

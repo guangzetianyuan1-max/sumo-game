@@ -1,14 +1,14 @@
 // 勝ち抜き（20体版・元は100体）（設計書 §3〜§8・10/12 夜 本人「場所は存在しなく、100体倒してゲームクリア」）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=60';
-import { GUIDE_IDS } from '../data/guides.js?v=60';
-import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=60';
-import { foeAt } from '../data/foes.js?v=60';
-import { inGame } from '../data/kimarite.js?v=60';
-import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt, rankIndexOf } from './ladder.js?v=60';
-import { startStats, growthMult, diminish } from './career.js?v=60';
-import { GROWTH, FOE_TOTAL, TRAIN, CEILING } from './tuning.js?v=60';
-import { kimeteGain } from './drills.js?v=60';
-import { isTactic, FOE_KIME_ID } from './tactics.js?v=60';
+import { TYPES } from '../data/types.js?v=61';
+import { GUIDE_IDS } from '../data/guides.js?v=61';
+import { HERO_TYPE, OKAMI, NEW_TECH_AT, newTechIds } from '../data/heroes.js?v=61';
+import { foeAt } from '../data/foes.js?v=61';
+import { inGame } from '../data/kimarite.js?v=61';
+import { RANKS, CLEAR_AT, PLAY_COUNT, promotionAt, rankIndexOf } from './ladder.js?v=61';
+import { startStats, growthMult, diminish } from './career.js?v=61';
+import { GROWTH, FOE_TOTAL, TRAIN, CEILING } from './tuning.js?v=61';
+import { kimeteGain } from './drills.js?v=61';
+import { isTactic, FOE_KIME_ID } from './tactics.js?v=61';
 
 // はじめて見た時に ことねが返し方を教える攻め：相手の攻め4つと、敵の必殺技（foeKime・ボタン1つ Task 3）。記録の seenTactics はこれだけを残す
 const seenable = (id) => isTactic(id) || id === FOE_KIME_ID;

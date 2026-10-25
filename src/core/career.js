@@ -1,9 +1,9 @@
 // 一代記の状態・勝つたびの伸び・記録（設計書 §3・10/12 作り直しで稽古と疲れを無くした）。どの関数も元を書き換えない
-import { TYPES } from '../data/types.js?v=60';
-import { LADDER_SIZE } from '../data/ranks.js?v=60';
-import { GROWTH, HEYA_GROW_MULT } from './tuning.js?v=60';
-import { HEYA, heyaOfGuide } from '../data/heya.js?v=60';
-import { inGame } from '../data/kimarite.js?v=60';
+import { TYPES } from '../data/types.js?v=61';
+import { LADDER_SIZE } from '../data/ranks.js?v=61';
+import { GROWTH, HEYA_GROW_MULT } from './tuning.js?v=61';
+import { HEYA, heyaOfGuide } from '../data/heya.js?v=61';
+import { inGame } from '../data/kimarite.js?v=61';
 
 // 古い iPhone の Safari（iOS 15.4 より前）には Object.hasOwn が無い＝札を押すと止まっていた（10/10）
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);

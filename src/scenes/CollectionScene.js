@@ -2,16 +2,16 @@
 // 福島昔話クエストの図鑑と同じ形：3列×3段の札（1ページ9体）・倒した相手は姿と名前と朱の判子・まだの相手は黒い影と「？？？」（番号だけ）・
 // 倒した札をさわると1体を大きく（姿・名前・何体目・種類・型・必殺技）。勝った直後は取組の後の画面から開き、その相手の札に判子を押す
 // 開き方：this.scene.start('collection', { stamp: 相手の id（判子を押す札・無ければ null）, then: 閉じた後の画面（'ladder' | 'clear'） })
-import { t, foeLabel } from '../i18n/i18n.js?v=60';
-import { session } from '../state.js?v=60';
-import { collectionOf, pageOf, PER_PAGE } from '../core/collection.js?v=60';
-import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=60';
-import { foeKimeteAt } from '../core/kamiai.js?v=60';
-import { menuBgKey } from '../core/bgkey.js?v=60';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=60';
-import { playBout } from '../ui/sfx.js?v=60';
-import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=60';
-import { button, bindPress, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, addAura, clearScene, COLORS } from '../ui/widgets.js?v=60';
+import { t, foeLabel } from '../i18n/i18n.js?v=61';
+import { session } from '../state.js?v=61';
+import { collectionOf, pageOf, PER_PAGE } from '../core/collection.js?v=61';
+import { foeArt, foeAura, stageScale } from '../core/foeart.js?v=61';
+import { foeKimeteAt } from '../core/kamiai.js?v=61';
+import { menuBgKey } from '../core/bgkey.js?v=61';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=61';
+import { playBout } from '../ui/sfx.js?v=61';
+import { guardOpen, OPEN_GUARD_LONG_MS } from '../ui/openguard.js?v=61';
+import { button, bindPress, backButton, topTitle, fitText, wrapText, roundBox, hitZone, textStyle, addAura, clearScene, COLORS } from '../ui/widgets.js?v=61';
 
 const CARD = { w: 212, h: 298, top: 168, gapY: 14 }; // 札（3列×3段：168〜1094）
 const FIG = { dy: 112, h: 188, w: 190 }; // 札の中の姿（札の上の端から姿の真ん中まで・高さ・幅）

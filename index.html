@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>トントン紙相撲 | Ton-Ton Paper Sumo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
 <style>
+  /* 字は自分の置き場（fonts/・tools/fonts.py が作る）＝Google Fonts を直に読まない（10/25） */
+  @font-face { font-family: "M PLUS Rounded 1c"; src: url("fonts/mplus-rounded-500.woff") format("woff"); font-weight: 500; font-display: swap; }
+  @font-face { font-family: "M PLUS Rounded 1c"; src: url("fonts/mplus-rounded-800.woff") format("woff"); font-weight: 800; font-display: swap; }
   :root { --bg: #141a2e; }
   html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; touch-action: manipulation; }
   #game { width: 100vw; height: 100vh; height: 100dvh; }
@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-title" content="トントン紙相撲">
 <meta name="theme-color" content="#141a2e">
 <script>
-(function(){var mine="60",done=false,timer=null;
+(function(){var mine="61",done=false,timer=null;
 function load(){if(done)return;done=true;clearTimeout(timer);var go=function(){var s=document.createElement("script");s.type="module";s.src="src/main.js?v="+encodeURIComponent(mine);document.body.appendChild(s);};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",go);else go();}
 timer=setTimeout(load,1500);

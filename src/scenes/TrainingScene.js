@@ -7,18 +7,18 @@
 // 心技体の棒には今の番付の天井の印（細い線・v47）
 // 負けた後の稽古は3コマ終えると同じ相手へ。番付からいつでも入る稽古（training.voluntary・10/13 本人「好きなときに稽古が出来るように」）は、
 // どのコマでも「番付へ戻る」で抜けられる（残りのコマは捨てる）・終われば番付へ
-import { t } from '../i18n/i18n.js?v=60';
-import { session, trainLeaveNow } from '../state.js?v=60';
-import { canLeaveTraining, kimeteGauge, statCeiling } from '../core/run.js?v=60';
-import { kimeteById } from '../data/kimete.js?v=60';
-import { techCards, TECH_CARD_LIMIT, trainingAdvice } from '../core/training.js?v=60';
-import { DRILLS, kimetePct } from '../core/drills.js?v=60';
-import { playBout } from '../ui/sfx.js?v=60';
-import { menuBgKey } from '../core/bgkey.js?v=60';
-import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=60';
+import { t } from '../i18n/i18n.js?v=61';
+import { session, trainLeaveNow } from '../state.js?v=61';
+import { canLeaveTraining, kimeteGauge, statCeiling } from '../core/run.js?v=61';
+import { kimeteById } from '../data/kimete.js?v=61';
+import { techCards, TECH_CARD_LIMIT, trainingAdvice } from '../core/training.js?v=61';
+import { DRILLS, kimetePct } from '../core/drills.js?v=61';
+import { playBout } from '../ui/sfx.js?v=61';
+import { menuBgKey } from '../core/bgkey.js?v=61';
+import { preloadBackdrop, drawBackdrop, inkPanel } from '../ui/backdrop.js?v=61';
 import {
   topTitle, fitText, roundBox, hitZone, textStyle, statBars, speakerFace, speechBubble, button, bindPress, preloadOyakataArt, clearScene, COLORS,
-} from '../ui/widgets.js?v=60';
+} from '../ui/widgets.js?v=61';
 
 // 札の行：top から bottom までに収める。行の高さは最大 step・札の数が多いときは縮める（1235 は「稽古おわり」の字・1210 は番付へ戻る）
 const CARD = { w: 640, top: 470, step: 120, bottom: 1150 };

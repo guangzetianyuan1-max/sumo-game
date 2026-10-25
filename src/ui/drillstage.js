@@ -4,7 +4,7 @@
 //   連打：主人公は左・鉄砲柱は右・回数は柱のさらに右（主人公にも柱にも重ならない）
 //   長押し：主人公ひとり（相手は置かない・v42 本人）。真ん中より少し右。こらえの見せ方は主人公だけ（緑で離す＝四股を踏みしめる／外す＝後ろへよろける）。左端のバー（HUD.bar）にかからない
 // ボタン2つは本番（KamiScene）と同じ場所と大きさ：左（連打）・右（一押しと長押し）
-import { BUTTON_COLOR } from '../core/kamibutton.js?v=60';
+import { BUTTON_COLOR } from '../core/kamibutton.js?v=61';
 
 export const FACE = 1;
 export const FIG_H = 330; // 型紙の高さ（取組と同じ）

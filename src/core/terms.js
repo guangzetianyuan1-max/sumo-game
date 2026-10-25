@@ -6,7 +6,7 @@
 //   ⇒ 責任の範囲・画面をたたく故障の項は「制作者に故意または重大な過失がある場合を除き」と必ず書く（tests/terms.test.js が見張る）。
 //   お金を取る・広告を入れる時は、専門家に見てもらってから版を上げる
 // 書き換えたら TERMS_VERSION を上げる＝前に同意した人にも もう一度 見せる。ここは画面を使わない（node で試験する）
-export const TERMS_VERSION = '2026-10-15';
+export const TERMS_VERSION = '2026-10-25'; // 10/25 字を自分の置き場へ（Google Fonts に接続しない）
 export const TERMS_KEY = 'sumo.terms';
 export const OFFICIAL_URL = 'https://guangzetianyuan1-max.github.io/sumo-game/';
 // 項目の並び（文は i18n の terms.<id>.head・terms.<id>.body）。tap＝画面をたたいて遊ぶこと（新・v42）

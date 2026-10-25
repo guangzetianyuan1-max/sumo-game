@@ -1,25 +1,25 @@
 // src/main.js — 言葉を決めて Phaser を始める
-import { CautionScene } from './scenes/CautionScene.js?v=60';
-import { CoverScene } from './scenes/CoverScene.js?v=60';
-import { GuideScene } from './scenes/GuideScene.js?v=60';
-import { LadderScene } from './scenes/LadderScene.js?v=60';
-import { OpponentScene } from './scenes/OpponentScene.js?v=60';
-import { AfterScene } from './scenes/AfterScene.js?v=60';
-import { TrainingScene } from './scenes/TrainingScene.js?v=60';
-import { DrillScene } from './scenes/DrillScene.js?v=60';
-import { KamiScene } from './scenes/KamiScene.js?v=60';
-import { HelpScene } from './scenes/HelpScene.js?v=60';
-import { KenshoScene } from './scenes/KenshoScene.js?v=60';
-import { ClearScene } from './scenes/ClearScene.js?v=60';
-import { CollectionScene } from './scenes/CollectionScene.js?v=60';
-import { initLang, setLang, t } from './i18n/i18n.js?v=60';
-import { isPlayables, initPlatform, playablesLang, onYtAudioChange, onYtPause } from './platform.js?v=60';
-import { storage } from './ui/widgets.js?v=60';
-import { session, lastSlot, onSaveFail } from './state.js?v=60';
-import { setScene, setMuted, isMuted, unlockOnGesture, musicHidden } from './ui/music.js?v=60';
-import { sfxHidden, sfxWake } from './ui/sfx.js?v=60';
-import { askTerms, askTermsPlain } from './ui/terms.js?v=60';
-import { showNotice } from './ui/notice.js?v=60';
+import { CautionScene } from './scenes/CautionScene.js?v=61';
+import { CoverScene } from './scenes/CoverScene.js?v=61';
+import { GuideScene } from './scenes/GuideScene.js?v=61';
+import { LadderScene } from './scenes/LadderScene.js?v=61';
+import { OpponentScene } from './scenes/OpponentScene.js?v=61';
+import { AfterScene } from './scenes/AfterScene.js?v=61';
+import { TrainingScene } from './scenes/TrainingScene.js?v=61';
+import { DrillScene } from './scenes/DrillScene.js?v=61';
+import { KamiScene } from './scenes/KamiScene.js?v=61';
+import { HelpScene } from './scenes/HelpScene.js?v=61';
+import { KenshoScene } from './scenes/KenshoScene.js?v=61';
+import { ClearScene } from './scenes/ClearScene.js?v=61';
+import { CollectionScene } from './scenes/CollectionScene.js?v=61';
+import { initLang, setLang, t } from './i18n/i18n.js?v=61';
+import { isPlayables, initPlatform, playablesLang, onYtAudioChange, onYtPause } from './platform.js?v=61';
+import { storage } from './ui/widgets.js?v=61';
+import { session, lastSlot, onSaveFail } from './state.js?v=61';
+import { setScene, setMuted, isMuted, unlockOnGesture, musicHidden } from './ui/music.js?v=61';
+import { sfxHidden, sfxWake } from './ui/sfx.js?v=61';
+import { askTerms, askTermsPlain } from './ui/terms.js?v=61';
+import { showNotice } from './ui/notice.js?v=61';
 
 // 言葉と前に使った記録を決める（Playables 版は initPlatform の後＝記録と言葉を YouTube から読んでから）
 function boot() {
